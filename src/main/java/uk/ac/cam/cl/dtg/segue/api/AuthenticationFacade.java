@@ -327,7 +327,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (AuthenticationCodeException | CrossSiteRequestForgeryException | AuthenticatorSecurityException
                 | CodeExchangeException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage());
-            log.info("Error detected during authentication: " + e.getClass().toString());
+            log.info("Error detected during authentication!", e);
             return error.toResponse();
         } catch (DuplicateAccountException e) {
             log.debug("Duplicate user already exists in the database.", e);
@@ -390,7 +390,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
         // Stop users logging in who have already locked their account.
         if (misuseMonitor.hasMisused(email.toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName())) {
-            log.error(String.format("Segue Login Blocked for (%s). Rate limited - too many logins.", email));
+            log.error("Login Blocked for ({}). Rate limited - too many logins!", email);
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
         }
 
@@ -416,14 +416,14 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (IncorrectCredentialsProvidedException | NoUserException | NoCredentialsAvailableException e) {
             try {
                 misuseMonitor.notifyEvent(email.toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName());
-                log.info(String.format("Incorrect credentials received for (%s). Error: %s", email, e.getMessage()));
+                log.info("Incorrect credentials received for ({}). Error: {}", email, e.getMessage());
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect credentials provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
-                log.error(String.format("Segue Login Blocked for (%s). Rate limited - too many logins.", email));
+                log.error("Login Blocked for ({}). Rate limited - too many logins!", email);
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
         } catch (MFARequiredButNotConfiguredException e) {
-            log.warn(String.format("Login blocked for ADMIN account (%s) which does not have 2FA configured.", email));
+            log.warn("Login blocked for staff account ({}) missing the required 2FA!", email);
             return new SegueErrorResponse(Status.UNAUTHORIZED, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Internal Database error has occurred during authentication.";
@@ -524,8 +524,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
             if (misuseMonitor.hasMisused(partiallyLoggedInUser.getEmail().toLowerCase(),
                     SegueLoginMisuseHandler.class.getSimpleName())) {
 
-                log.error("Segue Login Blocked for (" + partiallyLoggedInUser.getEmail()
-                        + ") during 2FA step. Rate limited - too many logins.");
+                log.error("Login Blocked for ({}) during 2FA step. Rate limited - too many logins!", partiallyLoggedInUser.getEmail());
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
 
@@ -538,16 +537,15 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         } catch (NumberFormatException e) {
             return SegueErrorResponse.getBadRequestResponse("Verification code is not in the correct format.");
         } catch (IncorrectCredentialsProvidedException | NoCredentialsAvailableException e) {
-            log.info("Incorrect 2FA code received for (" + partiallyLoggedInUser.getEmail()
-                    + "). Error reason: " + e.getMessage());
             try {
-                misuseMonitor.notifyEvent(partiallyLoggedInUser.getEmail().toLowerCase(),
-                        SegueLoginMisuseHandler.class.getSimpleName());
-
+                if (null != partiallyLoggedInUser) {
+                    log.info("Incorrect 2FA code received for ({}). Error reason: {}", partiallyLoggedInUser.getEmail(), e.getMessage());
+                    misuseMonitor.notifyEvent(partiallyLoggedInUser.getEmail().toLowerCase(),
+                            SegueLoginMisuseHandler.class.getSimpleName());
+                }
                 return new SegueErrorResponse(Status.UNAUTHORIZED, "Incorrect code provided.").toResponse();
             } catch (SegueResourceMisuseException e1) {
-                log.error("Segue 2FA verification Blocked for (" + partiallyLoggedInUser.getEmail()
-                        + "). Rate limited - too many logins.");
+                log.error("2FA verification Blocked for ({}). Rate limited - too many logins!", partiallyLoggedInUser.getEmail());
                 return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
             }
         } catch (SegueDatabaseException e) {

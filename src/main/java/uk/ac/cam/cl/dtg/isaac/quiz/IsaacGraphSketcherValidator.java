@@ -60,8 +60,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
         boolean responseCorrect = false;                // Whether we're right or wrong
 
         if (null == graphSketcherQuestion.getChoices() || graphSketcherQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                + question.getCanonicalSourceFile());
+            log.error("Question ({}) does not have any answers. File: '{}'", question.getId(), question.getCanonicalSourceFile());
 
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
@@ -76,8 +75,7 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
             try {
                 graphAnswer = objectMapper.readValue(answer.getValue(), GraphAnswer.class);
             } catch (IOException e) {
-                log.error("Expected a GraphAnswer, but couldn't parse it for question id: "
-                    + graphSketcherQuestion.getId(), e);
+                log.error("Expected a GraphAnswer, but couldn't parse it for question ({})!", graphSketcherQuestion.getId(), e);
                 feedback = new Content("Your graph could not be read.");
             }
         }
@@ -95,14 +93,12 @@ public class IsaacGraphSketcherValidator implements IValidator, ISpecifier {
 
                 // ... that are of the GraphChoice type, ...
                 if (!(c instanceof GraphChoice graphChoice)) {
-                    log.error("Isaac GraphSketcher Validator for questionId: " + graphSketcherQuestion.getId()
-                        + " expected there to be a GraphChoice . Instead it found a Choice.");
+                    log.error("GraphQuestion ({}) expected a GraphChoice. Instead it contained a Choice.", graphSketcherQuestion.getId());
                     continue;
                 }
 
                 if (null == graphChoice.getGraphSpec() || graphChoice.getGraphSpec().isEmpty()) {
-                    log.error("Expected a spec to match, but none found in choice for question id: "
-                        + graphSketcherQuestion.getId());
+                    log.error("Choice for GraphQuestion ({}) did not contain a spec!", graphSketcherQuestion.getId());
                     continue;
                 }
 

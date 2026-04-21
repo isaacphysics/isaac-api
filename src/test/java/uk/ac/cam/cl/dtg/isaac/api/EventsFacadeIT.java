@@ -18,14 +18,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
-import static org.junit.jupiter.api.Assertions.*;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_EVENT_LEADERS_OPEN_GROUP_ID;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_EVENT_LEADERS_WAITING_LIST_GROUP_ID;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
 
 public class EventsFacadeIT extends IsaacIntegrationTest {
@@ -74,7 +76,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         // --- Login as a student
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL, ITConstants.TEST_STUDENT_PASSWORD);
         // --- Login as an event manager
-        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD);
+        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD, ITConstants.TEST_EVENTMANAGER_MFA_SECRET);
 
         // --- Create a booking as a logged in student
         HttpServletRequest createBookingRequest = createRequestWithCookies(new Cookie[] { studentLogin.cookie });
@@ -149,7 +151,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         assertNotEquals(Response.Status.OK.getStatusCode(), getEventBookingsAsEditor_Response.getStatus());
 
         // Get event bookings by event id as an event manager (should succeed)
-        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD);
+        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD, ITConstants.TEST_EVENTMANAGER_MFA_SECRET);
         HttpServletRequest getEventBookingsAsEventManager_Request = createRequestWithCookies(new Cookie[] { eventManagerLogin.cookie });
         replay(getEventBookingsAsEventManager_Request);
         Response getEventBookingsAsEventManager_Response = eventsFacade.adminGetEventBookingByEventId(getEventBookingsAsEventManager_Request, "_regular_test_event");
@@ -265,7 +267,7 @@ public class EventsFacadeIT extends IsaacIntegrationTest {
         // The student does not own the group so this should not succeed
         assertNotEquals(Response.Status.OK.getStatusCode(), alice_Response.getStatus());
 
-        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD);
+        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.TEST_EVENTMANAGER_EMAIL, ITConstants.TEST_EVENTMANAGER_PASSWORD, ITConstants.TEST_EVENTMANAGER_MFA_SECRET);
         HttpServletRequest eventManager_Request = createRequestWithCookies(new Cookie[] { eventManagerLogin.cookie });
         replay(eventManager_Request);
         Response eventManager_Response = eventsFacade.getEventBookingForGivenGroup(eventManager_Request, "_regular_test_event", "2");

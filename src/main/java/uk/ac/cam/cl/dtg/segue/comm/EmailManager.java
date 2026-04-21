@@ -155,7 +155,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * @param tokenToValueMapping - a Map of tokens to values that will be replaced in the email template.
      * @param emailType - the type of email that this is so that it is filtered appropriately based on user email prefs.
      * @param attachments
-     * 			  - list of attachment objects
+     *               - list of attachment objects
      * @throws ContentManagerException if we can't parse the content
      * @throws SegueDatabaseException if we cannot contact the database for logging.
      */
@@ -220,17 +220,17 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
     
     /**
      * @param sendingUser
-     * 				- the user object for the user sending the email
+     *                 - the user object for the user sending the email
      * @param contentObjectId
-     * 				- the id of the email template being used
+     *                 - the id of the email template being used
      * @param allSelectedUsers
-     * 				- the users to send email to
+     *                 - the users to send email to
      * @param emailType
-     * 				- the type of email to send (affects who receives it)
+     *                 - the type of email to send (affects who receives it)
      * @throws SegueDatabaseException
-     * 				- a segue database exception
+     *                 - a segue database exception
      * @throws ContentManagerException
-     * 				- a content management exception
+     *                 - a content management exception
      */
     public void sendCustomEmail(final RegisteredUserDTO sendingUser, final String contentObjectId,
             final List<RegisteredUserDTO> allSelectedUsers, final EmailType emailType) throws SegueDatabaseException,
@@ -271,22 +271,22 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put("type", emailType).build();
 
         this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_MASS_EMAIL, eventDetails);
-        log.info(String.format("Admin user (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
-                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
+        log.info("User ({}) added {} emails to the queue. {} were filtered.", sendingUser.getEmail(),
+                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers);
     }
 
 
     /**
      * @param sendingUser
-     * 				- the user object for the user sending the email
+     *                 - the user object for the user sending the email
      * @param emailTemplate
      *              - the subject of the email
      * @param emailType
-     * 				- the type of email to send (affects who receives it)
+     *                 - the type of email to send (affects who receives it)
      * @throws SegueDatabaseException
-     * 				- a segue database exception
+     *                 - a segue database exception
      * @throws ContentManagerException
-     * 				- a content management exception
+     *                 - a content management exception
      */
     public void sendCustomContentEmail(final RegisteredUserDTO sendingUser, final EmailTemplateDTO emailTemplate,
                                        final List<RegisteredUserDTO> allSelectedUsers,
@@ -325,8 +325,8 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 .put("type", emailType).build();
 
         this.logManager.logInternalEvent(sendingUser, SegueServerLogType.SEND_CUSTOM_MASS_EMAIL, eventDetails);
-        log.info(String.format("User (%s) added %d emails to the queue. %d were filtered.", sendingUser.getEmail(),
-                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers));
+        log.info("User ({}) added {} emails to the queue. {} were filtered.", sendingUser.getEmail(),
+                allSelectedUsers.size() - numberOfFilteredUsers, numberOfFilteredUsers);
     }
     
     
@@ -338,9 +338,9 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * e.g. SYSTEM emails cannot be filtered
      * 
      * @param userDTO
-     * 		- the userDTO used for logging. Must not be null. 
+     *         - the userDTO used for logging. Must not be null. 
      * @param email
-     * 		- the email we want to send. Must be non-null and have an associated non-null user id
+     *         - the email we want to send. Must be non-null and have an associated non-null user id
      * @return boolean - true if the email was added to the queue false if it was filtered for some reason
      * @throws SegueDatabaseException
      *             - the content was of incorrect type
@@ -365,7 +365,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
 
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
-            log.info(String.format("Added %s email to the queue with subject: %s", email.getEmailType().toString().toLowerCase(), email.getSubject()));
+            log.info("Added {} email to the queue with subject: '{}'.", email.getEmailType().toString().toLowerCase(), email.getSubject());
             logManager.logInternalEvent(userDTO, SegueServerLogType.SENT_EMAIL, eventDetails);
             addToQueue(email);
             return true;
@@ -392,11 +392,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * not be used to send email to users
      * 
      * @param email
-     * 		- the email we want to send
+     *         - the email we want to send
      */
     public void addSystemEmailToQueue(final EmailCommunicationMessage email) {
         addToQueue(email);
-        log.info(String.format("Added system email to the queue with subject: %s", email.getSubject()));
+        log.info("Added system email to the queue with subject: '{}'.", email.getSubject());
     }
 
     /**
@@ -520,7 +520,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
                 String tag = template.substring(m.start() + offset, m.end() + offset);
 
                 if (tag.length() <= MINIMUM_TAG_LENGTH) {
-                    log.info("Skipped email template tag with no contents: " + tag);
+                    log.info("Skipped email template tag with no contents: '{}'.", tag);
                     break;
                 }
 
@@ -556,7 +556,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
         }
 
         if (unknownTags.size() != 0) {
-            log.error("Email template contains tags that were not resolved! - " + unknownTags);
+            log.error("Email template contains tags that were not resolved! - {}", unknownTags);
             throw new IllegalArgumentException("Email template contains tag that was not provided! - " + unknownTags);
         }
 
@@ -567,17 +567,17 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage.
      *
      * @param userId
-     * 		- (nullable) the id of the user the email should be sent to
+     *         - (nullable) the id of the user the email should be sent to
      * @param userEmail
-     * 		- the email of the user
+     *         - the email of the user
      * @param emailType
      *      - the type of e-mail being created
      * @return
-     * 		- a multi-part EmailCommunicationMessage
+     *         - a multi-part EmailCommunicationMessage
      * @throws ContentManagerException
-     * 		- if there has been an error accessing content
+     *         - if there has been an error accessing content
      * @throws ResourceNotFoundException
-     * 		- if the resource has not been found
+     *         - if the resource has not been found
      *
      */
     public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
@@ -591,20 +591,20 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      * This method loads the HTML and plain text templates and returns the resulting EmailCommunicationMessage. 
      * 
      * @param userId
-     * 		- (nullable) the id of the user the email should be sent to
+     *         - (nullable) the id of the user the email should be sent to
      * @param userEmail
-     * 		- the email of the user 
+     *         - the email of the user 
      * @param emailType
      *      - the type of e-mail being created
      * @param attachments
-     * 			  - list of attachment objects
+     *               - list of attachment objects
      * @return
-     * 		- a multi-part EmailCommunicationMessage
+     *         - a multi-part EmailCommunicationMessage
      * @throws ContentManagerException
-     * 		- if there has been an error accessing content
+     *         - if there has been an error accessing content
      * @throws ResourceNotFoundException 
-     * 		- if the resource has not been found
-     * 	
+     *         - if the resource has not been found
+     *     
      */
     public EmailCommunicationMessage constructMultiPartEmail(@Nullable final Long userId, final String userEmail,
                                          EmailTemplateDTO emailContent, Properties contentProperties,

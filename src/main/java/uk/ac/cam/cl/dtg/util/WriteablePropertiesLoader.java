@@ -15,15 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.util;
 
+import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 
 /**
  * A simple helper class for loading and modifying properties files.
@@ -65,7 +64,7 @@ public class WriteablePropertiesLoader extends PropertiesLoader {
         OutputStream out = new FileOutputStream(file);
         this.getLoadedProperties().store(out, "");
 
-        log.debug("Writing out properties file " + this.getConfigPath());
+        log.debug("Writing out properties file '{}'", this.getConfigPath());
         out.close();
     }
 }

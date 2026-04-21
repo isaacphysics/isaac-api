@@ -286,8 +286,8 @@ public class UserAccountManager implements IUserAccountManager {
             return this.convertUserDOToUserDTO(getCurrentRegisteredUserDO(request));
         } else {
             if (providerUserDO.getEmail() != null && !providerUserDO.getEmail().isEmpty() && this.findUserByEmail(providerUserDO.getEmail()) != null) {
-                log.warn("A user tried to use unknown provider '" + capitalizeFully(provider)
-                        + "' to log in to an account with matching email (" + providerUserDO.getEmail() + ").");
+                log.warn("A user tried to use unknown provider '{}' to log in to an account with matching email ({}).",
+                        capitalizeFully(provider), providerUserDO.getEmail());
                 throw new DuplicateAccountException("You do not use " + authenticator.getFriendlyName() + " to log in."
                         + " You may have registered using a different provider, or your email address and password.");
             }
@@ -305,7 +305,7 @@ public class UserAccountManager implements IUserAccountManager {
                         emailTokens, EmailType.SYSTEM);
 
             } catch (ContentManagerException e) {
-                log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+                log.error("Registration email could not be sent due to content issue: {}", e.getMessage());
             }
 
             return segueUserDTO;
@@ -341,21 +341,20 @@ public class UserAccountManager implements IUserAccountManager {
         // get the current user based on their session id information.
         RegisteredUserDTO currentUser = this.convertUserDOToUserDTO(this.getCurrentRegisteredUserDO(request));
         if (null != currentUser) {
-            log.debug(String.format("UserId (%s) already has a valid session - not bothering to reauthenticate",
-                    currentUser.getId()));
+            log.debug("User ({}) already has a valid session - not reauthenticating", currentUser.getId());
             return currentUser;
         }
 
         RegisteredUser user = this.userAuthenticationManager.getSegueUserFromCredentials(provider, email, password);
-        log.debug(String.format("UserId (%s) authenticated with credentials", user.getId()));
+        log.debug("User ({}) authenticated with credentials", user.getId());
 
         // check if user has MFA enabled, if so we can't just log them in - also they won't have the correct cookie
         if (secondFactorManager.has2FAConfigured(convertUserDOToUserDTO(user))) {
             // we can't just log them in we have to set a caveat cookie
             this.logUserInWithCaveats(request, response, user, rememberMe, Set.of(AuthenticationCaveat.INCOMPLETE_MFA_CHALLENGE));
             throw new AdditionalAuthenticationRequiredException();
-        } else if (Role.ADMIN.equals(user.getRole())) {
-            // Admins MUST have 2FA enabled to use password login, so if we reached this point login cannot proceed.
+        } else if (Role.ADMIN.equals(user.getRole()) || Role.EVENT_MANAGER.equals(user.getRole())) {
+            // Administrator accounts MUST have 2FA to use password login, so if we are here login cannot proceed.
             String message = "Your account type requires 2FA, but none has been configured! "
                     + "Please ask an admin to demote your account to regain access.";
             throw new MFARequiredButNotConfiguredException(message);
@@ -424,17 +423,17 @@ public class UserAccountManager implements IUserAccountManager {
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
                     "Unable to set a password.").toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn(String.format("Missing or invalid field during update operation: %s ", e.getMessage()));
+            log.warn("Missing or invalid field during update operation: {} ", e.getMessage());
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (DuplicateAccountException e) {
-            log.warn(String.format("Duplicate account registration attempt for (%s)", userObjectFromClient.getEmail()));
+            log.warn("Duplicate account registration attempt for ({})", userObjectFromClient.getEmail());
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             String errorMsg = "Unable to create account due to a database error.";
             log.error(errorMsg, e);
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, errorMsg).toResponse();
         } catch (EmailMustBeVerifiedException e) {
-            log.warn("Someone attempted to register with an Isaac email address: " + userObjectFromClient.getEmail());
+            log.warn("Someone attempted to register with an Isaac email address ({})", userObjectFromClient.getEmail());
             return new SegueErrorResponse(Response.Status.BAD_REQUEST,
                     "You cannot register with an Isaac email address.").toResponse();
         } catch (InvalidNameException e) {
@@ -466,7 +465,7 @@ public class UserAccountManager implements IUserAccountManager {
             // Check if the given preference type is one we support:
             if (!EnumUtils.isValidEnum(uk.ac.cam.cl.dtg.isaac.api.Constants.IsaacUserPreferences.class, preferenceType)
                     && !EnumUtils.isValidEnum(SegueUserPreferences.class, preferenceType)) {
-                log.warn("Unknown user preference type '" + preferenceType + "' provided. Skipping.");
+                log.warn("Unknown user preference type '{}' provided. Skipping.", preferenceType);
                 continue;
             }
 
@@ -476,8 +475,7 @@ public class UserAccountManager implements IUserAccountManager {
                 for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
                     if (!EnumUtils.isValidEnum(EmailType.class, preferenceName)
                             || !EmailType.valueOf(preferenceName).isValidEmailPreference()) {
-                        log.warn("Invalid email preference name '" + preferenceName + "' provided for '"
-                                + preferenceType + "'! Skipping.");
+                        log.warn("Invalid email preference name '{}' provided for '{}'! Skipping.", preferenceName, preferenceType);
                         continue;
                     }
                     boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
@@ -488,22 +486,20 @@ public class UserAccountManager implements IUserAccountManager {
                 // Isaac user preference names are configured in the config files:
                 String acceptedPreferenceNamesProperty = properties.getProperty(preferenceType);
                 if (null == acceptedPreferenceNamesProperty) {
-                    log.error("Failed to find allowed user preferences names for '" + preferenceType
-                            + "'! Has it been configured?");
+                    log.error("Failed to find allowed user preferences names for '{}'! Has it been configured?", preferenceType);
                     acceptedPreferenceNamesProperty = "";
                 }
                 List<String> acceptedPreferenceNames = Arrays.asList(acceptedPreferenceNamesProperty.split(","));
                 for (String preferenceName : userPreferenceObject.get(preferenceType).keySet()) {
                     if (!acceptedPreferenceNames.contains(preferenceName)) {
-                        log.warn("Invalid user preference name '" + preferenceName + "' provided for type '"
-                                + preferenceType + "'! Skipping.");
+                        log.warn("Invalid user preference name '{}' provided for type '{}'! Skipping.", preferenceName, preferenceType);
                         continue;
                     }
                     boolean preferenceValue = userPreferenceObject.get(preferenceType).get(preferenceName);
                     userPreferences.add(new UserPreference(userId, preferenceType, preferenceName, preferenceValue));
                 }
             } else {
-                log.warn("Unexpected user preference type '" + preferenceType + "' provided. Skipping.");
+                log.warn("Unexpected user preference type '{}' provided. Skipping.", preferenceType);
             }
         }
         return userPreferences;
@@ -625,7 +621,7 @@ public class UserAccountManager implements IUserAccountManager {
             return new SegueErrorResponse(Response.Status.NOT_FOUND,
                     "The user specified does not exist.").toResponse();
         } catch (DuplicateAccountException e) {
-            log.warn(String.format("Account email change failed due to existing email (%s)", userObjectFromClient.getEmail()));
+            log.warn("Account email change failed due to existing email ({})", userObjectFromClient.getEmail());
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (SegueDatabaseException e) {
             log.error("Unable to modify user", e);
@@ -634,7 +630,7 @@ public class UserAccountManager implements IUserAccountManager {
         } catch (InvalidPasswordException e) {
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (MissingRequiredFieldException e) {
-            log.warn(String.format("Missing field during update operation: %s ", e.getMessage()));
+            log.warn("Missing field during update operation: {} ", e.getMessage());
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (AuthenticationProviderMappingException e) {
             return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
@@ -793,7 +789,7 @@ public class UserAccountManager implements IUserAccountManager {
         try {
             updateLastSeen(user);
         } catch (SegueDatabaseException e) {
-            log.error(String.format("Unable to update user (%s) last seen date.", user.getId()));
+            log.error("Unable to update user ({}) last seen date.", user.getId());
         }
 
         return this.convertUserDOToUserDTO(user);
@@ -1057,9 +1053,9 @@ public class UserAccountManager implements IUserAccountManager {
                     emailTokens, EmailType.SYSTEM);
 
         } catch (ContentManagerException e) {
-            log.error("Registration email could not be sent due to content issue: " + e.getMessage());
+            log.error("Registration email could not be sent due to content issue: {}", e.getMessage());
         } catch (NoUserException e) {
-            log.error("Registration email could not be sent due to not being able to locate the user: " + e.getMessage());
+            log.error("Registration email could not be sent due to not being able to locate the user ({})", user.getId());
         }
 
         // save the user again with updated token
@@ -1174,7 +1170,7 @@ public class UserAccountManager implements IUserAccountManager {
                 this.sendVerificationEmailsForEmailChange(userDTO, newEmail, emailVerificationToken);
 
             } catch (ContentManagerException | NoUserException e) {
-                log.error("ContentManagerException during sendEmailVerificationChange " + e.getMessage());
+                log.error("Exception during sendEmailVerificationChange: {}", e.getMessage());
             }
 
             userToSave.setEmail(existingUser.getEmail());
@@ -1221,7 +1217,7 @@ public class UserAccountManager implements IUserAccountManager {
                         EmailType.SYSTEM);
             }
         } catch (ContentManagerException | NoUserException e) {
-            log.debug("ContentManagerException during sendTeacherWelcome " + e.getMessage());
+            log.debug("Exception during sendTeacherWelcome: {}", e.getMessage());
         }
 
         userToSave.setRole(requestedRole);
@@ -1238,9 +1234,7 @@ public class UserAccountManager implements IUserAccountManager {
         Objects.requireNonNull(requestedEmailVerificationStatus);
         RegisteredUser userToSave = this.findUserByEmail(email);
         if (null == userToSave) {
-            log.warn(String.format(
-                    "Could not update email verification status of email address (%s) - does not exist",
-                    email));
+            log.warn("Could not update email verification status of email address ({}) - does not exist", email);
             return;
         }
         userToSave.setEmailVerificationStatus(requestedEmailVerificationStatus);
@@ -1352,10 +1346,9 @@ public class UserAccountManager implements IUserAccountManager {
             }
 
         } catch (NoUserLoggedInException e) {
-            log.error(String.format("Verification requested for email:%s where email does not exist "
-                    + "and user not logged in!", email));
+            log.error("Verification requested for email ({}) where email does not exist and user not logged in!", email);
         } catch (ContentManagerException e) {
-            log.debug("ContentManagerException " + e.getMessage());
+            log.debug("ContentManagerException {}", e.getMessage());
         }
     }
 
@@ -1393,15 +1386,14 @@ public class UserAccountManager implements IUserAccountManager {
         RegisteredUser user = this.findUserById(userId);
 
         if (null == user) {
-            log.warn(String.format("Received an invalid email token request for (%s)", userId));
+            log.warn("Received email verification request for non-existent user ({}).", userId);
             throw new NoUserException("No user found with this userId!");
         }
 
         EmailVerificationStatus evStatus = user.getEmailVerificationStatus();
         if (evStatus == EmailVerificationStatus.VERIFIED
                 && user.getEmail().equals(user.getEmailToVerify())) {
-            log.warn(String.format("Received a duplicate email verification request for (%s) - already verified",
-                    user.getEmail()));
+            log.warn("Received a duplicate email verification request for ({}) - already verified", user.getEmail());
             return this.convertUserDOToUserDTO(user);
         }
 
@@ -1446,12 +1438,11 @@ public class UserAccountManager implements IUserAccountManager {
             user.setTeacherAccountPending(false);
 
             RegisteredUser createOrUpdateUser = this.database.createOrUpdateUser(user);
-            log.info(String.format("Email verification for user (%s) has completed successfully.",
-                    createOrUpdateUser.getId()));
+            log.info("Email verification for user ({}) completed successfully.", createOrUpdateUser.getId());
 
             return this.convertUserDOToUserDTO(createOrUpdateUser);
         } else {
-            log.warn(String.format("Received an invalid email verification token for (%s) - invalid token", userId));
+            log.warn("Received an invalid email verification token ({}) for ({})", token, userId);
             throw new InvalidTokenException();
         }
     }
@@ -1606,7 +1597,7 @@ public class UserAccountManager implements IUserAccountManager {
         Map<String, Object> emailTokens =
                 ImmutableMap.of("verificationURL", this.generateEmailVerificationURL(userDTO, emailVerificationToken));
 
-        log.info(String.format("Sending email verification message to %s", userDTO.getEmail()));
+        log.info("Sending email verification message to ({})", userDTO.getEmail());
 
         emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
     }
@@ -1629,7 +1620,7 @@ public class UserAccountManager implements IUserAccountManager {
                 "accountDeletionURL", this.generateAccountDeletionURL(token.getToken())
         );
 
-        log.info("Sending account deletion message to {}", userDTO.getEmail());
+        log.info("Sending account deletion message to ({})", userDTO.getEmail());
 
         emailManager.sendTemplatedEmailToUser(userDTO, emailVerificationTemplate, emailTokens, EmailType.SYSTEM);
     }
@@ -1671,8 +1662,8 @@ public class UserAccountManager implements IUserAccountManager {
         EmailTemplateDTO emailChangeTemplate = emailManager.getEmailTemplateDTO("email-verification-change");
         Map<String, Object> emailTokens = ImmutableMap.of("requestedemail", newEmail);
 
-        log.info(String.format("Sending email for email address change for user (%s)"
-                + " from email (%s) to email (%s)", userDTO.getId(), userDTO.getEmail(), newEmail));
+        log.info("Sending email for email address change for user ({}) from email ({}) to email ({})",
+                userDTO.getId(), userDTO.getEmail(), newEmail);
         emailManager.sendTemplatedEmailToUser(userDTO, emailChangeTemplate, emailTokens, EmailType.SYSTEM);
 
         // Defensive copy to ensure old email address is preserved (shouldn't change until new email is verified)
@@ -1696,7 +1687,7 @@ public class UserAccountManager implements IUserAccountManager {
                                         final RegisteredUser user, final boolean rememberMe) throws SegueDatabaseException {
         AnonymousUser anonymousUser = this.getAnonymousUserDO(request);
         if (anonymousUser != null) {
-            log.debug(String.format("Anonymous User (%s) located during login - need to merge question information", anonymousUser.getSessionId()));
+            log.debug("Anonymous User ({}) located during login - need to merge question information", anonymousUser.getSessionId());
         }
 
         // now we want to clean up any data generated by the user while they weren't logged in.
@@ -1814,11 +1805,10 @@ public class UserAccountManager implements IUserAccountManager {
     private RegisteredUser registerUserWithFederatedProvider(final AuthenticationProvider federatedAuthenticator,
                                                              final UserFromAuthProvider userFromProvider) throws NoUserException, SegueDatabaseException {
 
-        log.debug(String.format("New registration (%s) as user does not already exist.", federatedAuthenticator));
+        log.debug("New registration ({}) as user does not already exist.", federatedAuthenticator);
 
         if (null == userFromProvider) {
-            log.warn("Unable to create user for the provider "
-                    + federatedAuthenticator);
+            log.warn("User object from provider ({}) was missing!", federatedAuthenticator);
             throw new NoUserException("No user returned by the provider!");
         }
 

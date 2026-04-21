@@ -725,12 +725,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                         if (liteGameboard != null) {
                             linkedGameboards.add(liteGameboard);
                         } else {
-                            log.error(String.format("Unable to locate gameboard (%s) for topic summary page (%s)!",
-                                    linkedGameboardId, topicId));
+                            log.error("Unable to locate gameboard ({}) for topic summary page ({})!", linkedGameboardId, topicId);
                         }
 
                     } catch (SegueDatabaseException e) {
-                        log.info(String.format("Problem with retrieving gameboard: %s", linkedGameboardId));
+                        log.info("Problem retrieving gameboard ({})", linkedGameboardId);
                     }
                 }
             }

@@ -58,7 +58,7 @@ class ETLConfigurationModule extends AbstractModule {
 
                 globalProperties = new YamlLoader(configLocation);
 
-                log.info(String.format("Segue using configuration file: %s", configLocation));
+                log.info("Segue using configuration file: '{}'.", configLocation);
 
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);

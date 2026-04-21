@@ -8,13 +8,17 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
-import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -22,10 +26,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.Maps.*;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_BASE;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SCHOOLS_INDEX_TYPE;
+import static com.google.common.collect.Maps.immutableEntry;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Created by Ian on 17/10/2016.
@@ -134,14 +136,13 @@ class SchoolIndexer {
                             source);
 
                     if (null == schoolToSave.getPostcode() || schoolToSave.getPostcode().isEmpty()) {
-                        log.warn("School with missing postcode! URN:" + schoolToSave.getUrn());
+                        log.warn("School with missing postcode! URN: {}", schoolToSave.getUrn());
                     }
 
                     schools.add(schoolToSave);
                 } catch (IndexOutOfBoundsException e) {
                     // This happens when the school does not have the required data
-                    log.warn("Unable to load the following school into the school list due to missing required fields. "
-                            + Arrays.toString(schoolArray));
+                    log.warn("Unable to load school into list due to missing required fields: {}", Arrays.toString(schoolArray));
                 }
             }
         } catch (FileNotFoundException e) {

@@ -33,10 +33,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class EventNotificationEmailManager {
@@ -86,9 +84,9 @@ public class EventNotificationEmailManager {
                         .put("event", event)
                         .build(),
                     EmailType.SYSTEM);
-                log.debug(String.format("Sent email to user: %s %s, at: %s", user.getGivenName(), user.getFamilyName(), user.getEmail()));
+                log.debug("Sent email to user ({}) for event ({})", user.getEmail(), event.getId());
             } catch (NoUserException e) {
-                log.error(String.format("No user found with ID: %s", id));
+                log.error("No user found with ID ({}).", id);
             } catch (ContentManagerException e) {
                 log.error("Failed to add the scheduled email sent time: ", e);
             }

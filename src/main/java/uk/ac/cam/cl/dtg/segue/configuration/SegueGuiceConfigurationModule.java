@@ -246,7 +246,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
                 globalProperties = new YamlLoader(configLocation);
 
-                log.info(String.format("Segue using configuration file: %s", configLocation));
+                log.info("Segue using configuration file: '{}'", configLocation);
 
             } catch (IOException e) {
                 log.error("Error loading properties file.", e);
@@ -388,8 +388,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             mapBinder.addBinding(AuthenticationProvider.MICROSOFT).to(MicrosoftAuthenticator.class);
         } catch (Exception e) {
-            log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
-                    AuthenticationProvider.MICROSOFT));
+            log.error("Failed to initialise authenticator '{}' due to one or more absent config properties.", AuthenticationProvider.MICROSOFT);
         }
 
         // Raspberry Pi
@@ -412,8 +411,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             mapBinder.addBinding(AuthenticationProvider.RASPBERRYPI).to(RaspberryPiOidcAuthenticator.class);
 
         } catch (NullPointerException e) {
-            log.error(String.format("Failed to initialise authenticator %s due to one or more absent config properties.",
-                    AuthenticationProvider.RASPBERRYPI));
+            log.error("Failed to initialise authenticator '{}' due to one or more absent config properties.", AuthenticationProvider.RASPBERRYPI);
         }
 
         // Segue local
@@ -463,12 +461,12 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             @Named(Constants.API_METRICS_EXPORT_PORT) final int port) {
         if (null == metricsExporter) {
             try {
-                log.info("Creating MetricsExporter on port (" + port + ")");
+                log.info("Creating MetricsExporter on port ({})", port);
                 metricsExporter = new PrometheusMetricsExporter(port);
                 log.info("Exporting default JVM metrics.");
                 metricsExporter.exposeJvmMetrics();
             } catch (IOException e) {
-                log.error("Could not create MetricsExporter on port (" + port + ")");
+                log.error("Could not create MetricsExporter on port ({})", port);
                 return null;
             }
         }
@@ -1431,7 +1429,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     public static Reflections getReflectionsClass(final String pkg) {
         if (!reflections.containsKey(pkg)) {
-            log.info(String.format("Caching reflections scan on '%s'", pkg));
+            log.info("Caching reflections scan on '{}'", pkg);
             reflections.put(pkg, new Reflections(pkg));
         }
         return reflections.get(pkg);
@@ -1457,7 +1455,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
             for (Class<? extends ServletContextListener> contextListener : subTypes) {
                 contextListeners.add(contextListener);
-                log.info("Registering context listener class " + contextListener.getCanonicalName());
+                log.info("Registering context listener class '{}'", contextListener.getCanonicalName());
             }
         }
 

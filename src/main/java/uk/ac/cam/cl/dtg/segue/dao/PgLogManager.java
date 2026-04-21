@@ -275,7 +275,7 @@ public class PgLogManager implements ILogManager {
                 // [user_ip], [balancer/gateway_ip]
                 locationManager.refreshLocation(ipAddress.split(",")[0]);
             } catch (SegueDatabaseException | IOException e1) {
-                log.error("Unable to record location information for ip Address: " + ipAddress, e1);
+                log.error("Unable to record location information for ip Address: {}", ipAddress, e1);
             }
         }
 

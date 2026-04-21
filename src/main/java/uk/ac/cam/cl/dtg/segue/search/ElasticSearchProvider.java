@@ -181,7 +181,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             )._toQuery();
         }
 
-        log.debug("Randomised Query, to be sent to elasticsearch is : " + query);
+        log.debug("Randomised Query, to be sent to elasticsearch is : {}", query);
 
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
     }
@@ -670,7 +670,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             this.addSortInstructions(requestBuilder, sortInstructions);
         }
 
-        log.debug("Building Query: " + requestBuilder);
+        log.debug("Building Query: {}", requestBuilder);
         ResultsWrapper<String> results = executeQuery(requestBuilder.build());
 
         // execute another query to get all results as this is an unlimited

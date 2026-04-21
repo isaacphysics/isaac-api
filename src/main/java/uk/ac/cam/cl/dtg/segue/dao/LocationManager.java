@@ -91,7 +91,7 @@ public class LocationManager implements IPLocationResolver {
         if (ipAddress == null || ipAddress.startsWith("localhost") || ipAddress.contains("0:0:0:0:0:0:0:1")
                 || ipAddress.contains("127.0.0.1")) {
             // do not record
-            log.debug("Not geocoding ip address as it looks like localhost: " + ipAddress);
+            log.debug("Not geocoding ip address as it looks like localhost: {}", ipAddress);
             return;
         }
 
@@ -133,10 +133,10 @@ public class LocationManager implements IPLocationResolver {
             }
 
             this.locationCache.put(ipAddress, locationToCache);
-            log.debug("Location Cache currently has " + locationCache.size() + " ip addresses");
+            log.debug("Location Cache currently has {} ip addresses", locationCache.size());
 
         } catch (LocationServerException e) {
-            log.error(String.format("Unable to resolve location for ip address: %s. Skipping...", ipAddress), e.getMessage());
+            log.error("Unable to resolve location for ip address: {}. Skipping...", ipAddress, e);
             // add it to the ephemeral failed cache for a while so we don't keep asking for an address with no info immediately.
             this.failedLocationCache.put(ipAddress, new Location(null, 0.0, 0.0));
         }

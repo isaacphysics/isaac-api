@@ -15,19 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.PROXY_PATH;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ImageDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import com.google.inject.Inject;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /**
  * A class responsible for managing Segue URIs.
@@ -74,7 +73,7 @@ public class URIManager {
             }
             resourceUrl = proxyPath + "/api/" + base + "/" + URLEncoder.encode(content.getId(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            log.error("Url generation for resource id " + content.getId() + " failed. ", e);
+            log.error("Url generation for resource id '{}' failed!", content.getId(), e);
         }
 
         return resourceUrl;
