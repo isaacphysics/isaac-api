@@ -27,11 +27,19 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
 
     @AfterEach
     public void tearDown() throws Exception {
-        // Clean up bookmark added during tests
-        PreparedStatement deleteBookmarks = postgresSqlDb.getDatabaseConnection().prepareStatement("DELETE FROM user_bookmarks WHERE user_id = ? AND content_id = ?");
-        deleteBookmarks.setLong(1, ITConstants.ALICE_STUDENT_ID);
-        deleteBookmarks.setString(2, ITConstants.FUZZY_MATCH_TEST_PAGE_ID);
-        deleteBookmarks.executeUpdate();
+        // Restore ALICE_STUDENT bookmarks to original state
+        PreparedStatement pstDelete = postgresSqlDb.getDatabaseConnection().prepareStatement(
+                "DELETE FROM user_bookmarks WHERE user_id = ? AND content_id = ?");
+        pstDelete.setLong(1, ITConstants.ALICE_STUDENT_ID);
+        pstDelete.setString(2, ITConstants.FUZZY_MATCH_TEST_PAGE_ID);
+        pstDelete.executeUpdate();
+
+        PreparedStatement pstInsert = postgresSqlDb.getDatabaseConnection().prepareStatement(
+                "INSERT INTO user_bookmarks (user_id, content_id, content_type, created) VALUES (?, ?, ?, NOW()) ON CONFLICT DO NOTHING");
+        pstInsert.setLong(1, ITConstants.ALICE_STUDENT_ID);
+        pstInsert.setString(2, ITConstants.SEARCH_TEST_CONCEPT_ID);
+        pstInsert.setString(3, CONCEPT_TYPE);
+        pstInsert.executeUpdate();
     }
 
     @Test
