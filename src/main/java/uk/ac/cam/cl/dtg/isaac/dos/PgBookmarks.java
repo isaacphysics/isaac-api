@@ -44,11 +44,12 @@ public class PgBookmarks implements IBookmarks {
         String query = "SELECT content_id, created FROM user_bookmarks WHERE user_id = ?";
 
         boolean filterByContentType = false;
-        if (null != contentType) {
+        if (null != contentType && !contentType.isEmpty()) {
             if (contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage")) {
                 query += " AND content_type = ?";
                 filterByContentType = true;
             } else {
+                // Should have already been caught at facade level
                 log.warn("Invalid content type provided for bookmarks query: {}", contentType);
                 throw new IllegalArgumentException("Invalid content type for bookmarks query: " + contentType);
             }

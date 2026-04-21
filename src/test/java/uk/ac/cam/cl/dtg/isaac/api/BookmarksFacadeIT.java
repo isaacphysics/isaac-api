@@ -50,10 +50,8 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
         ArrayList<ContentSummaryDTO> responseBody = (ArrayList<ContentSummaryDTO>) bookmarksResponse.getEntity();
         List<String> actualBookmarkIds = responseBody.stream().map(ContentSummaryDTO::getId).toList();
 
-        List<String> expectedBookmarkIds = new ArrayList<>();
-        expectedBookmarkIds.add(ITConstants.REGRESSION_TEST_PAGE_ID);
-        expectedBookmarkIds.add(ITConstants.ASSIGNMENT_TEST_PAGE_ID);
-        expectedBookmarkIds.add(ITConstants.SEARCH_TEST_CONCEPT_ID);
+        List<String> expectedBookmarkIds = List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID,
+                ITConstants.SEARCH_TEST_CONCEPT_ID);
 
         assertEquals(expectedBookmarkIds, actualBookmarkIds);
     }
@@ -74,16 +72,14 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
         ArrayList<ContentSummaryDTO> responseBody = (ArrayList<ContentSummaryDTO>) bookmarksResponse.getEntity();
         List<String> actualBookmarkIds = responseBody.stream().map(ContentSummaryDTO::getId).toList();
 
-        List<String> expectedBookmarkIds = new ArrayList<>();
-        expectedBookmarkIds.add(ITConstants.REGRESSION_TEST_PAGE_ID);
-        expectedBookmarkIds.add(ITConstants.ASSIGNMENT_TEST_PAGE_ID);
+        List<String> expectedBookmarkIds = List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID);
 
         assertEquals(expectedBookmarkIds, actualBookmarkIds);
     }
 
     @Test
     public void getCurrentUserBookmarks_noLoggedInUser_returnsError() {
-        // Arrange: create request with no cookie
+        // Arrange: create request without valid cookie
         HttpServletRequest bookmarksRequest = createRequestWithCookies(new Cookie[]{});
         replay(bookmarksRequest);
 
@@ -109,7 +105,7 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void addCurrentUserBookmark_validContent_addsBookmark() throws Exception {
+    public void addCurrentUserBookmark_validContent_returnsOK() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
         HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
@@ -124,7 +120,7 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
 
     @Test
     public void addCurrentUserBookmark_noLoggedInUser_returnsError() {
-        // Arrange: create request with no cookie
+        // Arrange: create request without valid cookie
         HttpServletRequest addBookmarkRequest = createRequestWithCookies(new Cookie[]{});
         replay(addBookmarkRequest);
 
@@ -178,7 +174,7 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
     }
 
     @Test
-    public void deleteCurrentUserBookmark_validContent_deletesBookmark() throws Exception {
+    public void deleteCurrentUserBookmark_bookmarkedContent_returnsOK() throws Exception {
         // Arrange: log in, create request
         LoginResult login = loginAs(httpSession, ITConstants.ALICE_STUDENT_EMAIL, ITConstants.ALICE_STUDENT_PASSWORD);
         HttpServletRequest deleteBookmarkRequest = createRequestWithCookies(new Cookie[]{login.cookie});
@@ -193,7 +189,7 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
 
     @Test
     public void deleteCurrentUserBookmark_noLoggedInUser_returnsError() throws Exception {
-        // Arrange: create request with no cookie
+        // Arrange: create request without valid cookie
         HttpServletRequest deleteBookmarkRequest = createRequestWithCookies(new Cookie[]{});
         replay(deleteBookmarkRequest);
 

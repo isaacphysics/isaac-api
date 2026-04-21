@@ -34,7 +34,7 @@ import java.util.List;
  *
  * Responsible for handling requests related to user bookmarks.
  */
-@Path("/")
+@Path("/bookmarks")
 @Tag(name = "BookmarksFacade", description = "/bookmarks")
 public class BookmarksFacade {
     private static final Logger log = LoggerFactory.getLogger(BookmarksFacade.class);
@@ -64,7 +64,7 @@ public class BookmarksFacade {
      * @return the list of content that the user has bookmarked.
      */
     @GET
-    @Path("bookmarks")
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Get bookmarks for the current user.")
     public final Response getCurrentUserBookmarks(@Context final HttpServletRequest request,
@@ -76,7 +76,8 @@ public class BookmarksFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
-        if (null != contentType && !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
+        if (null != contentType && !contentType.isEmpty()
+                && !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
             SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid content type for bookmarks query: " + contentType);
             log.warn(error.getErrorMessage());
             return error.toResponse();
@@ -95,7 +96,7 @@ public class BookmarksFacade {
      *           - the id of the content to bookmark.
      */
     @POST
-    @Path("bookmarks")
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Add a bookmark for the current user.")
     public final Response addCurrentUserBookmark(@Context final HttpServletRequest request,
@@ -107,30 +108,37 @@ public class BookmarksFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         }
 
+        if (null == contentId || contentId.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Cannot create bookmark without content ID.").toResponse();
+        }
+
         List<BookmarkDO> currentBookmarks = bookmarksDbManager.getBookmarksForUser(user.getId());
 
         if (currentBookmarks.size() >= 100) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.").toResponse();
-        } else if (currentBookmarks.stream().anyMatch(b -> b.contentId().equals(contentId))) {
+        }
+
+        if (currentBookmarks.stream().anyMatch(b -> b.contentId().equals(contentId))) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You have already bookmarked this content.").toResponse();
-        } else {
-            try {
-                ContentDTO content = this.contentManager.getContentById(contentId);
-                String contentType = content.getType();
-                if ((null == contentType) || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
-                    SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                            "Invalid content type for bookmark: " + contentType);
-                    log.error(error.getErrorMessage());
-                    return error.toResponse();
-                }
-                bookmarksDbManager.addBookmarkForUser(user.getId(), contentId, contentType);
-            } catch (final ContentManagerException | NullPointerException e) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-                        "Failed to create bookmark, could not find content: " + contentId, e);
-                log.error(error.getErrorMessage(), e);
+        }
+
+        try {
+            ContentDTO content = this.contentManager.getContentById(contentId);
+            String contentType = content.getType();
+            if (null == contentType || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
+                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
+                        "Invalid content type for bookmark: " + contentType);
+                log.error(error.getErrorMessage());
                 return error.toResponse();
             }
+            bookmarksDbManager.addBookmarkForUser(user.getId(), contentId, contentType);
+        } catch (final ContentManagerException | NullPointerException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
+                    "Failed to create bookmark, could not find content with ID: " + contentId, e);
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
+
         return Response.ok().build();
     }
 
@@ -143,7 +151,7 @@ public class BookmarksFacade {
      *           - the id of the content to be removed from the user's bookmarks.
      */
     @DELETE
-    @Path("bookmarks")
+    @Path("/")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Remove a bookmark for the current user.")
     public final Response removeCurrentUserBookmark(@Context final HttpServletRequest request,
@@ -153,6 +161,10 @@ public class BookmarksFacade {
             user = userManager.getCurrentRegisteredUser(request);
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        }
+
+        if (null == contentId || contentId.isEmpty()) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Cannot delete bookmark without content ID.").toResponse();
         }
 
         List<BookmarkDO> currentBookmarks = bookmarksDbManager.getBookmarksForUser(user.getId());
