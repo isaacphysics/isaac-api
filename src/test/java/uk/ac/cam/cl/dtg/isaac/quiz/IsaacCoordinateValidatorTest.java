@@ -60,6 +60,7 @@ public class IsaacCoordinateValidatorTest {
         // Set up the question objects:
         someCoordinateQuestion = new IsaacCoordinateQuestion();
         someCoordinateQuestion.setNumberOfDimensions(2);
+        someCoordinateQuestion.setDisregardSignificantFigures(false);
         someCoordinateQuestion.setSignificantFiguresMin(2);
         someCoordinateQuestion.setSignificantFiguresMax(2);
         someCoordinateQuestion.setOrdered(true);
@@ -123,6 +124,20 @@ public class IsaacCoordinateValidatorTest {
 
         assertFalse(response.isCorrect());
         assertEquals(someIncorrectExplanation, response.getExplanation());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestPartiallyIncorrectAnswer() {
+        someCoordinateQuestion.setDisregardSignificantFigures(true);
+
+        // Correct first coordinate, incorrect second coordinate
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1, item3));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertNull(response.getExplanation());
     }
 
     @Test

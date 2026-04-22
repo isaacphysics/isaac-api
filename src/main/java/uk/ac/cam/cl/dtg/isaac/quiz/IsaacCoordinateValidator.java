@@ -281,7 +281,8 @@ public class IsaacCoordinateValidator implements IValidator {
         }
 
         // If incorrect & no other feedback, check for too few significant figures
-        if (!responseCorrect && feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
+        boolean disregardSigFigs = null != coordinateQuestion.getDisregardSignificantFigures() && coordinateQuestion.getDisregardSignificantFigures();
+        if (!disregardSigFigs && !responseCorrect && feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
                 .anyMatch(c -> ValidationUtils.tooFewSignificantFigures(c, sigFigsMin, log)))) {
             feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
             feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
@@ -306,14 +307,20 @@ public class IsaacCoordinateValidator implements IValidator {
 
             if (null != coordinateQuestion.getDisregardSignificantFigures()
                     && coordinateQuestion.getDisregardSignificantFigures()) {
-                return ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log);
+                if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log)) {
+                    return false;
+                }
+                continue;
             }
 
             if (allowTooManySigFigs) {
                 // Check if the submission has more significant figures than the allowed maximum
                 if (ValidationUtils.tooManySignificantFigures(submittedValue, sigFigsMax, log)) {
                     // Check if the submission would match the choice if we ignore the excess significant figures
-                    return ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigsMax, log);
+                    if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigsMax, log)) {
+                        return false;
+                    }
+                    continue; // If the value does match without excess significant figures
                 }
             }
 
