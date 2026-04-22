@@ -322,7 +322,6 @@ public class IsaacCoordinateValidator implements IValidator {
                     }
                     continue; // If the value does match without excess significant figures
                 }
-                return false; // If there weren't too many significant figures
             }
 
             int sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue, sigFigsMin, sigFigsMax, log);
