@@ -281,7 +281,8 @@ public class IsaacCoordinateValidator implements IValidator {
         }
 
         // If incorrect & no other feedback, check for too few significant figures
-        if (!responseCorrect && feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
+        boolean disregardSigFigs = null != coordinateQuestion.getDisregardSignificantFigures() && coordinateQuestion.getDisregardSignificantFigures();
+        if (!disregardSigFigs && !responseCorrect && feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
                 .anyMatch(c -> ValidationUtils.tooFewSignificantFigures(c, sigFigsMin, log)))) {
             feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
             feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
