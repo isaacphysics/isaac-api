@@ -306,15 +306,22 @@ public class IsaacCoordinateValidator implements IValidator {
 
             if (null != coordinateQuestion.getDisregardSignificantFigures()
                     && coordinateQuestion.getDisregardSignificantFigures()) {
-                return ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log);
+                if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, null, log)) {
+                    return false;
+                }
+                continue;
             }
 
             if (allowTooManySigFigs) {
                 // Check if the submission has more significant figures than the allowed maximum
                 if (ValidationUtils.tooManySignificantFigures(submittedValue, sigFigsMax, log)) {
                     // Check if the submission would match the choice if we ignore the excess significant figures
-                    return ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigsMax, log);
+                    if (!ValidationUtils.numericValuesMatch(choiceValue, submittedValue, sigFigsMax, log)) {
+                        return false;
+                    }
+                    continue; // If the value does match without excess significant figures
                 }
+                return false; // If there weren't too many significant figures
             }
 
             int sigFigs = ValidationUtils.numberOfSignificantFiguresToValidateWith(submittedValue, sigFigsMin, sigFigsMax, log);
