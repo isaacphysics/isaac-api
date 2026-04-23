@@ -168,6 +168,6 @@ public class BookmarksFacade {
         }
 
         bookmarksDbManager.removeBookmarkForUser(user.getId(), contentId);
-        return Response.ok().build();
+        return Response.noContent().build();
     }
 }
