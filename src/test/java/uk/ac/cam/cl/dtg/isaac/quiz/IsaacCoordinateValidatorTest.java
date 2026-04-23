@@ -25,14 +25,19 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.CoordinateItem;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Item;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 public class IsaacCoordinateValidatorTest {
 
@@ -92,6 +97,7 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertTrue(response.isCorrect());
+        assertNull(response.getExplanation());
     }
 
     @Test
@@ -104,6 +110,7 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertTrue(response.isCorrect());
+        assertNull(response.getExplanation());
     }
 
     @Test
@@ -123,6 +130,30 @@ public class IsaacCoordinateValidatorTest {
 
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item3, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertNull(response.getExplanation());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestCompletelyIncorrectAnswerTooFewItems() {
+        someCoordinateQuestion.setOrdered(false);
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item3));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertNull(response.getExplanation());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestCompletelyIncorrectAnswerTooManyItems() {
+        someCoordinateQuestion.setOrdered(false);
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item3, item4, item3));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
@@ -180,7 +211,7 @@ public class IsaacCoordinateValidatorTest {
 
     @Test
     public final void isaacCoordinateValidator_TestPartiallyIncorrectAnswer() {
-        // Correct first coordinate, incorrect second coordinate
+        // Correct first ordinate, incorrect second ordinate
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1, item3));
 
@@ -194,7 +225,7 @@ public class IsaacCoordinateValidatorTest {
     public final void isaacCoordinateValidator_TestPartiallyIncorrectAnswerDisregardSF() {
         someCoordinateQuestion.setDisregardSignificantFigures(true);
 
-        // Correct first coordinate, incorrect second coordinate
+        // Correct first ordinate, incorrect second ordinate
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1, item3));
 
@@ -246,6 +277,20 @@ public class IsaacCoordinateValidatorTest {
         assertFalse(response.isCorrect());
         assertTrue(response.getExplanation().getValue().contains("did not provide the expected number of dimensions"));
     }
+
+    @Test
+    public final void isaacCoordinateValidator_TestIncompleteAnswer() {
+        CoordinateItem ci = new CoordinateItem(List.of("1", ""));
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(ci, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertTrue(response.getExplanation().getValue().contains("did not provide a complete answer"));
+    }
+
+    // Test significant figures
 
     @Test
     public final void isaacCoordinateValidator_TestTooManySignificantFigures() {
@@ -301,7 +346,7 @@ public class IsaacCoordinateValidatorTest {
 
     @Test
     public final void isaacCoordinateValidator_TestCorrectTooFewSignificantFiguresWithDisregardSF() {
-        // If disregardSignificantFigure is true, too few trailing 0s should be accepted even if they break sig figs rules
+        // If disregardSignificantFigure is true, too few trailing 0s should be accepted even if this break sig figs rules
         someCoordinateQuestion.setDisregardSignificantFigures(true);
 
         CoordinateChoice c = new CoordinateChoice();
@@ -320,6 +365,7 @@ public class IsaacCoordinateValidatorTest {
 
         CoordinateChoice correctChoice = new CoordinateChoice();
         correctChoice.setItems(List.of(item1ExtraSigFigIncorrect, item2));
+        correctChoice.setCorrect(true);
         someCoordinateQuestion.setChoices(List.of(correctChoice));
 
         CoordinateChoice c = new CoordinateChoice();
@@ -350,6 +396,7 @@ public class IsaacCoordinateValidatorTest {
         c.setItems(List.of(item1, item2));
         response = validator.validateQuestionResponse(someCoordinateQuestion, c);
         assertTrue(response.isCorrect());
+        assertNull(response.getExplanation());
     }
 
     @Test
@@ -371,6 +418,7 @@ public class IsaacCoordinateValidatorTest {
         c.setItems(List.of(item1, item2));
         response = validator.validateQuestionResponse(someCoordinateQuestion, c);
         assertTrue(response.isCorrect());
+        assertNull(response.getExplanation());
     }
 
     @Test
@@ -394,27 +442,35 @@ public class IsaacCoordinateValidatorTest {
         someCoordinateQuestion.setSignificantFiguresMax(null);
         someCoordinateQuestion.setDisregardSignificantFigures(true);
 
-        // Exact match should be correct
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1, item2Again));
 
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertTrue(response.isCorrect());
+        assertNull(response.getExplanation());
     }
 
     @Test
-    public final void isaacCoordinateValidator_TestDisregardSignificantFiguresOverridesSFSet() {
-        someCoordinateQuestion.setDisregardSignificantFigures(true); // Should override sig figs min/max
+    public final void isaacCoordinateValidator_TestZeroIgnoredForSigFigs() {
+        // 0, 0.0, 0.00... etc should never cause sig figs feedback
+        CoordinateItem zeroItem = new CoordinateItem(List.of("0", "0.0"));
+        CoordinateChoice zeroChoice = new CoordinateChoice();
+        zeroChoice.setItems(List.of(zeroItem, zeroItem));
+        zeroChoice.setCorrect(true);
+        someCoordinateQuestion.setChoices(List.of(zeroChoice));
 
-        // Exact match should be correct
-        CoordinateChoice c = new CoordinateChoice();
-        c.setItems(List.of(item1, item2Again));
+        CoordinateItem differentZeroItem =  new CoordinateItem(List.of("0.00000", "0"));
+        CoordinateChoice differentZeroChoice = new CoordinateChoice();
+        differentZeroChoice.setItems(List.of(differentZeroItem, differentZeroItem));
 
-        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, differentZeroChoice);
 
         assertTrue(response.isCorrect());
+        assertNull(response.getExplanation());
     }
+
+    // Test subset matching
 
     @Test
     public final void isaacCoordinateValidator_TestSubsetOfCorrectChoice() {
@@ -503,6 +559,41 @@ public class IsaacCoordinateValidatorTest {
         assertEquals(defaultExplanation, response.getExplanation());
     }
 
+    // Test invalid submissions
+
+    @Test
+    public final void isaacCoordinateValidator_TestEmptySubmission() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(new ArrayList<>());
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertEquals(FEEDBACK_NO_ANSWER_PROVIDED, response.getExplanation().getValue());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestWrongItemType() {
+        CoordinateChoice c = new CoordinateChoice();
+        Item i = new Item("id", "value");
+        c.setItems(List.of(i));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertEquals(FEEDBACK_UNRECOGNISED_ITEMS, response.getExplanation().getValue());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestInvalidNumberFormat() {
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(new CoordinateItem(List.of("1.2.3", "4"))));
+
+        assertThrows(NumberFormatException.class, () -> {
+            validator.validateQuestionResponse(someCoordinateQuestion, c);
+        });
+    }
+
     // Test the internals of the item-ordering:
 
     @Test
@@ -541,5 +632,105 @@ public class IsaacCoordinateValidatorTest {
         List<CoordinateItem> sorted = List.of(itemA, itemB, itemC, itemD);
         List<CoordinateItem> test = validator.orderCoordinates(unsorted);
         assertEquals(sorted, test);
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestCoordinateEmptyOrdering() {
+        CoordinateItem itemA = new CoordinateItem(List.of("1", "2"));
+        CoordinateItem itemB = new CoordinateItem(List.of("1", ""));
+
+        List<CoordinateItem> unsorted = List.of(itemA, itemB);
+        List<CoordinateItem> sorted = List.of(itemB, itemA);
+        List<CoordinateItem> test = validator.orderCoordinates(unsorted);
+        assertEquals(sorted, test);
+    }
+
+    // Test invalid question properties
+
+    @Test
+    public final void isaacCoordinateValidator_TestWrongQuestionType() {
+        Question question = new Question();
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1));
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(question, c);
+        });
+
+        assertTrue(exception.getMessage().contains("This validator only works with IsaacCoordinateQuestion"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestWrongChoiceType() {
+        Choice c = new Choice();
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            validator.validateQuestionResponse(someCoordinateQuestion, c);
+        });
+
+        assertTrue(exception.getMessage().contains("Expected CoordinateChoice for IsaacCoordinateQuestion"));
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestNoChoices() {
+        someCoordinateQuestion.setChoices(new ArrayList<>());
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertEquals(FEEDBACK_NO_CORRECT_ANSWERS, response.getExplanation().getValue());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestNoDimensions() {
+        someCoordinateQuestion.setNumberOfDimensions(null);
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertEquals("This question cannot be answered correctly.", response.getExplanation().getValue());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestInvalidMaxSF() {
+        someCoordinateQuestion.setSignificantFiguresMin(0);
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertEquals("This question cannot be answered correctly.", response.getExplanation().getValue());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestInvalidSFRange() {
+        someCoordinateQuestion.setSignificantFiguresMin(2);
+        someCoordinateQuestion.setSignificantFiguresMax(1);
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertFalse(response.isCorrect());
+        assertEquals("This question cannot be answered correctly.", response.getExplanation().getValue());
+    }
+
+    @Test
+    public final void isaacCoordinateValidator_TestInvalidSFRange_IgnoredIfDisregardSF() {
+        someCoordinateQuestion.setSignificantFiguresMin(2);
+        someCoordinateQuestion.setSignificantFiguresMax(1);
+        someCoordinateQuestion.setDisregardSignificantFigures(true);
+        CoordinateChoice c = new CoordinateChoice();
+        c.setItems(List.of(item1, item2));
+
+        QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
+
+        assertTrue(response.isCorrect());
+        assertNull(response.getExplanation());;
     }
 }
