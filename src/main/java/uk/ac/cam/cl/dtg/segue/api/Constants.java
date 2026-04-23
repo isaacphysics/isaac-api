@@ -200,7 +200,7 @@ public final class Constants {
     public static final String SEARCH_CLUSTER_ADDRESS = "SEARCH_CLUSTER_ADDRESS";
     public static final String SEARCH_CLUSTER_PORT = "SEARCH_CLUSTER_PORT";
     public static final String SEARCH_CLUSTER_INFO_PORT = "SEARCH_CLUSTER_INFO_PORT";
-    public static final String SEARCH_CLUSTER_NAME = "SEARCH_CLUSTER_V8_NAME";
+    public static final String SEARCH_CLUSTER_NAME = "SEARCH_CLUSTER_V9_NAME";
 
     public static final String SEARCH_RESULTS_HARD_LIMIT = "SEARCH_RESULTS_HARD_LIMIT";
 
