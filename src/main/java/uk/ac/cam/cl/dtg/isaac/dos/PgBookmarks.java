@@ -48,10 +48,6 @@ public class PgBookmarks implements IBookmarks {
             if (contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage")) {
                 query += " AND content_type = ?";
                 filterByContentType = true;
-            } else {
-                // Should have already been caught at facade level
-                log.warn("Invalid content type provided for bookmarks query: {}", contentType);
-                throw new IllegalArgumentException("Invalid content type for bookmarks query: " + contentType);
             }
         }
 
