@@ -21,6 +21,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
@@ -95,11 +96,11 @@ public class BookmarksFacade {
      *           - the id of the content to bookmark.
      */
     @POST
-    @Path("/")
+    @Path("/{content_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Add a bookmark for the current user.")
     public final Response addCurrentUserBookmark(@Context final HttpServletRequest request,
-                                                 @QueryParam("content_id") final String contentId) {
+                                                 @PathParam("content_id") final String contentId) {
         RegisteredUserDTO user;
         try {
             user = userManager.getCurrentRegisteredUser(request);
@@ -146,11 +147,11 @@ public class BookmarksFacade {
      *           - the id of the content to be removed from the user's bookmarks.
      */
     @DELETE
-    @Path("/")
+    @Path("/{content_id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(summary = "Remove a bookmark for the current user.")
     public final Response removeCurrentUserBookmark(@Context final HttpServletRequest request,
-                                                    @QueryParam("content_id") final String contentId) {
+                                                    @PathParam("content_id") final String contentId) {
         RegisteredUserDTO user;
         try {
             user = userManager.getCurrentRegisteredUser(request);
