@@ -73,7 +73,7 @@ public class PgBookmarks implements IBookmarks {
                 bookmarks.add(new BookmarkDO(contentId, created));
             }
         } catch (final SQLException e) {
-            e.printStackTrace();
+            log.error("Database error saving bookmark!", e);
         }
         return bookmarks;
     }

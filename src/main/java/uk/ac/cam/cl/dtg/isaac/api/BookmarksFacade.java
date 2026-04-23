@@ -78,9 +78,8 @@ public class BookmarksFacade {
 
         if (null != contentType && !contentType.isEmpty()
                 && !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid content type for bookmarks query: " + contentType);
-            log.warn(error.getErrorMessage());
-            return error.toResponse();
+            log.warn("Invalid content type provided for bookmarks query: {}", contentType);
+            return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
         }
 
         List<BookmarkDO> bookmarks = bookmarksDbManager.getBookmarksForUser(user.getId(), contentType);
@@ -126,17 +125,13 @@ public class BookmarksFacade {
             ContentDTO content = this.contentManager.getContentById(contentId);
             String contentType = content.getType();
             if (null == contentType || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
-                SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST,
-                        "Invalid content type for bookmark: " + contentType);
-                log.error(error.getErrorMessage());
-                return error.toResponse();
+                log.warn("Invalid content type provided for bookmarks query: {}", contentType);
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
             }
             bookmarksDbManager.addBookmarkForUser(user.getId(), contentId, contentType);
         } catch (final ContentManagerException | NullPointerException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
-                    "Failed to create bookmark, could not find content with ID: " + contentId, e);
-            log.error(error.getErrorMessage(), e);
-            return error.toResponse();
+            log.warn("Failed to create bookmark, could not find content with ID: {}", contentId);
+            return new SegueErrorResponse(Status.NOT_FOUND, "Unable to find content to bookmark.").toResponse();
         }
 
         return Response.ok().build();
