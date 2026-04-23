@@ -207,7 +207,6 @@ public class IsaacCoordinateValidator implements IValidator {
                                     // Check if this is just a significant figures mismatch
                                     if (!itemInChoiceWithoutSigFigs) {
                                         allItemsInChoiceWithoutSigFigs = false;
-                                        break;
                                     }
                                     break;
                                 }
