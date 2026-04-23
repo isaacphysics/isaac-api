@@ -1,6 +1,6 @@
 ARG BUILD_TARGET="production"
 
-FROM maven:3.9.12-eclipse-temurin-21 AS builder
+FROM maven:3.9.14-eclipse-temurin-25 AS builder
 
 ARG BUILD_TARGET
 ARG BUILD_VERSION
@@ -11,7 +11,7 @@ RUN mvn dependency:go-offline
 COPY . /isaac-api
 RUN mvn package -Dmaven.test.skip=true -Dsegue.version=$BUILD_VERSION -P $BUILD_TARGET
 
-FROM jetty:12.1.8-jdk21-eclipse-temurin
+FROM jetty:12.1.8-jdk25-eclipse-temurin
 USER root
 COPY --from=builder /isaac-api/target/isaac-api.war /var/lib/jetty/webapps/isaac-api.war
 RUN chmod 755 /var/lib/jetty/webapps/*
