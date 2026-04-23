@@ -32,12 +32,10 @@ public class ContentValidatorUtils {
         }
 
         private static Stream<String> getFromContent(final ContentBase content) {
-            if (content instanceof Figure && ((Figure) content).getFigureRegions() != null) {
-                var figure = (Figure) content;
+            if (content instanceof Figure figure && figure.getFigureRegions() != null) {
                 return figure.getFigureRegions().stream().map(FigureRegion::getId);
             }
-            if (content instanceof Content && ((Content) content).getValue() != null) {
-                var textContent = (Content) content;
+            if (content instanceof Content textContent && textContent.getValue() != null) {
                 String expr = "\\[drop-zone:(?<id>[a-zA-Z0-9_-]+)(?<params>\\|(?<width>w-\\d+?)?(?<height>h-\\d+?)?)?]";
                 Pattern dndDropZoneRegex = Pattern.compile(expr);
                 return dndDropZoneRegex.matcher(textContent.getValue()).results().map(mr -> mr.group(1));

@@ -435,7 +435,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             List<Long> groupMemberIds = groupManager.getUsersInGroup(group)
                     .stream().map(RegisteredUserDTO::getId)
-                    .collect(Collectors.toList());
+                    .toList();
 
             // Filter eventBookings based on whether the booked user is a member of the given group
             List<DetailedEventBookingDTO> eventBookings = bookingManager.getBookingsByEventId(eventId)
@@ -1107,8 +1107,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
             this.bookingManager.resendEventEmail(event, bookedUser);
 
-            log.info(String.format("User (%s) has just resent an event email to user id (%s)",
-                    currentUser.getEmail(), bookedUser.getId()));
+            log.info("User ({}) resent an event email to user id ({})", currentUser.getEmail(), bookedUser.getId());
 
             return Response.noContent().build();
         } catch (NoUserLoggedInException e) {

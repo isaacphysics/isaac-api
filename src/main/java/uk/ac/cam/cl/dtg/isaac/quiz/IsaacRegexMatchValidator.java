@@ -65,8 +65,7 @@ public class IsaacRegexMatchValidator implements IValidator {
         boolean responseCorrect = false;                // Whether we're right or wrong
 
         if (null == regexMatchQuestion.getChoices() || regexMatchQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("RegexMatchQuestion ({}) does not have any answers. File: '{}'", question.getId(), question.getCanonicalSourceFile());
 
             feedback = new Content(FEEDBACK_NO_CORRECT_ANSWERS);
         }
@@ -89,15 +88,13 @@ public class IsaacRegexMatchValidator implements IValidator {
 
                 // ... that are of the RegexPattern type, ...
                 if (!(c instanceof RegexPattern)) {
-                    log.error("Isaac RegexMatch Validator for questionId: " + regexMatchQuestion.getId()
-                            + " expected there to be a RegexPattern. Instead it found a Choice.");
+                    log.error("Expected RegexPattern in question ({}), instead found {}!", regexMatchQuestion.getId(), c.getClass());
                     continue;
                 }
                 RegexPattern regexPattern = (RegexPattern) c;
 
                 if (null == regexPattern.getValue() || regexPattern.getValue().isEmpty()) {
-                    log.error("Expected a regex pattern to match on, but none found in choice for question id: "
-                            + regexMatchQuestion.getId());
+                    log.error("Expected a regex pattern to match, but none found in choice for question ({}).", regexMatchQuestion.getId());
                     continue;
                 }
 

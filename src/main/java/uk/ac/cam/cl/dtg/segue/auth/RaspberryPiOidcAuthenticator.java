@@ -169,7 +169,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
         boolean emailVerified = (Boolean) idToken.getPayload().getOrDefault("email_verified", false);
 
         if (null != country && !CountryLookupManager.isKnownCountryCode(country)) {
-            log.debug(String.format("Country code %s from identity provider is not known, discarding.", country));
+            log.debug("Country code '{}' from identity provider is not known, discarding.", country);
             country = null;
         }
 
@@ -262,7 +262,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
             return internalCredentialID;
 
         } catch (IOException e) {
-            log.error("An error occurred during code exchange: " + e);
+            log.error("An error occurred during code exchange!", e);
             throw new CodeExchangeException();
         }
     }
@@ -297,7 +297,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
             familyName = nickname;
         } else {
             // Otherwise, use the last token of the full name as the family name.
-            familyName = tokenisedFullName.get(tokenisedFullName.size() - 1);
+            familyName = tokenisedFullName.getLast();
         }
 
         // Finally, check that the name meets validation.

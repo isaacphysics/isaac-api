@@ -855,7 +855,7 @@ public class PgUsers extends AbstractPgDataManager implements IUserDataManager {
                     + listOfResults);
         }
 
-        return listOfResults.get(0);
+        return listOfResults.getFirst();
     }
     
     /**

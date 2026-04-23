@@ -22,13 +22,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
-import jakarta.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -103,9 +103,9 @@ public class SchoolListReader {
             try {
                 resultList.add(mapper.readValue(schoolString, School.class));
             } catch (JsonParseException | JsonMappingException e) {
-                log.error("Unable to parse the school " + schoolString, e);
+                log.error("Unable to parse the school '{}'", schoolString, e);
             } catch (IOException e) {
-                log.error("IOException " + schoolString, e);
+                log.error("IOException for ({})!", schoolString, e);
             }
         }
         return resultList;
@@ -145,11 +145,10 @@ public class SchoolListReader {
         }
         
         if (matchingSchoolList.size() > 1) {
-            log.error("Error occurred while trying to look a school up by id... Found more than one match for "
-                    + schoolURN + " results: " + matchingSchoolList);
+            log.error("Error while looking up school up by id! More than one match for '{}' results: {}", schoolURN, matchingSchoolList);
         }
 
-        return mapper.readValue(matchingSchoolList.get(0), School.class);
+        return mapper.readValue(matchingSchoolList.getFirst(), School.class);
     }
 
 

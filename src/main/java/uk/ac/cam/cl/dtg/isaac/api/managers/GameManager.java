@@ -30,7 +30,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardCreationMethod;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacWildcard;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
@@ -61,7 +60,6 @@ import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,7 +73,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -166,8 +163,8 @@ public class GameManager {
     throws SegueDatabaseException, ContentManagerException {
 
         Long boardOwnerId;
-        if (boardOwner instanceof RegisteredUserDTO) {
-            boardOwnerId = ((RegisteredUserDTO) boardOwner).getId();
+        if (boardOwner instanceof RegisteredUserDTO registeredUser) {
+            boardOwnerId = registeredUser.getId();
         } else {
             // anonymous users do not get to own a board so just mark it as unowned.
             boardOwnerId = null;
@@ -186,7 +183,7 @@ public class GameManager {
             String uuid = UUID.randomUUID().toString();
 
             // filter game board ready questions to make up a decent gameboard.
-            log.debug("Created gameboard " + uuid);
+            log.debug("Created gameboard: '{}'.", uuid);
 
             GameboardDTO gameboardDTO = new GameboardDTO(uuid, title, selectionOfGameboardQuestions,
                     null, null, new Date(), gameFilter,
@@ -696,8 +693,7 @@ public class GameManager {
 
         List<IsaacWildcardDTO> result = Lists.newArrayList();
         for (ContentDTO c : wildcardResults.getResults()) {
-            if ((c instanceof IsaacWildcardDTO)) {
-                IsaacWildcardDTO wildcard = (IsaacWildcardDTO) c;
+            if ((c instanceof IsaacWildcardDTO wildcard)) {
                 result.add(wildcard);
             }
         }
@@ -771,9 +767,9 @@ public class GameManager {
                                                                                           final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser,
                                                                                           final AbstractSegueUserDTO user)
             throws SegueDatabaseException, ContentManagerException {
-        if (user instanceof RegisteredUserDTO) {
+        if (user instanceof RegisteredUserDTO registeredUser) {
             gameboardDTO
-                    .setSavedToCurrentUser(this.isBoardLinkedToUser((RegisteredUserDTO) user, gameboardDTO.getId()));
+                    .setSavedToCurrentUser(this.isBoardLinkedToUser(registeredUser, gameboardDTO.getId()));
         }
 
         this.augmentGameboardWithQuestionAttemptInformation(gameboardDTO, questionAttemptsFromUser);
@@ -813,9 +809,8 @@ public class GameManager {
             try {
                 this.augmentGameItemWithAttemptInformation(gameItem, questionAttemptsFromUser);
             } catch (ResourceNotFoundException e) {
-                log.info(String.format(
-                        "The gameboard '%s' references an unavailable question '%s' - treating it as if it never existed for marking!",
-                        gameboardDTO.getId(), gameItem.getId()));
+                log.info("The gameboard '{}' references an unavailable question '{}' - treating it as if it never existed for marking!",
+                        gameboardDTO.getId(), gameItem.getId());
                 continue;
             }
 
@@ -854,7 +849,7 @@ public class GameManager {
                     try {
                         this.augmentGameItemWithAttemptInformation(questionItem, userQuestionAttempts);
                     } catch (ContentManagerException | ResourceNotFoundException e) {
-                        log.error("Unable to augment '" + questionItem.getId() + "' with user attempt information");
+                        log.error("Unable to augment '{}' with user attempt information", questionItem.getId());
                     }
                     return questionItem;
                 }).collect(Collectors.toList());
@@ -909,9 +904,8 @@ public class GameManager {
             return result;
         }
 
-        if (c instanceof InlineRegionDTO) {
+        if (c instanceof InlineRegionDTO inlineRegionDTO) {
             // extract inline questions
-            InlineRegionDTO inlineRegionDTO = (InlineRegionDTO) c;
             result.addAll(inlineRegionDTO.getInlineQuestions());
         }
         
@@ -942,9 +936,8 @@ public class GameManager {
                 depthFirstDOQuestionSearch((Content) child, result);
             }
 
-            if (child instanceof InlineRegion) {
+            if (child instanceof InlineRegion inlineRegion) {
                 // extract inline questions
-                InlineRegion inlineRegion = (InlineRegion) child;
                 result.addAll(inlineRegion.getInlineQuestions());
             }
         }
@@ -1097,8 +1090,7 @@ public class GameManager {
         for (ContentDTO c : questionsForGameboard) {
             // Only keep questions that have not been superseded.
             // Yes, this should probably be done in the fieldsToMap filter above, but this is simpler.
-            if (c instanceof IsaacQuestionPageDTO) {
-                IsaacQuestionPageDTO qp = (IsaacQuestionPageDTO) c;
+            if (c instanceof IsaacQuestionPageDTO qp) {
                 if (qp.getSupersededBy() != null && !qp.getSupersededBy().isEmpty()) {
                     // This question has been superseded. Don't include it.
                     continue;

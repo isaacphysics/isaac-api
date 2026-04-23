@@ -41,6 +41,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Test class for the user manager class.
@@ -71,6 +72,8 @@ public class GameboardsFacadeTest {
 		this.fastTrackManager = createMock(FastTrackManger.class);
 		expect(this.dummyPropertiesLoader.getProperty(Constants.FASTTRACK_GAMEBOARD_WHITELIST))
 				.andReturn("ft_board_1,ft_board_2").anyTimes();
+        expect(dummyPropertiesLoader.getProperty(SEGUE_APP_ENVIRONMENT))
+                .andReturn(EnvironmentType.DEV.name()).anyTimes();
 		replay(this.dummyPropertiesLoader);
 	}
 

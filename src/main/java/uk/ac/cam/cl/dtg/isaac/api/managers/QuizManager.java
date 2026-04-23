@@ -122,8 +122,8 @@ public class QuizManager {
         if (cachedContent instanceof IsaacQuiz) {
             ContentDTO contentDTO = contentManager.getContentDTOByDO(cachedContent);
 
-            if (contentDTO instanceof IsaacQuizDTO) {
-                return (IsaacQuizDTO) contentDTO;
+            if (contentDTO instanceof IsaacQuizDTO quiz) {
+                return quiz;
             } else {
                 throw new ContentManagerException("Expected an IsaacQuizDTO, got a " + contentDTO.getType());
             }
@@ -157,12 +157,10 @@ public class QuizManager {
                 try {
                     quiz = this.contentSummarizerService.extractContentSummary(this.findQuiz(quizId), QuizSummaryDTO.class);
                 } catch (ContentManagerException e) {
-                    if (item instanceof QuizAttemptDTO) {
-                        log.warn("Attempt (" + ((QuizAttemptDTO) item).getId() +  ") exists with test ID ("
-                            + item.getQuizId() + ") that does not exist!");
-                    } else if (item instanceof QuizAssignmentDTO) {
-                        log.warn("Assignment (" + ((QuizAssignmentDTO) item).getId() +  ") exists with test ID ("
-                            + item.getQuizId() + ") that does not exist!");
+                    if (item instanceof QuizAttemptDTO attempt) {
+                        log.warn("Attempt ({}) exists with test ID ({}) that does not exist!", attempt.getId(), item.getQuizId());
+                    } else if (item instanceof QuizAssignmentDTO assignment) {
+                        log.warn("Assignment ({}) exists with test ID ({}) that does not exist!", assignment.getId(), item.getQuizId());
                     }
                 }
                 quizCache.put(quizId, quiz);
@@ -190,10 +188,10 @@ public class QuizManager {
             return quiz.getChildren().stream().map(c -> ((IsaacQuizSectionDTO) c)).collect(Collectors.toList());
         } else {
             return quiz.getChildren().stream().flatMap(c -> {
-                if (c instanceof IsaacQuizSectionDTO) {
-                    return Stream.of((IsaacQuizSectionDTO) c);
+                if (c instanceof IsaacQuizSectionDTO quizSection) {
+                    return Stream.of(quizSection);
                 } else {
-                    log.warn("Test id " + quiz.getId() + " contains top-level non-section with id " + c.getId());
+                    log.warn("Test ({}) contains top-level non-section with ID ({})!", quiz.getId(), c.getId());
                     return Stream.empty();
                 }
             }).collect(Collectors.toList());

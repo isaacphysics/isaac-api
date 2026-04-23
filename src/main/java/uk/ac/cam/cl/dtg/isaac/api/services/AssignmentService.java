@@ -19,17 +19,16 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class AssignmentService {
     private static final Logger log = LoggerFactory.getLogger(AssignmentService.class);
@@ -45,14 +44,14 @@ public class AssignmentService {
         Map<Long, UserSummaryDTO> userSummaryCache = new HashMap<>();
 
         // Iterating over the owner IDs allows us to cache "no user found" errors without querying database each time:
-        List<Long> ownerUserIds = assignments.stream().map(IAssignmentLike::getOwnerUserId).distinct().collect(Collectors.toList());
+        List<Long> ownerUserIds = assignments.stream().map(IAssignmentLike::getOwnerUserId).distinct().toList();
         for (Long ownerUserId: ownerUserIds) {
             try {
                 RegisteredUserDTO user = userManager.getUserDTOById(ownerUserId);
                 UserSummaryDTO userSummary = userManager.convertToUserSummaryObject(user);
                 userSummaryCache.put(ownerUserId, userSummary);
             } catch (NoUserException e) {
-                log.debug(String.format("Assignments exist with owner user ID (%s) that does not exist!", ownerUserId));
+                log.debug("Assignments exist with owner user ID ({}) that does not exist!", ownerUserId);
             }
         }
 

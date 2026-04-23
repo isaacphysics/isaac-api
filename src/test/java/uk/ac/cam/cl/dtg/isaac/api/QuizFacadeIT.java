@@ -83,7 +83,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
 
         // check the quiz was assigned successfully
         List<?> responseBody = (List<?>) createQuizResponse.getEntity();
-        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.get(0);
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
         assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
     }
 
@@ -199,8 +199,8 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     })
     public void getAvailableQuizzesEndpoint_getQuizzesAsStaff_includesNofilterTaggedQuizzes(String email) throws Exception {
         // Arrange
-        // log in, create request
-        LoginResult login = loginAs(httpSession, email, "test1234");
+        // log in, create request (and assume password and MFA secret same for all)
+        LoginResult login = loginAs(httpSession, email, "test1234", ITConstants.TEST_ADMIN_MFA_SECRET);
         HttpServletRequest availableQuizzesRequest = createRequestWithCookies(new Cookie[]{login.cookie});
         replay(availableQuizzesRequest);
 
@@ -271,8 +271,8 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
     })
     public void previewQuizEndpoint_previewNofilterQuizAsTutorOrAbove_succeeds(String email) throws Exception {
         // Arrange
-        // log in as user, create request
-        LoginResult login = loginAs(httpSession, email, "test1234");
+        // log in as user, create request (and assume password and MFA secret same for all)
+        LoginResult login = loginAs(httpSession, email, "test1234", ITConstants.TEST_ADMIN_MFA_SECRET);
         HttpServletRequest previewQuizRequest = createRequestWithCookies(new Cookie[]{login.cookie});
         replay(previewQuizRequest);
 

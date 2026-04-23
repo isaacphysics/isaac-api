@@ -109,7 +109,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the assignment assigned successfully
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
-        Assertions.assertNull(responseBody.get(0).getErrorMessage());
+        Assertions.assertNull(responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -139,7 +139,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the assignment assigned successfully
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
-        Assertions.assertNull(responseBody.get(0).getErrorMessage());
+        Assertions.assertNull(responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -167,7 +167,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the assignment assigned successfully
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
-        Assertions.assertNull(responseBody.get(0).getErrorMessage());
+        Assertions.assertNull(responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -204,7 +204,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the assignment assigned successfully
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
-        Assertions.assertNull(responseBody.get(0).getErrorMessage());
+        Assertions.assertNull(responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -241,7 +241,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the assignment assigned successfully
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
-        Assertions.assertNull(responseBody.get(0).getErrorMessage());
+        Assertions.assertNull(responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -278,7 +278,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // check the assignment failed to assign
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
-        Assertions.assertEquals("The assignment cannot be due in the past.", responseBody.get(0).getErrorMessage());
+        Assertions.assertEquals("The assignment cannot be due in the past.", responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -317,7 +317,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
         Assertions.assertEquals("The assignment cannot be scheduled to begin more than one year in the future.",
-                responseBody.get(0).getErrorMessage());
+                responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -363,7 +363,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) assignBulkResponse.getEntity();
         Assertions.assertEquals("The assignment cannot be scheduled to begin after it is due.",
-                responseBody.get(0).getErrorMessage());
+                responseBody.getFirst().getErrorMessage());
     }
 
     @Test
@@ -398,7 +398,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         @SuppressWarnings("unchecked") ArrayList<AssignmentStatusDTO> responseBody =
                 (ArrayList<AssignmentStatusDTO>) duplicateAssignBulkResponse.getEntity();
         Assertions.assertEquals("You cannot assign the same work to a group more than once.",
-                responseBody.get(0).getErrorMessage());
+                responseBody.getFirst().getErrorMessage());
     }
 
     @Test public void deleteAssignmentEndpoint_attemptToDeleteAssignmentAsOwner_succeeds()

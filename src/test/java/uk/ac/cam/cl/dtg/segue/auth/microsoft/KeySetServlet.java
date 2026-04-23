@@ -1,9 +1,9 @@
 package uk.ac.cam.cl.dtg.segue.auth.microsoft;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -17,11 +17,11 @@ public class KeySetServlet extends HttpServlet {
     private final List<KeyPair> keys;
     private int requestCount = 0;
 
-    public static Pair<Server, KeySetServlet> startServer(int port, List<KeyPair> keys) throws Exception {
-        var handler = new ServletHandler();
-        var servlet = new KeySetServlet(keys);
-        handler.addServletWithMapping(new ServletHolder(servlet), "/keys");
-        var server = new Server(port);
+    public static Pair<Server, KeySetServlet> startServer(final int port, final List<KeyPair> keys) throws Exception {
+        ServletContextHandler handler = new ServletContextHandler();
+        KeySetServlet servlet = new KeySetServlet(keys);
+        handler.addServlet(new ServletHolder(servlet), "/keys");
+        Server server = new Server(port);
         server.setHandler(handler);
         server.start();
         return Pair.of(server, servlet);

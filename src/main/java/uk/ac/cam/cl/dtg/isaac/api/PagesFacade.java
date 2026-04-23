@@ -249,8 +249,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             AbstractSegueUserDTO user = userManager.getCurrentUser(servletRequest);
 
             ContentDTO contentDTO = contentManager.getContentById(conceptId, true);
-            if (contentDTO instanceof IsaacConceptPageDTO) {
-                SeguePageDTO content = (SeguePageDTO) contentDTO;
+            if (contentDTO instanceof IsaacConceptPageDTO content) {
 
                 // Load attempts at related questions:
                 Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
@@ -461,9 +460,9 @@ public class PagesFacade extends AbstractIsaacFacade {
         boolean showSupersededContent = false;
         boolean isRandomQuestion = Objects.equals(QUESTION_SEARCH_RANDOM_QUESTION, querySource);
         try {
-            if (!isRandomQuestion && user instanceof RegisteredUserDTO) {
-                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) user);
-                showSupersededContent = isUserTeacherOrAbove(userManager, (RegisteredUserDTO) user);
+            if (!isRandomQuestion && user instanceof RegisteredUserDTO registeredUser) {
+                showNoFilterContent = isUserStaff(userManager, registeredUser);
+                showSupersededContent = isUserTeacherOrAbove(userManager, registeredUser);
             }
         } catch (NoUserLoggedInException e) {
             // This cannot happen!
@@ -518,7 +517,7 @@ public class PagesFacade extends AbstractIsaacFacade {
                     combinedResults.addAll(summarizedResults.subList(0, remainingResults));
                     // we want to skip to the index of the last result added, *including the indices of the filtered results*.
                     // Because indices start at 0, cannot just add indices; we must add one to get the *number* of items to skip
-                    nextSearchStartIndex += unfilteredSummarizedResults.indexOf(combinedResults.get(combinedResults.size() - 1)) + 1;
+                    nextSearchStartIndex += unfilteredSummarizedResults.indexOf(combinedResults.getLast()) + 1;
                 }
                 totalResults = c.getTotalResults();
 
@@ -574,16 +573,15 @@ public class PagesFacade extends AbstractIsaacFacade {
 
             ContentDTO contentDTO = contentManager.getContentById(questionId, true);
 
-            if (contentDTO instanceof IsaacQuestionPageDTO) {
-                SeguePageDTO content = (SeguePageDTO) contentDTO;
+            if (contentDTO instanceof IsaacQuestionPageDTO content) {
 
                 String userIdForRandomisation;
                 Map<String, Map<String, List<QuestionValidationResponse>>> questionAttempts;
                 Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> relatedQuestionAttempts;
                 // We have to cope with both anonymous and registered users:
-                if (user instanceof AnonymousUserDTO) {
+                if (user instanceof AnonymousUserDTO anonymousUser) {
                     // For anonymous users, we just load all their question attempts.
-                    userIdForRandomisation = ((AnonymousUserDTO) user).getSessionId();
+                    userIdForRandomisation = anonymousUser.getSessionId();
 
                     Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts =
                             questionManager.getQuestionAttemptsByUser(user);
@@ -686,8 +684,7 @@ public class PagesFacade extends AbstractIsaacFacade {
             Content contentDOById = this.contentManager.getContentDOById(summaryPageId, true);
             ContentDTO contentDTOById = this.contentManager.getContentDTOByDO(contentDOById);
 
-            if (!(contentDOById instanceof IsaacTopicSummaryPage
-                    && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
+            if (!(contentDOById instanceof IsaacTopicSummaryPage && contentDTOById instanceof IsaacTopicSummaryPageDTO)) {
                 return SegueErrorResponse.getResourceNotFoundResponse(String.format(
                         "Unable to locate topic summary page with id: %s", summaryPageId));
             }
@@ -719,12 +716,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                         if (liteGameboard != null) {
                             linkedGameboards.add(liteGameboard);
                         } else {
-                            log.error(String.format("Unable to locate gameboard (%s) for topic summary page (%s)!",
-                                    linkedGameboardId, topicId));
+                            log.error("Unable to locate gameboard ({}) for topic summary page ({})!", linkedGameboardId, topicId);
                         }
 
                     } catch (SegueDatabaseException e) {
-                        log.info(String.format("Problem with retrieving gameboard: %s", linkedGameboardId));
+                        log.info("Problem retrieving gameboard ({})", linkedGameboardId);
                     }
                 }
             }
@@ -919,8 +915,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
         try {
             ContentDTO contentDTO = contentManager.getContentById(bookId, true);
-            if (contentDTO instanceof IsaacBookIndexPageDTO) {
-                IsaacBookIndexPageDTO indexPageDTO = (IsaacBookIndexPageDTO) contentDTO;
+            if (contentDTO instanceof IsaacBookIndexPageDTO indexPageDTO) {
 
                 // Unlikely we want to augment with related content here!
                 contentManager.populateSidebar(indexPageDTO);
@@ -1187,14 +1182,13 @@ public class PagesFacade extends AbstractIsaacFacade {
                     .getRelatedContent()
                     .stream()
                     .map(ContentSummaryDTO::getId)
-                    .collect(Collectors.toList()));
+                    .toList());
         }
 
         List<ContentBaseDTO> children = content.getChildren();
         if (children != null) {
             for (ContentBaseDTO child : children) {
-                if (child instanceof ContentDTO) {
-                    ContentDTO childContent = (ContentDTO) child;
+                if (child instanceof ContentDTO childContent) {
                     relatedContent.addAll(getRelatedContentIds(childContent));
                 }
             }

@@ -253,7 +253,7 @@ public class EventsManager {
             }
             if (e.getLocation().getLatitude().equals(0.0) && e.getLocation().getLongitude().equals(0.0)) {
                 // Ignore events with locations that haven't been set properly.
-                log.info("Event with 0.0 lat/long:  " + e.getId());
+                log.info("Event with 0.0 lat/long: {}", e.getId());
                 continue;
             }
 
@@ -364,8 +364,7 @@ public class EventsManager {
     public IsaacEventPageDTO augmentEventWithBookingInformation(final RegisteredUserDTO currentUser,
                                                                  final ContentDTO possibleEvent)
             throws SegueDatabaseException {
-        if (possibleEvent instanceof IsaacEventPageDTO) {
-            IsaacEventPageDTO page = (IsaacEventPageDTO) possibleEvent;
+        if (possibleEvent instanceof IsaacEventPageDTO page) {
 
             if (null != currentUser) {
                 page.setUserBookingStatus(this.bookingManager.getBookingStatus(page.getId(), currentUser.getId()));
@@ -397,11 +396,10 @@ public class EventsManager {
             throw new ResourceNotFoundException(String.format("Unable to locate the event with id; %s", eventId));
         }
 
-        if (possibleEvent instanceof IsaacEventPageDTO) {
+        if (possibleEvent instanceof IsaacEventPageDTO eventPageDTO) {
             // The Events Facade *mutates* the EventDTO returned by this method; we must return a copy of
             // the original object else we will poison the contentManager's cache!
             // TODO: might it be better to get the DO from the cache and map it to DTO here to reduce overhead?
-            IsaacEventPageDTO eventPageDTO = (IsaacEventPageDTO) possibleEvent;
             return mapper.copy(eventPageDTO);
         }
         return null;

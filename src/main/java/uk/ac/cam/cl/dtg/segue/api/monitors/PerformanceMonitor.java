@@ -77,14 +77,13 @@ public class PerformanceMonitor implements ContainerRequestFilter, ContainerResp
         long timeInMs = timer.getTime();
 
         if (timeInMs < WARNING_THRESHOLD) {
-            log.debug(String.format("Request: %s %s took %dms",
-                    requestContext.getMethod(), request.getUri().getPath(), timeInMs));
+            log.debug("Request: {} {} took {}ms", requestContext.getMethod(), request.getUri().getPath(), timeInMs);
         } else if (timeInMs < ERROR_THRESHOLD) {
-            log.warn(String.format("Performance Warning: Request: %s %s took %dms and exceeded threshold of %d",
-                    requestContext.getMethod(), request.getUri().getPath(), timeInMs, WARNING_THRESHOLD));
+            log.warn("Performance Warning: Request: {} {} took {}ms and exceeded threshold of {}",
+                    requestContext.getMethod(), request.getUri().getPath(), timeInMs, WARNING_THRESHOLD);
         } else {
-            log.error(String.format("Performance Alert: Request: %s %s took %dms and exceeded threshold of %d",
-                    requestContext.getMethod(), request.getUri().getPath(), timeInMs, ERROR_THRESHOLD));
+            log.error("Performance Alert: Request: {} {} took {}ms and exceeded threshold of {}",
+                    requestContext.getMethod(), request.getUri().getPath(), timeInMs, ERROR_THRESHOLD);
         }
 
         // Record for metrics

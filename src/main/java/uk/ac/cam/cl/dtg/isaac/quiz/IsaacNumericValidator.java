@@ -68,13 +68,11 @@ public class IsaacNumericValidator implements IValidator {
         int significantFiguresMax = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMax(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
         int significantFiguresMin = Objects.requireNonNullElse(isaacNumericQuestion.getSignificantFiguresMin(), NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES);
 
-        log.debug("Starting validation of '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "' for '"
-                + isaacNumericQuestion.getId() + "'");
+        log.debug("Starting validation of '{} {}' for '{}'", answerFromUser.getValue(), answerFromUser.getUnits(), isaacNumericQuestion.getId());
 
         // check there are no obvious issues with the question (e.g. no correct answers, nonsensical sig fig requirements)
         if (null == isaacNumericQuestion.getChoices() || isaacNumericQuestion.getChoices().isEmpty()) {
-            log.error("Question does not have any answers. " + question.getId() + " src: "
-                    + question.getCanonicalSourceFile());
+            log.error("Question ({}) does not have any answers. File: '{}'", question.getId(), question.getCanonicalSourceFile());
 
             return new QuantityValidationResponse(question.getId(), answerFromUser, false,
                             new Content(FEEDBACK_NO_CORRECT_ANSWERS),
@@ -85,8 +83,7 @@ public class IsaacNumericValidator implements IValidator {
         if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
             if (significantFiguresMin < 1 || significantFiguresMax < 1
                     || significantFiguresMax < significantFiguresMin) {
-                log.error("Question has broken significant figure rules! " + question.getId() + " src: "
-                        + question.getCanonicalSourceFile());
+                log.error("Question ({}) has broken significant figure rules! File: '{}'", question.getId(), question.getCanonicalSourceFile());
 
                 return new QuantityValidationResponse(question.getId(), answerFromUser, false,
                         new Content("This question cannot be answered correctly."),
@@ -98,8 +95,7 @@ public class IsaacNumericValidator implements IValidator {
             // Should this answer include units?
             boolean shouldValidateWithUnits = isaacNumericQuestion.getRequireUnits();
             if (shouldValidateWithUnits && null != isaacNumericQuestion.getDisplayUnit() && !isaacNumericQuestion.getDisplayUnit().isEmpty()) {
-                log.warn(String.format("Question has inconsistent units settings, overriding requiresUnits: %s! src: %s",
-                        question.getId(), question.getCanonicalSourceFile()));
+                log.warn("Question ({}) has inconsistent units settings, overriding requiresUnits! File: '{}'", question.getId(), question.getCanonicalSourceFile());
                 shouldValidateWithUnits = false;
             }
 
@@ -165,12 +161,11 @@ public class IsaacNumericValidator implements IValidator {
             }
 
             // And then return the bestResponse:
-            log.debug("Finished validation: correct=" + bestResponse.isCorrect() + ", correctValue="
-                    + bestResponse.getCorrectValue() + ", correctUnits=" + bestResponse.getCorrectUnits());
+            log.debug("Finished validation: correct={}, correctValue={}, correctUnits={}",
+                    bestResponse.isCorrect(), bestResponse.getCorrectValue(), bestResponse.getCorrectUnits());
             return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
         } catch (NumberFormatException e) {
-            log.debug("Validation failed for '" + answerFromUser.getValue() + " " + answerFromUser.getUnits() + "': "
-                    + "cannot parse as number!");
+            log.debug("Validation failed for '{} {}': cannot parse as number!", answerFromUser.getValue(), answerFromUser.getUnits());
             HashSet<String> responseTags = new HashSet<>(ImmutableList.of("unrecognised_format"));
             if (answerFromUser.getValue().matches(INVALID_NEGATIVE_STANDARD_FORM)) {
                 responseTags.add("invalid_std_form");
@@ -208,11 +203,10 @@ public class IsaacNumericValidator implements IValidator {
 
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
         for (Choice c : orderedChoices) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
+            if (c instanceof Quantity quantityFromQuestion) {
 
                 if (quantityFromQuestion.getUnits() == null) {
-                    log.error("Expected units and no units can be found for question id: " + isaacNumericQuestion.getId());
+                    log.error("Expected units and no units can be found for question ({})!", isaacNumericQuestion.getId());
                     continue;
                 }
 
@@ -244,8 +238,7 @@ public class IsaacNumericValidator implements IValidator {
                             false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
                 }
             } else {
-                log.error("Isaac Numeric Validator for questionId: " + isaacNumericQuestion.getId()
-                        + " expected there to be a Quantity. Instead it found a Choice.");
+                log.error("IsaacNumericValidator for question ({}) expected a Quantity. Instead found a Choice.", isaacNumericQuestion.getId());
             }
         }
 
@@ -283,8 +276,7 @@ public class IsaacNumericValidator implements IValidator {
         List<Choice> orderedChoices = getOrderedChoices(isaacNumericQuestion.getChoices());
 
         for (Choice c : orderedChoices) {
-            if (c instanceof Quantity) {
-                Quantity quantityFromQuestion = (Quantity) c;
+            if (c instanceof Quantity quantityFromQuestion) {
 
                 // Do we have a match? Since only comparing values, either an exact match or not a match at all.
                 if (ValidationUtils.numericValuesMatch(
@@ -299,8 +291,7 @@ public class IsaacNumericValidator implements IValidator {
                     break;
                 }
             } else {
-                log.error("Isaac Numeric Validator expected there to be a Quantity in ("
-                        + isaacNumericQuestion.getCanonicalSourceFile() + ") Instead it found a Choice.");
+                log.error("IsaacNumericValidator expected a Quantity in ({}). Instead it found a Choice.", isaacNumericQuestion.getId());
             }
         }
 

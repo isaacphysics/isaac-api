@@ -89,7 +89,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         List<UserGroupDTO> groups = groupManager.getGroupMembershipList(user, false);
 
         if (groups.size() == 0) {
-            log.debug(String.format("User (%s) does not have any groups", user.getId()));
+            log.debug("User ({}) does not have any groups", user.getId());
             return Lists.newArrayList();
         }
 
@@ -141,8 +141,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
 
         if (assignmentPersistenceManager.getAssignmentsByGameboardAndGroup(newAssignment.getGameboardId(),
                 newAssignment.getGroupId()).size() != 0) {
-            log.error(String.format("Duplicated Assignment Exception - cannot assign the same work %s to a group %s",
-                    newAssignment.getGameboardId(), newAssignment.getGroupId()));
+            log.error("Duplicate assignment: cannot assign the same work '{}' to a group ({}).", newAssignment.getGameboardId(), newAssignment.getGroupId());
             throw new DuplicateAssignmentException("You cannot assign the same work to a group more than once.");
         }
         
@@ -221,7 +220,7 @@ public class AssignmentManager implements IAssignmentLike.Details<AssignmentDTO>
         if (assignments.size() == 0) {
             return null;
         } else if (assignments.size() == 1) {
-            return assignments.get(0);
+            return assignments.getFirst();
         }
 
         throw new SegueDatabaseException(String.format(

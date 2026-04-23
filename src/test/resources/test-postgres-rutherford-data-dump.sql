@@ -361,6 +361,8 @@ COPY public.user_streak_targets (user_id, target_count, start_date, end_date, co
 
 COPY public.user_totp (user_id, shared_secret, created, last_updated) FROM stdin;
 2	OQXZE3PEGIGKAAP6	2022-07-06 10:48:02.111+00	2022-07-06 10:48:05.498+00
+3	OQXZE3PEGIGKAAP6	2022-07-06 10:48:02.111+00	2022-07-06 10:48:05.498+00
+14	OQXZE3PEGIGKAAP6	2022-07-06 10:48:02.111+00	2022-07-06 10:48:05.498+00
 \.
 
 

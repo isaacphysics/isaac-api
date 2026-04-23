@@ -355,9 +355,9 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             with(assignmentRequest,
                 requiresLogin(),
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.get(0))).andReturn(newAssignment)),
+                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.getFirst())).andReturn(newAssignment)),
                     respondsWith(newAssignments),
-                    check(ignoreResponse -> assertEquals(currentUser().getId(), assignmentRequest.get(0).getOwnerUserId()))
+                    check(ignoreResponse -> assertEquals(currentUser().getId(), assignmentRequest.getFirst().getOwnerUserId()))
                 )
                 // FIXME forbiddenForEveryoneElse does not handle the multiple requests and the fact that
                 //  the a request may return 400 or may return a status list
@@ -365,13 +365,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
             ),
             with(assignmentRequest,
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.get(0))).andThrow(new DueBeforeNowException())),
+                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.getFirst())).andThrow(new DueBeforeNowException())),
                     respondsWith(dueBeforeAssignments)
                 )
             ),
             with(assignmentRequest,
                 as(studentsTeachersOrAdmin(),
-                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.get(0))).andThrow(new DuplicateAssignmentException("Test"))),
+                    prepare(quizAssignmentManager, m -> expect(m.createAssignment(assignmentRequest.getFirst())).andThrow(new DuplicateAssignmentException("Test"))),
                     respondsWith(duplicateAssignments)
                 )
             )

@@ -67,7 +67,7 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Too many requests from an IP Address: " + message);
+        log.warn("Too many requests from IP Address '{}'.", message);
     }
 
     @Override
@@ -76,6 +76,6 @@ public class IPQuestionAttemptMisuseHandler implements IMisuseHandler {
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
-        log.warn("Too many requests from an IP Address: " + message + " This may be a scripted attack!");
+        log.warn("Too many requests from IP Address: '{}'. This may be a scripted attack!", message);
     }
 }

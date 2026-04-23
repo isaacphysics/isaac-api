@@ -173,7 +173,7 @@ public class PgPasswordDataManager extends AbstractPgDataManager implements IPas
                     + listOfResults);
         }
 
-        return listOfResults.get(0);
+        return listOfResults.getFirst();
     }
 
     /**

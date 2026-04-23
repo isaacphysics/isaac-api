@@ -77,7 +77,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
+        log.warn("Soft threshold limit: {}", message);
 
     }
 
@@ -88,7 +88,7 @@ public class TokenOwnerLookupMisuseHandler implements IMisuseHandler {
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
-        log.warn("Hard threshold limit: " + message);
+        log.warn("Hard threshold limit: {}", message);
 
     }
 }

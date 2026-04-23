@@ -40,17 +40,14 @@ public class ChoiceQuestionValidator implements IValidator {
         Objects.requireNonNull(question);
         Objects.requireNonNull(answer);
 
-        ChoiceQuestion choiceQuestion;
         // These variables store the important features of the response we'll send.
         Content feedback = null;                        // The feedback we send the user
-        boolean responseCorrect = false;                // Whether we're right or wrong
+        Boolean responseCorrect = null;                // Whether we're right or wrong
         // check that the question is of type ChoiceQuestion before we go ahead
-        if (question instanceof ChoiceQuestion) {
-            choiceQuestion = (ChoiceQuestion) question;
+        if (question instanceof ChoiceQuestion choiceQuestion) {
 
             if (null == choiceQuestion.getChoices() || choiceQuestion.getChoices().isEmpty()) {
-                log.warn("Question does not have any answers. " + question.getId() + " src: "
-                        + question.getCanonicalSourceFile());
+                log.warn("Question ({}) does not have any answers! File: '{}'", question.getId(), question.getCanonicalSourceFile());
                 return new QuestionValidationResponse(question.getId(), answer, false, null, new Date());
             }
 
@@ -62,10 +59,10 @@ public class ChoiceQuestionValidator implements IValidator {
                 }
             }
 
-            if (null == feedback) {
+            if (null == responseCorrect) {
                 // This should not happen for multiple choice questions.
-                log.warn("Unable to find choice for question ( " + question.getId() + " ) matching the answer supplied ("
-                        + answer.getValue() + ")!");
+                responseCorrect = false;
+                log.warn("Unable to find choice for question ({}) matching answer supplied ({})!", question.getId(), answer.getValue());
             }
 
             // If we still have no feedback to give, use the question's default feedback if any to use:

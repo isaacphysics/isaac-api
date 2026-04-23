@@ -176,8 +176,8 @@ public class IsaacController extends AbstractIsaacFacade {
         try {
             AbstractSegueUserDTO currentUser = userManager.getCurrentUser(httpServletRequest);
             boolean showNoFilterContent = false;
-            if (currentUser instanceof RegisteredUserDTO) {
-                showNoFilterContent = isUserStaff(userManager, (RegisteredUserDTO) currentUser);
+            if (currentUser instanceof RegisteredUserDTO registeredUser) {
+                showNoFilterContent = isUserStaff(userManager, registeredUser);
             }
             List<String> documentTypes = !types.isEmpty()
                     ? Arrays.asList(types.split(",")) : List.copyOf(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
@@ -313,7 +313,7 @@ public class IsaacController extends AbstractIsaacFacade {
         if (null == fileContent) {
             String refererHeader = httpServletRequest.getHeader("Referer");
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate the file: " + path);
-            log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+            log.warn("Unable to locate the file: ({}). Referer: ({})", path, refererHeader);
             return error.toResponse();
         }
 
@@ -388,7 +388,7 @@ public class IsaacController extends AbstractIsaacFacade {
                 String refererHeader = httpServletRequest.getHeader("Referer");
                 SegueErrorResponse error = new SegueErrorResponse(
                         Status.NOT_FOUND, "Unable to locate the file: " + path);
-                log.warn(String.format("Unable to locate the file: (%s). Referer: (%s)", path, refererHeader));
+                log.warn("Unable to locate the file: ({}). Referer: ({})", path, refererHeader);
                 return error.toResponse(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, false), etag);
             }
 

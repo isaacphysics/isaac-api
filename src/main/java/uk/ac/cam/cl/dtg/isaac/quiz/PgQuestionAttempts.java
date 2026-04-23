@@ -304,9 +304,9 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             return Collections.emptyMap();
         }
 
-        List<String> uniquePageIds = allQuestionPageIds.stream().distinct().collect(Collectors.toList());
+        List<String> uniquePageIds = allQuestionPageIds.stream().distinct().toList();
         if (uniquePageIds.size() > MAX_PAGE_IDS_TO_MATCH) {
-            log.debug(String.format("Attempting to match too many (%s) question page IDs; returning all attempts for these users instead!", uniquePageIds.size()));
+            log.debug("Attempting to match too many ({}) question page IDs; returning all attempts for these users instead!", uniquePageIds.size());
             return this.getLightweightQuestionAttemptsByUsers(userIds);
         }
 
@@ -372,8 +372,7 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             }
         }
 
-        log.info(String.format("Merged anonymously answered questions (%s) with known user account (%s)", count,
-                registeredUserId));
+        log.info("Merged anonymously answered questions ({}) with known user account ({})", count, registeredUserId);
     }
 
     @Override

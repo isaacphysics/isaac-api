@@ -535,7 +535,7 @@ public class GroupManager {
             dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(group.getOwnerId()), UserSummaryWithEmailAddressDTO.class));
         } catch (NoUserException e) {
             // This should never happen!
-            log.error(String.format("Group (%s) has owner ID (%s) that no longer exists!", group.getId(), group.getOwnerId()));
+            log.error("Group ({}) has owner ID ({}) that no longer exists!", group.getId(), group.getOwnerId());
         }
 
         Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();
@@ -585,7 +585,7 @@ public class GroupManager {
                 if (null != ownerUser) {
                     groupDTO.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(ownerUser, UserSummaryWithEmailAddressDTO.class));
                 } else {
-                    log.debug(String.format("Group (%s) has owner ID (%s) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId()));
+                    log.debug("Group ({}) has owner ID ({}) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId());
                 }
 
                 // set additional manager summary:
@@ -597,7 +597,7 @@ public class GroupManager {
                         if (managerUser != null) {
                             setOfUsers.add(userManager.convertToDetailedUserSummaryObject(managerUser, UserSummaryWithEmailAddressDTO.class));
                         } else {
-                            log.debug(String.format("Group (%s) has manager ID (%s) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId()));
+                            log.debug("Group ({}) has manager ID ({}) that no longer exists!", groupDTO.getId(), groupDTO.getOwnerId());
                         }
                     }
                 }

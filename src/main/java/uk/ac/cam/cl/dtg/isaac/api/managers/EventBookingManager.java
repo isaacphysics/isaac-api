@@ -392,8 +392,7 @@ public class EventBookingManager {
                 }
             }
         } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send booking confirmation email (%s) to user (%s)", event.getId(), user
-                    .getEmail()), e);
+            log.error("Unable to send booking confirmation email ({}) to user ({})", event.getId(), user.getEmail(), e);
         }
 
         return booking;
@@ -468,8 +467,7 @@ public class EventBookingManager {
                     Collections.singletonList(generateEventICSFile(event, booking)));
 
         } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(), user
-                    .getEmail()), e);
+            log.error("Unable to send event email ({}) to user ({})", event.getId(), user.getEmail(), e);
         }
 
         return booking;
@@ -581,8 +579,7 @@ public class EventBookingManager {
                         EmailType.SYSTEM);
             } catch (NoUserException e) {
                 // This should never really happen, though...
-                log.error(String.format("Unable to find reserved user while sending emails for event (%s)",
-                        event.getId()), e);
+                log.error("Unable to find reserved user while sending emails for event ({})", event.getId(), e);
             } catch (SegueDatabaseException | ContentManagerException e) {
                 log.error(String.format("Unable to send event email (%s) to user (%s)",
                         event.getId(), reservation.getUserBooked().getId()), e);
@@ -613,8 +610,8 @@ public class EventBookingManager {
                     EmailType.SYSTEM);
         } catch (NoUserException e) {
             // This should never really happen, though...
-            log.error(String.format("Unable to find reserved user while sending recap email for event (%s) to reserving user (%s)",
-                    event.getId(), reservingUser.getId()), e);
+            log.error("Unable to find reserved user while sending recap email for event ({}) to reserving user ({})",
+                    event.getId(), reservingUser.getId(), e);
         } catch (SegueDatabaseException | ContentManagerException e) {
             log.error(String.format("Unable to send event reservation recap email (%s) to user (%s)",
                     event.getId(), reservingUser.getId()), e);
@@ -623,7 +620,8 @@ public class EventBookingManager {
         // If the frontend prevents selection of unreservable users, then this email should never go out.
         if (unreservableUsers.size() > 0) {
             // Log that the reserving user tried to reserve invalid users.
-            log.error(String.format("User (%s) tried to request a reservation for invalid users on an event (%s). Users requested: %s", reservingUser.getId(), event.getId(), unreservableUsers));
+            log.error("User ({}) tried to request a reservation for invalid users on an event ({}). Users requested: {}",
+                    reservingUser.getId(), event.getId(), unreservableUsers);
         }
 
         return reservations;
@@ -710,8 +708,7 @@ public class EventBookingManager {
                             .build(),
                     EmailType.SYSTEM);
         } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(), user
-                    .getEmail()), e);
+            log.error("Unable to send event email ({}) to user ({})", event.getId(), user.getEmail(), e);
         }
 
         return booking;
@@ -790,8 +787,7 @@ public class EventBookingManager {
                         Collections.singletonList(generateEventICSFile(event, updatedStatus)));
             }
         } catch (ContentManagerException e) {
-            log.error(String.format("Unable to send event email (%s) to user (%s)", event.getId(),
-                    userDTO.getEmail()), e);
+            log.error("Unable to send event email ({}) to user ({})", event.getId(), userDTO.getEmail(), e);
             throw new EventBookingUpdateException("Unable to send event email, failed to update event booking");
         }
 
@@ -1075,8 +1071,8 @@ public class EventBookingManager {
                 }
             }
         } catch (NoUserException e) {
-            log.error("Unable to resolve reserving user (" + reservedById + ") in the database, notification of "
-                    + "student cancellation email was not sent");
+            log.error("Unable to find reserving user ({}) in database,"
+                    + " email notification of student cancellation not sent", reservedById);
         }
     }
 
@@ -1164,7 +1160,7 @@ public class EventBookingManager {
                 reservingUserName = String.format("%s %s", reservedByUser.getGivenName(), reservedByUser.getFamilyName());
             } catch (NoUserException e) {
                 reservingUserName = "";
-                log.error(String.format("Unable to find the reserving user (%d) for this event (%s).", booking.getReservedById(), event.getId()));
+                log.error("Unable to find the reserving user ({}) for this event ({}).", booking.getReservedById(), event.getId());
             }
             emailManager.sendTemplatedEmailToUser(user,
                     emailManager.getEmailTemplateDTO("email-event-reservation-requested"),
@@ -1399,8 +1395,7 @@ public class EventBookingManager {
                 this.userAssociationManager.createAssociationWithToken(event.getIsaacGroupToken(), user,
                         addUserToGroup);
             } catch (InvalidUserAssociationTokenException e) {
-                log.error(String.format("Unable to auto add user (%s) using token (%s) as the token is invalid.",
-                        user.getEmail(), event.getIsaacGroupToken()));
+                log.error("Unable to auto add user ({}) using token ({}) as token is invalid.", user.getEmail(), event.getIsaacGroupToken());
             }
         }
     }
@@ -1423,8 +1418,7 @@ public class EventBookingManager {
                 }
             }
         } catch (InvalidUserAssociationTokenException e) {
-            log.error(String.format("Unable to auto remove user (%s) using token (%s) as the token is invalid.",
-                    user.getEmail(), event.getIsaacGroupToken()));
+            log.error("Unable to auto remove user ({}) using token ({}) as token is invalid.", user.getEmail(), event.getIsaacGroupToken());
         }
     }
 }

@@ -271,7 +271,7 @@ public class GitContentManager {
                 return null;
             }
 
-            return result.getResults().get(0);
+            return result.getResults().getFirst();
 
         } catch (final ExecutionException e) {
             throw new ContentManagerException(e.getCause().getMessage());
@@ -751,7 +751,7 @@ public class GitContentManager {
                 GitContentManager.generateDerivedSummaryValues(relatedContent, summary);
                 relatedContentDTOs.add(summary);
             } else {
-                log.error("Related content with ID '" + contentId + "' not returned by elasticsearch query");
+                log.error("Related content with ID '{}' not returned by elasticsearch query", contentId);
             }
         }
 
@@ -876,29 +876,6 @@ public class GitContentManager {
      * @deprecated in favour of {@code BooleanInstruction}, as an attempt to unify approaches to searching.
      */
     @Deprecated
-    public static class BooleanSearchClause {
-        private final String field;
-        private final Constants.BooleanOperator operator;
-        private final List<String> values;
-
-        public BooleanSearchClause(final String field,
-                                   final Constants.BooleanOperator operator,
-                                   final List<String> values) {
-            this.field = field;
-            this.operator = operator;
-            this.values = values;
-        }
-
-        public String getField() {
-            return this.field;
-        }
-
-        public Constants.BooleanOperator getOperator() {
-            return this.operator;
-        }
-
-        public List<String> getValues() {
-            return this.values;
-        }
+    public record BooleanSearchClause(String field, BooleanOperator operator, List<String> values) {
     }
 }

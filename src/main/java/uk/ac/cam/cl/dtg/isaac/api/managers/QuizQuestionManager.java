@@ -21,24 +21,24 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizSectionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizFeedbackDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentBaseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.ErrorResponseWrapper;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
-import uk.ac.cam.cl.dtg.isaac.dto.QuestionValidationResponseDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ChoiceDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.QuestionDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
@@ -51,8 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ESCAPED_ID_SEPARATOR;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.ID_SEPARATOR;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class QuizQuestionManager {
     private final QuestionManager questionManager;
@@ -97,10 +96,10 @@ public class QuizQuestionManager {
 
     public QuestionValidationResponseDTO validateAnswer(Question question, ChoiceDTO answerFromClientDTO) throws ErrorResponseWrapper {
         Response response = questionManager.validateAnswer(question, answerFromClientDTO);
-        if (response.getEntity() instanceof QuestionValidationResponseDTO) {
-            return (QuestionValidationResponseDTO) response.getEntity();
-        } else if (response.getEntity() instanceof SegueErrorResponse) {
-            throw new ErrorResponseWrapper((SegueErrorResponse) response.getEntity());
+        if (response.getEntity() instanceof QuestionValidationResponseDTO validationResponse) {
+            return validationResponse;
+        } else if (response.getEntity() instanceof SegueErrorResponse errorResponse) {
+            throw new ErrorResponseWrapper(errorResponse);
         } else {
             throw new ErrorResponseWrapper(new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, response.getEntity().toString()));
         }
@@ -271,7 +270,7 @@ public class QuizQuestionManager {
 
             if (questionAttempts != null && questionAttempts.size() > 0) {
                 // The latest answer is the only answer we consider.
-                lastResponse = questionAttempts.get(questionAttempts.size() - 1);
+                lastResponse = questionAttempts.getLast();
             }
 
             results.put(question, lastResponse);
@@ -350,7 +349,7 @@ public class QuizQuestionManager {
             QuizFeedbackDTO.Mark sectionMark = sectionMarks.get(sectionId);
             QuizFeedbackDTO.Mark questionMark = questionMarks.get(question.getId());
             if (sectionMark == null) {
-                log.error("Missing test section id: " + sectionId + " in question " + question + " but not in section map " + sections);
+                log.error("Missing test section id ({}) in question ({}) but not in section map ({})", sectionId, question, sections);
                 continue;
             }
             QuestionValidationResponse response = answerMap.get(question);

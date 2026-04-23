@@ -183,6 +183,11 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             log.warn("Method generateTemporaryGameboard was called by an API request!");
+            // FIXME: remove endpoint after 2026-05. brownout below, in a revertible way, until removal.
+            if (!getProperties().getProperty(SEGUE_APP_ENVIRONMENT).equals(EnvironmentType.DEV.name())) {
+                return SegueErrorResponse.getGoneResponse();
+            }
+
             AbstractSegueUserDTO boardOwner = this.userManager.getCurrentUser(request);
             GameboardDTO gameboard;
 

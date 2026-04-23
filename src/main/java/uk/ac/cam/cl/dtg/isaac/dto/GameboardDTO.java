@@ -443,10 +443,9 @@ public class GameboardDTO implements EmailService.HasTitleOrId {
         if (obj == null) {
             return false;
         }
-        if (!(obj instanceof GameboardDTO)) {
+        if (!(obj instanceof GameboardDTO other)) {
             return false;
         }
-        GameboardDTO other = (GameboardDTO) obj;
         if (creationDate == null) {
             if (other.creationDate != null) {
                 return false;

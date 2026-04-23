@@ -118,7 +118,7 @@ public class ContentIndexer {
             throw new VersionLockedException(version);
         }
 
-        log.info("Acquired lock for version " + version + ". Indexing.");
+        log.info("Acquired lock for version ({}). Indexing.", version);
 
         try {
 
@@ -128,13 +128,11 @@ public class ContentIndexer {
             // The case where only some of the content types have been successfully indexed for this version, should
             // never happen but is covered by an expunge at the start of #buildElasticSearchIndex(...).
             if (allContentTypesAreIndexedForVersion(version)) {
-                log.info("Content already indexed: " + version);
+                log.info("Content already indexed: {}", version);
                 return;
             }
 
-            log.info(String.format(
-                    "Rebuilding content index as sha (%s) does not exist in search provider.",
-                    version));
+            log.info("Rebuilding content index as sha ({}) does not exist in search provider.", version);
 
             Map<String, Content> contentCache = new HashMap<>();
             Set<String> tagsList = new HashSet<>();
@@ -148,14 +146,14 @@ public class ContentIndexer {
             buildGitContentIndex(version, true, contentCache, tagsList, allUnits, publishedUnits, indexProblemCache);
             endTime = System.nanoTime();
 
-            log.info("Finished populating Git content cache, took: " + ((endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+            log.info("Finished populating Git content cache, took: {}ms", (endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND);
             log.info("Beginning to record content errors");
 
             startTime = System.nanoTime();
             recordContentErrors(version, contentCache, indexProblemCache);
             endTime = System.nanoTime();
 
-            log.info("Finished recording content errors, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+            log.info("Finished recording content errors, took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
 
             startTime = System.nanoTime();
             try {
@@ -166,7 +164,7 @@ public class ContentIndexer {
                 throw e;
             }
             endTime = System.nanoTime();
-            log.info("Finished indexing git content cache, took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+            log.info("Finished indexing git content cache, took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
 
             // Verify the version requested is now available
             if (!allContentTypesAreIndexedForVersion(version)) {
@@ -174,7 +172,7 @@ public class ContentIndexer {
                 throw new Exception(String.format("Failed to index version %s. Don't know why.", version));
             }
 
-            log.info("Finished indexing version " + version + ", took: " + ((endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+            log.info("Finished indexing version {}, took: {}ms", version, (endTime - totalStartTime) / NANOSECONDS_IN_A_MILLISECOND);
 
         } finally {
             versionLocks.remove(version);
@@ -226,7 +224,7 @@ public class ContentIndexer {
             }
 
             TreeWalk treeWalk = database.getTreeWalk(sha, ".json");
-            log.info("Populating git content cache based on sha " + sha + " ...");
+            log.info("Populating git content cache based on sha {} ...", sha);
 
             // Traverse the git repository looking for the .json files
             while (treeWalk.next()) {
@@ -245,7 +243,7 @@ public class ContentIndexer {
                     // check if we only want to index published content
                     boolean contentPublished = content.getPublished() != null && content.getPublished();
                     if (!includeUnpublished && !contentPublished) {
-                        log.debug("Skipping unpublished content: " + content.getId());
+                        log.debug("Skipping unpublished content: {}", content.getId());
                         continue;
                     }
 
@@ -273,8 +271,7 @@ public class ContentIndexer {
                             if (flattenedContent instanceof IsaacQuiz) {
                                 List<ContentBase> children = flattenedContent.getChildren();
                                 if (children.stream().anyMatch(c -> !(c instanceof IsaacQuizSection))) {
-                                    log.debug("IsaacQuiz (" + flattenedContent.getId()
-                                           + ") contains top-level non-quiz sections. Skipping.");
+                                    log.debug("IsaacQuiz ({}) contains top-level non-quiz sections. Skipping.", flattenedContent.getId());
                                     this.registerContentProblem(flattenedContent, "Index failure - Invalid "
                                            + "content type among quiz sections. Quizzes can only contain quiz sections "
                                            + "in the top-level children array.", indexProblemCache);
@@ -283,7 +280,7 @@ public class ContentIndexer {
                             }
 
                             if (flattenedContent.getId().length() > 512) {
-                                log.debug("Content ID too long: " + flattenedContent.getId());
+                                log.debug("Content ID too long: {}", flattenedContent.getId());
                                 this.registerContentProblem(flattenedContent, "Content ID too long: " + flattenedContent.getId(), indexProblemCache);
                                 continue;
                             }
@@ -291,8 +288,8 @@ public class ContentIndexer {
                             if (flattenedContent.getId().contains(".")) {
                                 // Otherwise, duplicate IDs with different content,
                                 // therefore log an error
-                                log.debug("Resource with invalid ID (" + content.getId()
-                                        + ") detected in cache. Skipping " + treeWalk.getPathString());
+                                log.debug("Resource with invalid ID ({}) detected in cache. Skipping {}",
+                                        content.getId(), treeWalk.getPathString());
 
                                 this.registerContentProblem(flattenedContent, "Index failure - Invalid ID "
                                         + flattenedContent.getId() + " found in file " + treeWalk.getPathString()
@@ -305,8 +302,8 @@ public class ContentIndexer {
                             // again
                             if (!contentCache.containsKey(flattenedContent.getId())) {
                                 // It must be new so we can add it
-                                log.debug("Loading into cache: " + flattenedContent.getId() + "("
-                                        + flattenedContent.getType() + ")" + " from " + treeWalk.getPathString());
+                                log.debug("Loading into cache: {}({}) from {}", flattenedContent.getId(),
+                                        flattenedContent.getType(), treeWalk.getPathString());
                                 contentCache.put(flattenedContent.getId(), flattenedContent);
                                 registerTags(flattenedContent.getTags(), tagsList);
 
@@ -326,30 +323,30 @@ public class ContentIndexer {
                                 // content is the same therefore it is just
                                 // reuse of a content object so that is
                                 // fine.
-                                log.debug("Resource (" + content.getId() + ") already seen in cache. Skipping "
-                                        + treeWalk.getPathString());
+                                log.debug("Resource ({}) already seen in cache. Skipping {}",
+                                        content.getId(), treeWalk.getPathString());
                                 continue;
                             }
 
                             // Otherwise, duplicate IDs with different content,
                             // therefore log an error
-                            log.debug("Resource with duplicate ID (" + content.getId()
-                                    + ") detected in cache. Skipping " + treeWalk.getPathString());
+                            log.debug("Resource with duplicate ID ({}) detected in cache. Skipping {}",
+                                    flattenedContent.getId(), treeWalk.getPathString());
                             this.registerContentProblem(flattenedContent, String.format(
                                     "Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
-                                    content.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
+                                            flattenedContent.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
                                 indexProblemCache);
                         }
                     }
                 } catch (JsonMappingException e) {
-                    log.debug(String.format("Unable to parse the json file found %s as a content object. "
-                            + "Skipping file due to error: \n %s", treeWalk.getPathString(), e.getMessage()));
+                    log.debug("Unable to parse the json file found {} as a content object. Skipping file due to error: \n {}",
+                            treeWalk.getPathString(), e.getMessage());
                     Content dummyContent = new Content();
                     dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
                     this.registerContentProblem(dummyContent, "Index failure - Unable to parse json file found - "
                             + treeWalk.getPathString() + ". The following error occurred: " + e.getMessage(), indexProblemCache);
                 } catch (IOException e) {
-                    log.error("IOException while trying to parse " + treeWalk.getPathString(), e);
+                    log.error("IOException while trying to parse {}", treeWalk.getPathString(), e);
                     Content dummyContent = new Content();
                     dummyContent.setCanonicalSourceFile(treeWalk.getPathString());
                     this.registerContentProblem(dummyContent,
@@ -359,9 +356,9 @@ public class ContentIndexer {
             }
 
             repository.close();
-            log.debug("Tags available " + tagsList);
-            log.debug("All units: " + allUnits);
-            log.info("Git content cache population for " + sha + " completed!");
+            log.debug("Tags available {}", tagsList);
+            log.debug("All units: {}", allUnits);
+            log.info("Git content cache population for {} completed!", sha);
 
         } catch (IOException e) {
             log.error("IOException while trying to access git repository. ", e);
@@ -394,7 +391,7 @@ public class ContentIndexer {
         // If this object is of type question then we need to give it a random
         // id if it doesn't have one.
         if (content instanceof Question && content.getId() == null) {
-            log.debug("Found question without id " + content.getTitle() + " " + canonicalSourceFile);
+            log.debug("Found question without id '{}' in {}", content.getTitle(), canonicalSourceFile);
         }
 
         // Try to figure out the parent ids.
@@ -413,21 +410,18 @@ public class ContentIndexer {
 
         if (!content.getChildren().isEmpty()) {
             for (ContentBase cb : content.getChildren()) {
-                if (cb instanceof Content) {
-                    Content c = (Content) cb;
+                if (cb instanceof Content c) {
                     this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
                 }
             }
         }
 
-        if (content instanceof Choice) {
-            Choice choice = (Choice) content;
+        if (content instanceof Choice choice) {
             this.augmentChildContent((Content) choice.getExplanation(), canonicalSourceFile, newParentId, parentPublished);
         }
 
         // hack to get cards to count as children:
-        if (content instanceof IsaacCardDeck) {
-            IsaacCardDeck cardDeck = (IsaacCardDeck) content;
+        if (content instanceof IsaacCardDeck cardDeck) {
             if (cardDeck.getCards() != null) {
                 for (IsaacCard card : cardDeck.getCards()) {
                     this.augmentChildContent(card, canonicalSourceFile, newParentId, parentPublished);
@@ -435,8 +429,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof InlineRegion) {
-            InlineRegion inlineRegion = (InlineRegion) content;
+        if (content instanceof InlineRegion inlineRegion) {
             if (inlineRegion.getInlineQuestions() != null) {
                 for (IsaacQuestionBase question : inlineRegion.getInlineQuestions()) {
                     this.augmentChildContent(question, canonicalSourceFile, newParentId, parentPublished);
@@ -450,8 +443,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof Question) {
-            Question question = (Question) content;
+        if (content instanceof Question question) {
 
             if (question.getHints() != null) {
                 for (ContentBase cb : question.getHints()) {
@@ -470,8 +462,7 @@ public class ContentIndexer {
                 this.augmentChildContent(defaultFeedback, canonicalSourceFile, newParentId, parentPublished);
             }
 
-            if (content instanceof ChoiceQuestion) {
-                ChoiceQuestion choiceQuestion = (ChoiceQuestion) content;
+            if (content instanceof ChoiceQuestion choiceQuestion) {
                 if (choiceQuestion.getChoices() != null) {
                     for (Content c : choiceQuestion.getChoices()) {
                         this.augmentChildContent(c, canonicalSourceFile, newParentId, parentPublished);
@@ -496,8 +487,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof Media) {
-            Media media = (Media) content;
+        if (content instanceof Media media) {
             media.setSrc(fixMediaSrc(canonicalSourceFile, media.getSrc()));
 
             // for tracking purposes we want to generate an id for all image content objects.
@@ -532,8 +522,7 @@ public class ContentIndexer {
             // Repeat the process for each child
             if (!content.getChildren().isEmpty()) {
                 for (ContentBase childContentBase : content.getChildren()) {
-                    if (childContentBase instanceof Content) {
-                        Content child = (Content) childContentBase;
+                    if (childContentBase instanceof Content child) {
                         this.collateSearchableContent(child, prioritisedContentCollector, contentCollector);
                     }
                 }
@@ -649,8 +638,7 @@ public class ContentIndexer {
         HashMap<String, String> newUnits = Maps.newHashMap();
 
         for (Choice c : q.getChoices()) {
-            if (c instanceof Quantity) {
-                Quantity quantity = (Quantity) c;
+            if (c instanceof Quantity quantity) {
 
                 if (quantity.getUnits() != null && !quantity.getUnits().isEmpty()) {
                     String units = quantity.getUnits();
@@ -692,7 +680,7 @@ public class ContentIndexer {
             expungeAnyContentTypeIndicesRelatedToVersion(sha);
         }
 
-        log.info("Building search indexes for: " + sha);
+        log.info("Building search indexes for: {}", sha);
 
         // setup object mapper to use pre-configured deserializer module.
         // Required to deal with type polymorphism
@@ -702,8 +690,7 @@ public class ContentIndexer {
             try {
                 contentToIndex.add(immutableEntry(content.getId(), objectMapper.writeValueAsString(content)));
             } catch (JsonProcessingException e) {
-                log.error("Unable to serialize content object: " + content.getId()
-                        + " for indexing with the search provider.", e);
+                log.error("Unable to serialize content object: {} for indexing with the search provider.", content.getId(), e);
                 this.registerContentProblem(content, "Search Index Error: " + content.getId()
                         + content.getCanonicalSourceFile() + " Exception: " + e.toString(), indexProblemCache);
             }
@@ -722,7 +709,7 @@ public class ContentIndexer {
                 try {
                     return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
                 } catch (JsonProcessingException jsonProcessingException) {
-                    log.error("Unable to serialise unit entry for unit: " + entry.getValue());
+                    log.error("Unable to serialise unit entry for unit: {}", entry.getValue());
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
@@ -730,12 +717,12 @@ public class ContentIndexer {
                 try {
                     return objectMapper.writeValueAsString(ImmutableMap.of("cleanKey", entry.getKey(), "unit", entry.getValue()));
                 } catch (JsonProcessingException jsonProcessingException) {
-                    log.error("Unable to serialise published unit entry for unit: " + entry.getValue());
+                    log.error("Unable to serialise published unit entry for unit: {}", entry.getValue());
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
             endTime = System.nanoTime();
-            log.info("Bulk unit indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+            log.info("Bulk unit indexing took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
 
             startTime = System.nanoTime();
             es.bulkIndex(sha, CONTENT_INDEX_TYPE.CONTENT_ERROR.toString(), indexProblemCache.entrySet().stream().map(e -> {
@@ -748,12 +735,12 @@ public class ContentIndexer {
                             "published", e.getKey().getPublished() != null && e.getKey().getPublished(),
                             "errors", e.getValue().toArray()));
                 } catch (JsonProcessingException jsonProcessingException) {
-                    log.error("Unable to serialise content error entry from file: " + e.getKey().getCanonicalSourceFile());
+                    log.error("Unable to serialise content error entry from file: {}", e.getKey().getCanonicalSourceFile());
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList()));
             endTime = System.nanoTime();
-            log.info("Bulk content error indexing took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
+            log.info("Bulk content error indexing took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
         } catch (JsonProcessingException e) {
             log.error("Unable to serialise sha or tags");
             throw new Exception("Unable to serialise sha or tags");
@@ -767,8 +754,8 @@ public class ContentIndexer {
             startTime = System.nanoTime();
             es.bulkIndexWithIDs(sha, CONTENT_INDEX_TYPE.CONTENT.toString(), contentToIndex);
             endTime = System.nanoTime();
-            log.info("Bulk indexing content took: " + ((endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND) + "ms");
-            log.info("Search index request sent for: " + sha);
+            log.info("Bulk indexing content took: {}ms", (endTime - startTime) / NANOSECONDS_IN_A_MILLISECOND);
+            log.info("Search index request sent for: {}", sha);
         } catch (final SegueSearchException | ElasticsearchException e) {
             log.error("Error whilst trying to perform bulk index operation.", e);
             throw new Exception("Error whilst trying to perform bulk index operation.", e);
@@ -820,7 +807,7 @@ public class ContentIndexer {
             try {
                 this.recordContentTypeSpecificError(sha, c, indexProblemCache);
             } catch (NullPointerException e) {
-                log.warn("Failed processing content errors in file: " + c.getCanonicalSourceFile());
+                log.warn("Failed processing content errors in file: {}", c.getCanonicalSourceFile());
             }
         }
 
@@ -836,8 +823,8 @@ public class ContentIndexer {
             }
         }
         if (missingContent.size() > 0) {
-            log.debug("Referential integrity broken for (" + missingContent.size() + ") related Content items. "
-                    + "The following ids are referenced but do not exist: " + expectedIds.toString());
+            log.debug("Referential integrity broken for ({}) related Content items. "
+                    + "The following ids are referenced but do not exist: {}", missingContent.size(), expectedIds);
         }
 
         // Find all references from published content to unpublished content.
@@ -855,8 +842,8 @@ public class ContentIndexer {
             }
         }
 
-        log.info(String.format("Validation processing (%s) complete. There are %s files with content problems", sha,
-                indexProblemCache.size()));
+        log.info("Validation processing ({}) complete. There are {} files with content problems",
+                sha, indexProblemCache.size());
 
         if (indexProblemCache.size() == 0) {
             // Register a no-op style error to simplify application logic by ensuring there is always a content errors index
@@ -872,7 +859,7 @@ public class ContentIndexer {
      * @param version the commit sha of the content that we are interested in.
      */
     private void expungeAnyContentTypeIndicesRelatedToVersion(final String version) {
-        log.info("Deleting existing indexes for version " + version);
+        log.info("Deleting existing indexes for version {}", version);
         for (CONTENT_INDEX_TYPE contentIndexType : CONTENT_INDEX_TYPE.values()) {
             es.expungeIndexFromSearchCache(version, contentIndexType.toString());
         }
@@ -900,17 +887,6 @@ public class ContentIndexer {
         return Arrays.stream(CONTENT_INDEX_TYPE.values())
                 .anyMatch(contentIndexType -> es.hasIndex(version, contentIndexType.toString()));
     }
-
-//
-//
-//
-///*
-//    @Override
-//    public void setIndexRestriction(final boolean loadOnlyPublishedContent) {
-//        this.indexOnlyPublishedParentContent = loadOnlyPublishedContent;
-//    }*/
-
-    // GitContentManager ensureCache
 
     private String collateExpandableChildren(Content content) {
         StringBuilder ret = new StringBuilder();
@@ -944,8 +920,7 @@ public class ContentIndexer {
                     + " found with both children and a value. "
                     + "Content objects are only allowed to have one or the other.", indexProblemCache);
 
-            log.error("Invalid content item detected: The object with ID (" + content.getCanonicalSourceFile()
-                    + ") has both children and a value.");
+            log.error("Invalid content item detected: The object with ID ({}) has both children and a value.", content.getCanonicalSourceFile());
         }
 
         // Make sure no children of potentially expandable content are expandable, if so record a content error
@@ -969,8 +944,7 @@ public class ContentIndexer {
                     + " table, use class='expandable' in the table tag instead.", indexProblemCache);
         }
 
-        if (content instanceof Media) {
-            Media f = (Media) content;
+        if (content instanceof Media f) {
 
             if (f.getSrc() != null && !f.getSrc().startsWith("http") && !f.getSrc().startsWith("/assets/")) {
                 ByteArrayOutputStream fileData = null;
@@ -1016,9 +990,8 @@ public class ContentIndexer {
                     + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
         }
 
-        if (content instanceof ChoiceQuestion
+        if (content instanceof ChoiceQuestion question
                 && !(content.getType().equals("isaacQuestion"))) {
-            ChoiceQuestion question = (ChoiceQuestion) content;
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,
@@ -1039,16 +1012,14 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof EmailTemplate) {
-            EmailTemplate e = (EmailTemplate) content;
+        if (content instanceof EmailTemplate e) {
             if (e.getPlainTextContent() == null) {
                 this.registerContentProblem(content,
                         "Email template should always have plain text content field", indexProblemCache);
             }
         }
 
-        if (content instanceof IsaacEventPage) {
-            IsaacEventPage e = (IsaacEventPage) content;
+        if (content instanceof IsaacEventPage e) {
             if (e.getEndDate() == null) {
                 this.registerContentProblem(content, "Event has no end date", indexProblemCache);
             } else if (e.getEndDate().before(e.getDate())) {
@@ -1056,12 +1027,10 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacNumericQuestion) {
-            IsaacNumericQuestion q = (IsaacNumericQuestion) content;
+        if (content instanceof IsaacNumericQuestion q) {
             // Find quantities with values that cannot be parsed as numbers.
             for (Choice choice : q.getChoices()) {
-                if (choice instanceof Quantity) {
-                    Quantity quantity = (Quantity) choice;
+                if (choice instanceof Quantity quantity) {
 
                     // Check valid number by parsing in the same way ValidationUtils does:
                     try {
@@ -1121,8 +1090,7 @@ public class ContentIndexer {
                     }
                 }
                 for (Choice choice : q.getChoices()) {
-                    if (choice instanceof Formula) {
-                        Formula f = (Formula) choice;
+                    if (choice instanceof Formula f) {
                         if (f.getPythonExpression().contains("\\")) {
                             this.registerContentProblem(content, "Symbolic Question: " + q.getId() + " has Formula ("
                                     + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
@@ -1138,8 +1106,7 @@ public class ContentIndexer {
             } else if (content.getClass().equals(IsaacSymbolicChemistryQuestion.class)) {
                 IsaacSymbolicChemistryQuestion q = (IsaacSymbolicChemistryQuestion) content;
                 for (Choice choice : q.getChoices()) {
-                    if (choice instanceof ChemicalFormula) {
-                        ChemicalFormula f = (ChemicalFormula) choice;
+                    if (choice instanceof ChemicalFormula f) {
                         if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
                             this.registerContentProblem(content, "Chemistry Question: " + q.getId() + " has ChemicalFormula"
                                     + " with empty mhchemExpression!", indexProblemCache);
@@ -1152,12 +1119,10 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacClozeQuestion) {
-            IsaacClozeQuestion q = (IsaacClozeQuestion) content;
+        if (content instanceof IsaacClozeQuestion q) {
             Integer numberItems = null;
             for (Choice choice : q.getChoices()) {
-                if (choice instanceof ItemChoice) {
-                    ItemChoice c = (ItemChoice) choice;
+                if (choice instanceof ItemChoice c) {
                     if (null == c.getItems() || c.getItems().isEmpty()) {
                         this.registerContentProblem(content, "Cloze Question: " + q.getId() + " has choice with missing items!", indexProblemCache);
                         continue;
@@ -1173,8 +1138,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacDndQuestion) {
-            IsaacDndQuestion q = (IsaacDndQuestion) content;
+        if (content instanceof IsaacDndQuestion q) {
             IsaacDndValidator.DndProblem res = IsaacDndValidator.getProblemsWithQuestion(q);
             if (res == null) {
                 List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
@@ -1200,8 +1164,7 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacCoordinateQuestion) {
-            IsaacCoordinateQuestion q = (IsaacCoordinateQuestion) content;
+        if (content instanceof IsaacCoordinateQuestion q) {
 
             if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
                 // Both bounds need to be present, or both not present
@@ -1220,11 +1183,9 @@ public class ContentIndexer {
             }
 
             for (Choice choice : q.getChoices()) {
-                if (choice instanceof CoordinateChoice) {
-                    CoordinateChoice coordChoice = (CoordinateChoice) choice;
+                if (choice instanceof CoordinateChoice coordChoice) {
                     for (Item item : coordChoice.getItems()) {
-                        if (item instanceof CoordinateItem) {
-                            CoordinateItem coordItem = (CoordinateItem) item;
+                        if (item instanceof CoordinateItem coordItem) {
                             for (String coord : coordItem.getCoordinates()) {
                                 // Check valid number by parsing in the same way ValidationUtils does:
                                 try {

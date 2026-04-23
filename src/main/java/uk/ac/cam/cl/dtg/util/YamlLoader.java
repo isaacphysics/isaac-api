@@ -55,7 +55,7 @@ public class YamlLoader extends AbstractConfigLoader {
         String value = loadedConfig.get(key);
 
         if (null == value) {
-            log.warn("Failed to resolve requested property with key: " + key + ", " + this.configPath);
+            log.warn("Failed to resolve requested property with key ({}) in '{}'", key, this.configPath);
         }
 
         return value;
@@ -107,6 +107,6 @@ public class YamlLoader extends AbstractConfigLoader {
                     );
         }
         this.lastRefreshed = new Date();
-        log.debug("YAML config files read successfully: " + Arrays.toString(configPaths));
+        log.debug("YAML config files read successfully: {}", Arrays.toString(configPaths));
     }
 }

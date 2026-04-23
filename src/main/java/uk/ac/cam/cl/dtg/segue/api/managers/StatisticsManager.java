@@ -209,7 +209,7 @@ public class StatisticsManager implements IStatisticsManager {
         LocalDate startOfAprilThisYear = LocalDate.of(now.getYear(), Month.APRIL, 1);
         LocalDate startOfAprilLastYear = LocalDate.of(now.getYear() - 1, Month.APRIL, 1);
         LocalDate startOfMostRecentRevisionPeriod =
-                (now.isAfter(startOfAprilThisYear) || now.isEqual(startOfAprilLastYear)) ? startOfAprilThisYear : startOfAprilLastYear;
+                (now.isAfter(startOfAprilThisYear) || now.isEqual(startOfAprilThisYear)) ? startOfAprilThisYear : startOfAprilLastYear;
         LocalDate endOfMostRecentRevisionPeriod = startOfMostRecentRevisionPeriod.plus(Period.ofMonths(2));
 
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> questionAttemptsByUser = questionManager.getLightweightQuestionAttemptsByUser(userOfInterest);
@@ -337,8 +337,8 @@ public class StatisticsManager implements IStatisticsManager {
                 for (AudienceContext audience : questionPageDTO.getAudience()) {
                     // Check the question has both a stage and a difficulty
                     if (audience.getStage() != null && audience.getDifficulty() != null) {
-                        Stage currentStage = audience.getStage().get(0);
-                        Difficulty currentDifficulty = audience.getDifficulty().get(0);
+                        Stage currentStage = audience.getStage().getFirst();
+                        Difficulty currentDifficulty = audience.getDifficulty().getFirst();
                         // Count the attempt at the question
                         if (questionAttemptsByStageAndDifficultyStats.containsKey(currentStage)) {
                             if (questionAttemptsByStageAndDifficultyStats.get(currentStage).containsKey(currentDifficulty)) {

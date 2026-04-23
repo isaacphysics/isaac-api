@@ -1,8 +1,8 @@
 package uk.ac.cam.cl.dtg.segue.api.userAlerts;
 
 import com.google.inject.Injector;
-import org.eclipse.jetty.websocket.server.JettyWebSocketServlet;
-import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
+import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServletFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.segue.api.managers.SegueContextNotifier;
@@ -43,15 +43,14 @@ public class UserAlertsWebSocketServlet extends JettyWebSocketServlet {
     protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         // We have been seeing malformed WebSocket requests. Add some debug logging to these:
         if (!"websocket".equalsIgnoreCase(request.getHeader("Upgrade"))) {
-            log.debug(String.format("WebSocket Upgrade request from %s has incorrect header 'Upgrade: %s', headers: %s, 'Via: %s'.",
-                    getClientIpAddr(request), request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()).toString(),
-                    request.getHeader("Via")));
+            log.debug("WebSocket Upgrade request from {} has incorrect header 'Upgrade: {}', headers: {}, 'Via: {}'.",
+                    getClientIpAddr(request), request.getHeader("Upgrade"), Collections.list(request.getHeaderNames()), request.getHeader("Via"));
         }
         if (null == request.getHeader("Sec-WebSocket-Key")) {
-            log.warn(String.format("WebSocket Upgrade request from %s has missing 'Sec-WebSocket-Key' header."
-                    + " 'Sec-WebSocket-Extensions: %s', 'Sec-WebSocket-Version: %s', 'User-Agent: %s'",
-                    getClientIpAddr(request), request.getHeader("Sec-WebSocket-Extensions"),
-                    request.getHeader("Sec-WebSocket-Version"), request.getHeader("User-Agent")));
+            log.warn("WebSocket Upgrade request from {} has missing 'Sec-WebSocket-Key' header."
+                    + " 'Sec-WebSocket-Extensions: {}', 'Sec-WebSocket-Version: {}', 'User-Agent: {}'",
+                    getClientIpAddr(request), request.getHeader("Sec-WebSocket-Extensions"), request.getHeader("Sec-WebSocket-Version"),
+                    request.getHeader("User-Agent"));
             response.setStatus(BAD_REQUEST);
             return;
         }
@@ -61,8 +60,7 @@ public class UserAlertsWebSocketServlet extends JettyWebSocketServlet {
         if (!hostName.contains("localhost") && (null == origin || !origin.equals("https://" + hostName))) {
             // If we have no origin, or an origin not matching the current hostname; abort the Upgrade request with
             // a HTTP Forbidden. Allow an API running on localhost to bypass these origin checks.
-            log.warn("WebSocket Upgrade request has unexpected Origin: '" + origin + "'. Blocking access to: "
-                     + request.getServletPath());
+            log.warn("WebSocket Upgrade request has unexpected Origin: '{}'. Blocking access to: {}", origin, request.getServletPath());
             response.setStatus(FORBIDDEN);
             return;
         }

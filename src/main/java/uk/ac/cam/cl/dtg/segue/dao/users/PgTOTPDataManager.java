@@ -188,7 +188,7 @@ public class PgTOTPDataManager extends AbstractPgDataManager implements ITOTPDat
                     + listOfResults);
         }
 
-        return listOfResults.get(0);
+        return listOfResults.getFirst();
     }
 
     /**

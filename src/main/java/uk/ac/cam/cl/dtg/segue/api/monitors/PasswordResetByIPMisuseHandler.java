@@ -15,10 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -81,7 +80,7 @@ public class PasswordResetByIPMisuseHandler implements IMisuseHandler {
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
-        log.warn("Soft threshold limit: " + message);
+        log.warn("Soft threshold limit: {}", message);
     }
 
     @Override
@@ -90,7 +89,7 @@ public class PasswordResetByIPMisuseHandler implements IMisuseHandler {
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
-        log.error("Hard threshold limit: " + message);
+        log.error("Hard threshold limit: {}", message);
     }
 
 }

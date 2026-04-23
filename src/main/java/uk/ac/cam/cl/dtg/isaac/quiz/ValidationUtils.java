@@ -219,8 +219,10 @@ public final class ValidationUtils {
 
         // Parse exactly into a BigDecimal:
         BigDecimal bd = new BigDecimal(untrustedParsedValue);
-
-        if (untrustedParsedValue.contains(".")) {
+        if (bd.compareTo(BigDecimal.ZERO) == 0) {
+            // Zero is a special case; let it be ambiguous with any number of sig figs
+            return new ValidationUtils.SigFigResult(true, 0, Integer.MAX_VALUE);
+        } else if (untrustedParsedValue.contains(".")) {
             // If it contains a decimal point then there is no ambiguity in how many sig figs it has.
             return new ValidationUtils.SigFigResult(false, bd.precision(), bd.precision());
         } else {

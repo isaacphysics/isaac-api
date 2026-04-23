@@ -113,8 +113,7 @@ public class IsaacFreeTextValidator implements IValidator {
         boolean isCorrectResponse = false;
         Content feedback = null;
         for (Choice rule : freeTextQuestion.getChoices()) {
-            if (rule instanceof FreeTextRule) {
-                FreeTextRule freeTextRule = (FreeTextRule) rule;
+            if (rule instanceof FreeTextRule freeTextRule) {
                 String answerString = extractAnswerValue(answer, freeTextRule.isCaseInsensitive());
                 answerString = removeNonAlphanumericChars(answerString, freeTextRule.getValue());
                 PMatch questionAnswerMatcher = new PMatch(answerString);
@@ -125,7 +124,7 @@ public class IsaacFreeTextValidator implements IValidator {
                     break; // on first matching rule
                 }
             } else {
-                log.error("QuestionId: " + question.getId() + " contains a choice which is not a FreeTextRule.");
+                log.error("FreeTextQuestion ({}) contains a choice which is not a FreeTextRule.", question.getId());
             }
         }
 

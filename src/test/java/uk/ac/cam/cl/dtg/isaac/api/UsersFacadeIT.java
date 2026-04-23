@@ -1,15 +1,10 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.json.JSONObject;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.converter.ConvertWith;
@@ -30,6 +25,11 @@ import uk.ac.cam.cl.dtg.segue.dao.users.IDeletionTokenPersistenceManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.YamlLoader;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -37,11 +37,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ALICE_STUDENT_ID;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_TEACHER_EMAIL;
-import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_TEACHER_PASSWORD;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.newCapture;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 
 public class UsersFacadeIT extends IsaacIntegrationTest {
@@ -155,7 +163,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(true, ((Map<String, Boolean>) createResponse.getEntity()).get("EMAIL_VERIFICATION_REQUIRED"));
 
         // check we have an auth cookie with INCOMPLETE_MANDATORY_EMAIL_VERIFICATION caveat only
-        assertEquals("SEGUE_AUTH_COOKIE", cookieToCapture.getValue().getName());
+        assertEquals(SECURE_SEGUE_AUTH_COOKIE, cookieToCapture.getValue().getName());
         assertEquals(List.of(Constants.AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION.name()),
                 getCaveatsFromCookie(cookieToCapture.getValue()));
 
@@ -238,7 +246,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check we were given a session cookie
-        assertEquals("SEGUE_AUTH_COOKIE", setCookie.getValue().getName());
+        assertEquals(SECURE_SEGUE_AUTH_COOKIE, setCookie.getValue().getName());
     }
 
     /**
@@ -347,7 +355,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(Response.Status.OK.getStatusCode(), createResponse.getStatus());
 
         // check exam board was updated
-        assertEquals(ExamBoard.aqa, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getExamBoard());
+        assertEquals(ExamBoard.aqa, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().getFirst().getExamBoard());
 
         // check nothing else was modified unexpectedly
         assertEquals(targetUser.getEmail(), ((RegisteredUserDTO) createResponse.getEntity()).getEmail());
@@ -355,7 +363,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         assertEquals(targetUser.getFamilyName(), ((RegisteredUserDTO) createResponse.getEntity()).getFamilyName());
         assertEquals(targetUser.getGender(), ((RegisteredUserDTO) createResponse.getEntity()).getGender());
         assertEquals(targetUser.getGivenName(), ((RegisteredUserDTO) createResponse.getEntity()).getGivenName());
-        assertEquals(Stage.all, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().get(0).getStage());
+        assertEquals(Stage.all, ((RegisteredUserDTO) createResponse.getEntity()).getRegisteredContexts().getFirst().getStage());
         assertEquals(targetUser.getRole(), ((RegisteredUserDTO) createResponse.getEntity()).getRole());
         assertEquals(targetUser.getSchoolId(), ((RegisteredUserDTO) createResponse.getEntity()).getSchoolId());
     }
@@ -662,7 +670,7 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
     public void createOrUpdateEndpoint_updateAnotherUserWhileLoggedInAsEventManager_succeeds(RegisteredUser targetUser) throws Exception {
         // Arrange
         // log in as Event Manager
-        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.GARY_EVENTMANAGER_EMAIL, ITConstants.GARY_EVENTMANAGER_PASSWORD);
+        LoginResult eventManagerLogin = loginAs(httpSession, ITConstants.GARY_EVENTMANAGER_EMAIL, ITConstants.GARY_EVENTMANAGER_PASSWORD, ITConstants.GARY_EVENTMANAGER_MFA_SECRET);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{eventManagerLogin.cookie});
         replay(request);
 
@@ -807,8 +815,8 @@ public class UsersFacadeIT extends IsaacIntegrationTest {
         UsersFacade usersFacadeForTest = new UsersFacade(propertiesForTest, userAccountManager, logManager, userAssociationManager,
                 misuseMonitor, userPreferenceManager, schoolListReader);
 
-        // log in as user
-        LoginResult login = loginAs(httpSession, user.getEmail(), "test1234");
+        // log in as user (and assume password and MFA secret same for all)
+        LoginResult login = loginAs(httpSession, user.getEmail(), "test1234", ITConstants.TEST_ADMIN_MFA_SECRET);
         HttpServletRequest request = createRequestWithCookies(new Cookie[]{login.cookie});
         replay(request);
 
