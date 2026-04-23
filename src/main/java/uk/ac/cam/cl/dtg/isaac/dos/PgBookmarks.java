@@ -91,7 +91,7 @@ public class PgBookmarks implements IBookmarks {
             }
 
         } catch (final SQLException | SegueDatabaseException e) {
-            e.printStackTrace();
+            log.error("Database error saving bookmark!", e);
         }
     }
 
@@ -107,7 +107,7 @@ public class PgBookmarks implements IBookmarks {
                 throw new SegueDatabaseException("Unable to remove bookmark.");
             }
         } catch (final SQLException | SegueDatabaseException e) {
-            e.printStackTrace();
+            log.error("Database error saving bookmark!", e);
         }
     }
 }
