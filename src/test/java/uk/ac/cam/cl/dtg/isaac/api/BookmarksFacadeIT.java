@@ -191,8 +191,8 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
         // Act: make request
         Response deleteBookmarkResponse = bookmarksFacade.removeCurrentUserBookmark(deleteBookmarkRequest, ITConstants.SEARCH_TEST_CONCEPT_ID);
 
-        // Assert: check status code is OK
-        assertEquals(Response.Status.OK.getStatusCode(), deleteBookmarkResponse.getStatus());
+        // Assert: check status code is no content
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), deleteBookmarkResponse.getStatus());
     }
 
     @Test
