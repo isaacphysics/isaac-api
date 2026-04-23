@@ -211,7 +211,7 @@ public class IsaacCoordinateValidatorTest {
 
     @Test
     public final void isaacCoordinateValidator_TestPartiallyIncorrectAnswer() {
-        // Correct first ordinate, incorrect second ordinate
+        // Correct first coordinate, incorrect second coordinate
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1, item3));
 
@@ -225,7 +225,7 @@ public class IsaacCoordinateValidatorTest {
     public final void isaacCoordinateValidator_TestPartiallyIncorrectAnswerDisregardSF() {
         someCoordinateQuestion.setDisregardSignificantFigures(true);
 
-        // Correct first ordinate, incorrect second ordinate
+        // Correct first coordinate, incorrect second coordinate
         CoordinateChoice c = new CoordinateChoice();
         c.setItems(List.of(item1, item3));
 
