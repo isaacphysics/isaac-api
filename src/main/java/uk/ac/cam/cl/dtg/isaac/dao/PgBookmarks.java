@@ -45,10 +45,8 @@ public class PgBookmarks implements IBookmarks {
 
         boolean filterByContentType = false;
         if (null != contentType && !contentType.isEmpty()) {
-            if (contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage")) {
-                query += " AND content_type = ?";
-                filterByContentType = true;
-            }
+            query += " AND content_type = ?";
+            filterByContentType = true;
         }
 
         List<BookmarkDO> bookmarks = new ArrayList<>();
