@@ -234,6 +234,11 @@ public final class Constants {
     public static final long QUIZ_VIEW_STUDENT_ANSWERS_RELEASE_TIMESTAMP = Date.UTC(123, Calendar.JUNE, 12, 0, 0, 0); // 12/06/2023
 
     /**
+     * Bookmarks
+     */
+    public static final int MAXIMUM_BOOKMARKS = 100;
+
+    /**
      * Feedback messages
      */
     public static final String FEEDBACK_NO_ANSWER_PROVIDED = "You did not provide an answer.";

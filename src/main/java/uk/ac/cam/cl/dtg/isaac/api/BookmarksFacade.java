@@ -32,6 +32,8 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.List;
 
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+
 /**
  * Bookmarks Facade
  *
@@ -119,8 +121,8 @@ public class BookmarksFacade extends AbstractIsaacFacade {
 
         List<BookmarkDO> currentBookmarks = bookmarksDbManager.getBookmarksForUser(user.getId());
 
-        if (currentBookmarks.size() >= 100) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You cannot have more than 100 bookmarks.").toResponse();
+        if (currentBookmarks.size() >= MAXIMUM_BOOKMARKS) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, "You already have the maximum number of bookmarks!.").toResponse();
         }
 
         if (currentBookmarks.stream().anyMatch(b -> b.contentId().equals(contentId))) {
