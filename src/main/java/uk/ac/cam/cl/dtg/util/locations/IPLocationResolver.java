@@ -34,17 +34,4 @@ public interface IPLocationResolver {
      *             - if the server responds with an error.
      */
     Location resolveAllLocationInformation(final String ipAddress) throws IOException, LocationServerException;
-
-    /**
-     * Get a location with only minimal information.
-     * 
-     * @param ipAddress
-     *            that we are trying to convert into a location.
-     * @return a location populated with as much information as possible.
-     * @throws IOException
-     *             -
-     * @throws LocationServerException
-     *             - if the server responds with an error.
-     */
-    Location resolveCountryOnly(final String ipAddress) throws IOException, LocationServerException;
 }

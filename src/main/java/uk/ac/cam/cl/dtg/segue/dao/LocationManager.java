@@ -145,11 +145,6 @@ public class LocationManager implements IPLocationResolver {
 
     }
 
-    @Override
-    public Location resolveCountryOnly(final String ipAddress) throws IOException, LocationServerException {
-        return ipLocationResolver.resolveCountryOnly(ipAddress);
-    }
-
     /**
      * @param postCodeAndUserIds
      *            - A map of postcodes to userids

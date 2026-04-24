@@ -47,13 +47,6 @@ public class MaxMindIPLocationResolver implements IPLocationResolver {
         }
     }
 
-    @Override
-    public Location resolveCountryOnly(final String ipAddress) throws IOException, LocationServerException {
-        // It is no additional work to do just load everything.
-        // FIXME; can we just remove this method from the interface?
-        return resolveAllLocationInformation(ipAddress);
-    }
-
     private Location responseToLocation(final CityResponse response) {
 
         Country country = response.getCountry();
