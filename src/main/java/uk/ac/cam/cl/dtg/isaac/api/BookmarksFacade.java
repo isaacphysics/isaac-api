@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -127,9 +128,10 @@ public class BookmarksFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You have already bookmarked this content.").toResponse();
         }
 
+        String contentType;
         try {
             ContentDTO content = this.contentManager.getContentById(contentId);
-            String contentType = content.getType();
+            contentType = content.getType();
             if (null == contentType || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
                 log.warn("Invalid content type provided for bookmarks query: {}", contentType);
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
@@ -142,6 +144,11 @@ public class BookmarksFacade extends AbstractIsaacFacade {
             log.warn("Failed to create bookmark, could not find content with ID: {}", contentId);
             return new SegueErrorResponse(Status.NOT_FOUND, "Unable to find content to bookmark.").toResponse();
         }
+
+        this.getLogManager().logEvent(user, request, IsaacServerLogType.ADD_BOOKMARK,
+                ImmutableMap.of(BOOKMARK_USER_ID_LOG_FIELDNAME, user.getId(),
+                        BOOKMARK_CONTENT_ID_LOG_FIELDNAME, contentId,
+                        BOOKMARK_CONTENT_TYPE_LOG_FIELDNAME, contentType));
 
         return Response.ok().build();
     }
@@ -178,6 +185,10 @@ public class BookmarksFacade extends AbstractIsaacFacade {
 
         BookmarkDO bookmarkToRemove = new BookmarkDO(user.getId(), contentId, null, null);
         bookmarksManager.removeBookmarkForUser(bookmarkToRemove);
+
+        this.getLogManager().logEvent(user, request, IsaacServerLogType.DELETE_BOOKMARK,
+                ImmutableMap.of(BOOKMARK_USER_ID_LOG_FIELDNAME, user.getId(),
+                        BOOKMARK_CONTENT_ID_LOG_FIELDNAME, contentId));
 
         return Response.noContent().build();
     }

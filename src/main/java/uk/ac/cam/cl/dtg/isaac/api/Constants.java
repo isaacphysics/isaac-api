@@ -133,6 +133,10 @@ public final class Constants {
     public static final String PAGE_ID_LOG_FIELDNAME = "pageId";
     public static final String FRAGMENT_ID_LOG_FIELDNAME = "pageFragmentId";
     public static final String DOCUMENT_PATH_LOG_FIELDNAME = "path";
+    public static final String BOOKMARK_USER_ID_LOG_FIELDNAME = "userId";
+    public static final String BOOKMARK_CONTENT_ID_LOG_FIELDNAME = "contentId";
+    public static final String BOOKMARK_CONTENT_TYPE_LOG_FIELDNAME = "contentType";
+
 
     public static final Long DEFAULT_MISUSE_STATISTICS_LIMIT = 5L;
 
@@ -146,8 +150,10 @@ public final class Constants {
      */
     public enum IsaacServerLogType implements LogType {
         ADD_BOARD_TO_PROFILE,
+        ADD_BOOKMARK,
         CREATE_GAMEBOARD,
         DELETE_ASSIGNMENT,
+        DELETE_BOOKMARK,
         DELETE_QUIZ_ASSIGNMENT,
         DELETE_BOARD_FROM_PROFILE,
         DOWNLOAD_ASSIGNMENT_PROGRESS_CSV,
