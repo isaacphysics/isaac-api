@@ -20,7 +20,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.LocationHistoryEvent;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.Location;
@@ -48,7 +48,7 @@ public class LocationManager implements IPLocationResolver {
     private static final int LOCATION_UPDATE_FREQUENCY_IN_DAYS = 30;
     private static final int NON_PERSISTENT_CACHE_TIME_IN_HOURS = 1;
 
-    private final LocationHistory dao;
+    private final ILocationHistory dao;
     private final IPLocationResolver ipLocationResolver;
     private final PostCodeLocationResolver postCodeLocationResolver;
     private final Cache<String, Boolean> locationUpdatedRecentlyCache;
@@ -62,8 +62,8 @@ public class LocationManager implements IPLocationResolver {
      *            - the external postCode location resolver.
      */
     @Inject
-    public LocationManager(final LocationHistory dao, final IPLocationResolver ipLocationResolver,
-            final PostCodeLocationResolver postCodeLocationResolver) {
+    public LocationManager(final ILocationHistory dao, final IPLocationResolver ipLocationResolver,
+                           final PostCodeLocationResolver postCodeLocationResolver) {
         this.dao = dao;
         this.ipLocationResolver = ipLocationResolver;
         this.postCodeLocationResolver = postCodeLocationResolver;

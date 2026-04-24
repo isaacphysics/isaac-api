@@ -23,7 +23,7 @@ import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import jakarta.ws.rs.core.Response;
@@ -52,7 +52,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private final String outCodeUrl = "https://api.postcodes.io/outcodes"; // For partial postcodes (e.g. CB3)
     private final int POSTCODEIO_MAX_REQUESTS = 100;
     
-    private final LocationHistory locationHistory;
+    private final ILocationHistory locationHistory;
     private final HttpClient httpClient;
 
     /**
@@ -62,7 +62,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
      *            - the location history so we can access the database of existing post codes
      */
     @Inject
-    public PostCodeIOLocationResolver(final LocationHistory locationHistory) {
+    public PostCodeIOLocationResolver(final ILocationHistory locationHistory) {
         this.locationHistory = locationHistory;
         this.httpClient = HttpClient.newHttpClient();
     }

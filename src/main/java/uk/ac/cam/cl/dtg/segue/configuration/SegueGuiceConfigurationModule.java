@@ -54,9 +54,9 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
@@ -420,7 +420,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      * Deals with application data managers.
      */
     private void configureApplicationManagers() {
-        bind(LocationHistory.class).to(PgLocationHistory.class);
+        bind(ILocationHistory.class).to(PgLocationHistory.class);
 
         bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 

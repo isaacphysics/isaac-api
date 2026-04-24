@@ -42,7 +42,7 @@ import java.util.Objects;
  * @author sac92
  *
  */
-public class PgLocationHistory implements LocationHistory {
+public class PgLocationHistory implements ILocationHistory {
     private final PostgresSqlDb database;
     private final ObjectMapper locationSerializer;
 
