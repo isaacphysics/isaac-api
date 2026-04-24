@@ -6,10 +6,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.BookmarksManager;
-import uk.ac.cam.cl.dtg.isaac.dao.IBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dos.BookmarkDO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -48,18 +48,16 @@ public class BookmarksFacade extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final GitContentManager contentManager;
     private final BookmarksManager bookmarksManager;
-    private final IBookmarks bookmarksDbManager;
 
     @Inject
     public BookmarksFacade(final AbstractConfigLoader propertiesLoader, final ILogManager logManager,
                            final UserAccountManager userManager, final GitContentManager contentManager,
-                           final BookmarksManager bookmarksManager, final IBookmarks bookmarksDbManager) {
+                           final BookmarksManager bookmarksManager) {
         super(propertiesLoader, logManager);
 
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.bookmarksManager = bookmarksManager;
-        this.bookmarksDbManager = bookmarksDbManager;
     }
 
     /**
@@ -68,8 +66,7 @@ public class BookmarksFacade extends AbstractIsaacFacade {
      * @param request
      *            - so we can find the current user.
      * @param contentType
-     *           - optional query parameter to filter bookmarks by content type. Valid values are "isaacQuestionPage"
-     *              and "isaacConceptPage". If null, all bookmarks will be returned.
+     *           - the type of content to filter bookmarks by, or null to return all bookmarks.
      * @return the list of content that the user has bookmarked.
      */
     @GET
@@ -91,8 +88,8 @@ public class BookmarksFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
         }
 
-        List<BookmarkDO> bookmarks = bookmarksDbManager.getBookmarksForUser(user.getId(), contentType);
-        return Response.ok(bookmarksManager.mapBookmarkListToContentSummaryList(bookmarks)).build();
+        List<ContentSummaryDTO> bookmarks = bookmarksManager.getAugmentedBookmarksForUser(user.getId(), contentType);
+        return Response.ok(bookmarks).build();
     }
 
     /**
@@ -120,7 +117,7 @@ public class BookmarksFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Cannot create bookmark without content ID.").toResponse();
         }
 
-        List<BookmarkDO> currentBookmarks = bookmarksDbManager.getBookmarksForUser(user.getId());
+        List<BookmarkDO> currentBookmarks = bookmarksManager.getBookmarksForUser(user.getId(), null);
 
         if (currentBookmarks.size() >= MAXIMUM_BOOKMARKS) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You already have the maximum number of bookmarks!.").toResponse();
@@ -139,7 +136,7 @@ public class BookmarksFacade extends AbstractIsaacFacade {
             }
 
             BookmarkDO bookmarkToAdd = new BookmarkDO(user.getId(), contentId, contentType, new Date());
-            bookmarksDbManager.addBookmarkForUser(bookmarkToAdd);
+            bookmarksManager.addBookmarkForUser(bookmarkToAdd);
 
         } catch (final ContentManagerException | NullPointerException e) {
             log.warn("Failed to create bookmark, could not find content with ID: {}", contentId);
@@ -174,13 +171,13 @@ public class BookmarksFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Cannot delete bookmark without content ID.").toResponse();
         }
 
-        List<BookmarkDO> currentBookmarks = bookmarksDbManager.getBookmarksForUser(user.getId());
+        List<BookmarkDO> currentBookmarks = bookmarksManager.getBookmarksForUser(user.getId(), null);
         if (currentBookmarks.stream().noneMatch(b -> b.contentId().equals(contentId))) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You have not bookmarked this content.").toResponse();
         }
 
         BookmarkDO bookmarkToRemove = new BookmarkDO(user.getId(), contentId, null, null);
-        bookmarksDbManager.removeBookmarkForUser(bookmarkToRemove);
+        bookmarksManager.removeBookmarkForUser(bookmarkToRemove);
 
         return Response.noContent().build();
     }

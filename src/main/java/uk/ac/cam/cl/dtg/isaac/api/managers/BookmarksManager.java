@@ -99,4 +99,45 @@ public class BookmarksManager {
 
         return contentSummaries;
     }
+
+    /**
+     * Get a list of bookmarks associated with a user
+     *
+     * @param userId the ID of the user to return bookmarks for.
+     * @param contentType the type of content to filter bookmarks by, or null to return all bookmarks.
+     * @return the bookmarks associated with the user.
+     */
+    public List<BookmarkDO> getBookmarksForUser(final Long userId, final String contentType) {
+        return this.bookmarksDbManager.getBookmarksForUser(userId, contentType);
+    }
+
+    /**
+     * Get a list of bookmarks associated with a user, augmented with content information
+     *
+     * @param userId the ID of the user to return bookmarks for.
+     * @param contentType the type of content to filter bookmarks by, or null to return all bookmarks.
+     * @return the bookmarks associated with the user, augmented with content information
+     */
+    public List<ContentSummaryDTO> getAugmentedBookmarksForUser(final Long userId, final String contentType) {
+        List<BookmarkDO> bookmarks = this.bookmarksDbManager.getBookmarksForUser(userId, contentType);
+        return this.mapBookmarkListToContentSummaryList(bookmarks);
+    }
+
+    /**
+     * Save a bookmark to a user's account
+     *
+     * @param bookmark the bookmark to save
+     */
+    public void addBookmarkForUser(final BookmarkDO bookmark) {
+        this.bookmarksDbManager.addBookmarkForUser(bookmark);
+    }
+
+    /**
+     * Remove a bookmark from a user's account
+     *
+     * @param bookmark the bookmark to remove
+     */
+    public void removeBookmarkForUser(final BookmarkDO bookmark) {
+        this.bookmarksDbManager.removeBookmarkForUser(bookmark);
+    }
 }
