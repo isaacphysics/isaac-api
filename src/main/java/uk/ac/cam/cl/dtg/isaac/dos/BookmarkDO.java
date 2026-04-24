@@ -5,4 +5,4 @@ import java.util.Date;
 /**
  * DO representing a bookmarked piece of content.
  */
-public record BookmarkDO(String contentId, Date created) {}
+public record BookmarkDO(Long userId, String contentId, String contentType, Date created) {}

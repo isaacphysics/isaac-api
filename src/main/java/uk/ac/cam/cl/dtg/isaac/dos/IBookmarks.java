@@ -12,7 +12,7 @@ public interface IBookmarks {
 
     List<BookmarkDO> getBookmarksForUser(Long userId, String contentType);
 
-    void addBookmarkForUser(Long userId, String contentId, String contentType);
+    void addBookmarkForUser(BookmarkDO bookmark);
 
-    void removeBookmarkForUser(Long userId, String contentId);
+    void removeBookmarkForUser(BookmarkDO bookmark);
 }

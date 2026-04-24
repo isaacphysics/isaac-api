@@ -66,7 +66,7 @@ public class PgBookmarks implements IBookmarks {
             while (results.next()) {
                 String contentId = results.getString("content_id");
                 Timestamp created = results.getTimestamp("created");
-                bookmarks.add(new BookmarkDO(contentId, created));
+                bookmarks.add(new BookmarkDO(userId, contentId, contentType, created));
             }
         } catch (final SQLException e) {
             log.error("Database error saving bookmark!", e);
@@ -75,34 +75,32 @@ public class PgBookmarks implements IBookmarks {
     }
 
     @Override
-    public void addBookmarkForUser(final Long userId, final String contentId, final String contentType) {
-        Timestamp created = new Timestamp(System.currentTimeMillis());
+    public void addBookmarkForUser(final BookmarkDO bookmark) {
 
         String query = "INSERT INTO user_bookmarks (user_id, content_id, content_type, created) VALUES (?, ?, ?, ?)";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setLong(1, userId);
-            pst.setString(2, contentId);
-            pst.setString(3, contentType);
-            pst.setTimestamp(4, created);
+            pst.setLong(1, bookmark.userId());
+            pst.setString(2, bookmark.contentId());
+            pst.setString(3, bookmark.contentType());
+            pst.setTimestamp(4, (Timestamp) bookmark.created());
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save bookmark.");
             }
-
         } catch (final SQLException | SegueDatabaseException e) {
             log.error("Database error saving bookmark!", e);
         }
     }
 
     @Override
-    public void removeBookmarkForUser(final Long userId, final String contentId) {
+    public void removeBookmarkForUser(final BookmarkDO bookmark) {
         String query = "DELETE FROM user_bookmarks WHERE user_id = ? AND content_id = ?";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
-            pst.setLong(1, userId);
-            pst.setString(2, contentId);
+            pst.setLong(1, bookmark.userId());
+            pst.setString(2, bookmark.contentId());
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to remove bookmark.");
             }

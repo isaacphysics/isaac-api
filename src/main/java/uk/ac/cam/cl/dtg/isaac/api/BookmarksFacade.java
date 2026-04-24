@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.util.Date;
 import java.util.List;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -136,7 +137,10 @@ public class BookmarksFacade extends AbstractIsaacFacade {
                 log.warn("Invalid content type provided for bookmarks query: {}", contentType);
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
             }
-            bookmarksDbManager.addBookmarkForUser(user.getId(), contentId, contentType);
+
+            BookmarkDO bookmarkToAdd = new BookmarkDO(user.getId(), contentId, contentType, new Date());
+            bookmarksDbManager.addBookmarkForUser(bookmarkToAdd);
+
         } catch (final ContentManagerException | NullPointerException e) {
             log.warn("Failed to create bookmark, could not find content with ID: {}", contentId);
             return new SegueErrorResponse(Status.NOT_FOUND, "Unable to find content to bookmark.").toResponse();
@@ -175,7 +179,9 @@ public class BookmarksFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You have not bookmarked this content.").toResponse();
         }
 
-        bookmarksDbManager.removeBookmarkForUser(user.getId(), contentId);
+        BookmarkDO bookmarkToRemove = new BookmarkDO(user.getId(), contentId, null, null);
+        bookmarksDbManager.removeBookmarkForUser(bookmarkToRemove);
+
         return Response.noContent().build();
     }
 }
