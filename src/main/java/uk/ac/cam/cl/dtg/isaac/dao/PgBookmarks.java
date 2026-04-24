@@ -82,7 +82,7 @@ public class PgBookmarks implements IBookmarks {
             pst.setLong(1, bookmark.userId());
             pst.setString(2, bookmark.contentId());
             pst.setString(3, bookmark.contentType());
-            pst.setTimestamp(4, (Timestamp) bookmark.created());
+            pst.setTimestamp(4, new Timestamp(bookmark.created().getTime()));
             if (pst.executeUpdate() == 0) {
                 throw new SegueDatabaseException("Unable to save bookmark.");
             }
