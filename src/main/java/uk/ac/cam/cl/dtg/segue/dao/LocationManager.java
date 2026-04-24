@@ -36,14 +36,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * LocationHistoryManager. This class is intended to be used to maintain a database of geocoded ip addresses such that
- * we can look up historically where a particular ip address was. This is based on the assumption that ip address
- * allocation change over time.
- * 
- * @author sac92, ags46
+ * This manager governs access to IP and other location lookup services.
  *
  */
-public class LocationManager implements IPLocationResolver {
+public class LocationManager {
     private static final Logger log = LoggerFactory.getLogger(LocationManager.class);
     private static final int LOCATION_UPDATE_FREQUENCY_IN_DAYS = 30;
     private static final int NON_PERSISTENT_CACHE_TIME_IN_HOURS = 1;
@@ -137,12 +133,6 @@ public class LocationManager implements IPLocationResolver {
             // add to failed cache so we don't repeat failed lookups immediately
             this.locationUpdatedRecentlyCache.put(ipAddress, false);
         }
-    }
-
-    @Override
-    public Location resolveAllLocationInformation(final String ipAddress) throws IOException, LocationServerException {
-        return ipLocationResolver.resolveAllLocationInformation(ipAddress);
-
     }
 
     /**
