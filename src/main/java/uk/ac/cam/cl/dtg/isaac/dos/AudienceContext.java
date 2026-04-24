@@ -4,7 +4,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 
 import jakarta.annotation.Nullable;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  *  A class to specify a restricted and *validated* audience context which the user is allowed to specify when creating
@@ -18,18 +17,21 @@ public class AudienceContext {
 
     @Nullable
     public static AudienceContext fromFilter(@Nullable final GameFilter gameFilter) {
-        if (gameFilter == null) {return null;}
-        return new AudienceContext() {{
-            if (gameFilter.getStages() != null) {
-                setStage(gameFilter.getStages().stream().map(Stage::valueOf).collect(Collectors.toList()));
-            }
-            if (gameFilter.getExamBoards() != null) {
-                setExamBoard(gameFilter.getExamBoards().stream().map(ExamBoard::valueOf).collect(Collectors.toList()));
-            }
-            if (gameFilter.getDifficulties() != null) {
-                setDifficulty(gameFilter.getDifficulties().stream().map(Difficulty::valueOf).collect(Collectors.toList()));
-            }
-        }};
+        if (gameFilter == null) {
+            return null;
+        }
+
+        AudienceContext audienceContext = new AudienceContext();
+        if (gameFilter.getStages() != null) {
+            audienceContext.setStage(gameFilter.getStages().stream().map(Stage::valueOf).toList());
+        }
+        if (gameFilter.getExamBoards() != null) {
+            audienceContext.setExamBoard(gameFilter.getExamBoards().stream().map(ExamBoard::valueOf).toList());
+        }
+        if (gameFilter.getDifficulties() != null) {
+            audienceContext.setDifficulty(gameFilter.getDifficulties().stream().map(Difficulty::valueOf).toList());
+        }
+        return audienceContext;
     }
 
     public AudienceContext() {}
