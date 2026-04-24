@@ -160,8 +160,7 @@ public class PostCodeIOLocationResolver implements PostCodeLocationResolver {
     private List<PostCode> carryOutExternalPostCodeServiceRequest(final List<String> unknownPostCodes)
             throws LocationServerException {
 
-        log.info(String.format("Carrying out external postcode service request with %d unknown postcodes",
-                unknownPostCodes.size()));
+        log.info("Carrying out external postcode service request with {} unknown postcodes", unknownPostCodes.size());
 
         if (unknownPostCodes.size() > 100) {
             List<PostCode> completeResults = Lists.newArrayList();

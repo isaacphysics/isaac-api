@@ -352,14 +352,14 @@ public class EventBookingPersistenceManager {
 
             if (null == c) {
                 // The event this booking relates to has disappeared so treat it as though it never existed.
-                log.info(String.format("The event with id %s can no longer be found skipping...", eb.getEventId()));
+                log.info("The event with id {} can no longer be found skipping...", eb.getEventId());
                 return null;
             }
 
             if (c instanceof IsaacEventPageDTO event) {
                 return this.convertToDTO(eb, event);
             } else {
-                log.error(String.format("Content object (%s) is not an event page.", c));
+                log.error("Content object ({}) is not an event page.", c.getId());
                 throw new SegueDatabaseException("Content object is not an event page.");
             }
         } catch (ContentManagerException e) {

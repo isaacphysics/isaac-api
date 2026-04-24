@@ -109,8 +109,7 @@ public class QuizAssignmentManager implements IAssignmentLike.Details<QuizAssign
         if (existingQuizAssignments.size() != 0) {
             // TODO (scheduled-assignments): is this check truly necessary? There are now many ways tests can overlap and this misses some.
             if (existingQuizAssignments.stream().anyMatch(qa -> qa.getDueDate() == null || qa.dueDateIsAfter(newAssignmentStartDate))) {
-                log.error(String.format("Duplicated Test Assignment Exception - cannot assign the same work %s to a group %s when due date not passed",
-                    newAssignment.getQuizId(), newAssignment.getGroupId()));
+                log.error("Duplicated Test Assignment - cannot assign the same work ({}) to a group ({}) when due date not passed", newAssignment.getQuizId(), newAssignment.getGroupId());
                 throw new DuplicateAssignmentException("You cannot reassign a test until the due date has passed.");
             }
         }

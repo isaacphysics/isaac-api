@@ -15,18 +15,16 @@
  */
 package uk.ac.cam.cl.dtg.segue.api.monitors;
 
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicationMessage;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import com.google.inject.Inject;
-
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Handler to deal with additional group managers requests.
@@ -78,7 +76,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        log.warn("Soft threshold limit: " + message);
+        log.warn("Soft threshold limit: {}", message);
     }
 
     @Override
@@ -88,7 +86,7 @@ public class GroupManagerLookupMisuseHandler implements IMisuseHandler {
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
-        log.warn("Hard threshold limit: " + message);
+        log.warn("Hard threshold limit: {}", message);
 
     }
 }

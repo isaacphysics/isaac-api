@@ -210,7 +210,7 @@ public class ElasticSearchIndexer extends ElasticSearchProvider {
             // First, find where <alias>_previous points.
             try {
                 GetAliasResponse previousResponse = client.indices().getAlias(g -> g.name(ALL));
-                for (Map.Entry<String, IndexAliases> entry : previousResponse.result().entrySet()) {
+                for (Map.Entry<String, IndexAliases> entry : previousResponse.aliases().entrySet()) {
                     if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias + PREVIOUS)) {
                         indexWithPrevious = entry.getKey();
                     }
@@ -223,7 +223,7 @@ public class ElasticSearchIndexer extends ElasticSearchProvider {
             // Now find where <alias> points
             try {
                 GetAliasResponse aliasResponse = client.indices().getAlias(g -> g.name(ALL));
-                for (Map.Entry<String, IndexAliases> entry : aliasResponse.result().entrySet()) {
+                for (Map.Entry<String, IndexAliases> entry : aliasResponse.aliases().entrySet()) {
                     if (entry.getValue().aliases() != null && entry.getValue().aliases().containsKey(typedAlias)) {
                         indexWithCurrent = entry.getKey();
                     }
@@ -291,7 +291,7 @@ public class ElasticSearchIndexer extends ElasticSearchProvider {
         // Deleting all unaliased indices is not a safe operation if alias or index updates are in-progress!
         try {
             GetIndexResponse response = client.indices().get(g -> g.index("*"));
-            for (Map.Entry<String, IndexState> entry : response.result().entrySet()) {
+            for (Map.Entry<String, IndexState> entry : response.indices().entrySet()) {
                 String index = entry.getKey();
                 IndexState state = entry.getValue();
                 if (null == state.aliases() || state.aliases().isEmpty()) {

@@ -20,7 +20,7 @@ services:
   elasticsearch:
     network_mode: bridge
     container_name: elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.9
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.3
     environment:
       - cluster.name=isaac
       - node.name=localhost
@@ -38,7 +38,7 @@ services:
   cs-elasticsearch:
     network_mode: bridge
     container_name: cs-elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.9
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.3
     environment:
       - cluster.name=ada
       - node.name=localhost
@@ -56,7 +56,7 @@ services:
   it-elasticsearch:
     network_mode: bridge
     container_name: it-elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.9
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.3
     environment:
       - cluster.name=it-isaac
       - node.name=localhost

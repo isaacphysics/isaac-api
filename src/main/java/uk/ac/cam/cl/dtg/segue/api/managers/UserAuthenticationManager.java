@@ -96,6 +96,8 @@ public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
+    private static final String DUPLICATE_COOKIES = "Duplicate auth cookies found in request from ({}). Ignoring old cookie!";
+
     private final AbstractConfigLoader properties;
     private final IUserDataManager database;
     private final IDeletionTokenPersistenceManager deletionTokenPersistenceManager;
@@ -281,7 +283,7 @@ public class UserAuthenticationManager {
 
         RegisteredUser user = database.getByLinkedAccount(provider, providerId);
         if (null == user) {
-            log.debug("Unable to locate user based on provider " + "information provided.");
+            log.debug("Unable to locate user based on provider information provided.");
         }
         return user;
     }
@@ -362,18 +364,15 @@ public class UserAuthenticationManager {
             // correct CORS headers. This code will merely print warnings if something doesn't look right:
             String referrer = request.getHeader("Referer");  // Note HTTP Header misspelling!
             if (null == referrer) {
-                log.warn("Authenticated request has no 'Referer' information set! Accessing: "
-                        + request.getPathInfo());
+                log.warn("Authenticated request has no 'Referer' information set! Accessing: {}", request.getPathInfo());
             } else if (!referrer.startsWith("https://" + properties.getProperty(HOST_NAME) + "/")) {
-                log.warn("Authenticated request has unexpected Referer: '" + referrer + "'. Accessing: "
-                        + request.getPathInfo());
+                log.warn("Authenticated request has unexpected Referer: '{}'. Accessing: {}", referrer, request.getPathInfo());
             }
             // If the client sends an Origin header, we can check its value. If they do not send the header,
             // we can draw no conclusions.
             String origin = request.getHeader("Origin");
             if (null != origin && !origin.equals("https://" + properties.getProperty(HOST_NAME))) {
-                log.warn("Authenticated request has unexpected Origin: '" + origin + "'. Accessing: "
-                        + request.getMethod() + " " + request.getPathInfo());
+                log.warn("Authenticated request has unexpected Origin: '{}'. Accessing: {} {}", origin, request.getMethod(), request.getPathInfo());
             }
         }
 
@@ -468,7 +467,7 @@ public class UserAuthenticationManager {
 
             // Check that the user's session is indeed valid:
             if (null == userToReturn || !this.isValidUsersSession(currentSessionInformation, userToReturn)) {
-                log.debug("User session has failed validation. Treating as logged out. Session: " + currentSessionInformation);
+                log.debug("User session has failed validation. Treating as logged out. Session: {}", currentSessionInformation);
                 return null;
             }
 
@@ -477,7 +476,7 @@ public class UserAuthenticationManager {
             log.error("Internal Database error. Failed to resolve current user.", e);
             return null;
         } catch (NumberFormatException e) {
-            log.info("Invalid user id detected in session. " + currentSessionInformation.get(SESSION_USER_ID));
+            log.info("Invalid user id detected in session. {}", currentSessionInformation.get(SESSION_USER_ID));
             return null;
         }
     }
@@ -536,8 +535,7 @@ public class UserAuthenticationManager {
 
         ArrayList<String> caveatFlags = serializationMapper.readValue(caveats, new TypeReference<>() {});
         if (!caveatFlags.remove(caveatToRemove.toString())) {
-            log.warn(String.format("Attempted to remove caveat '%s' from user (%s) session, but no such caveat was present!",
-                    caveatToRemove, user.getId()));
+            log.warn("Attempted to remove caveat '{}' from user ({}) session, but no such caveat was present!", caveatToRemove, user.getId());
         }
         Set<AuthenticationCaveat> remainingCaveats = caveatFlags.stream().map(AuthenticationCaveat::valueOf).collect(Collectors.toSet());
 
@@ -556,16 +554,15 @@ public class UserAuthenticationManager {
         Objects.requireNonNull(request);
         try {
             request.getSession().invalidate();
-            Cookie logoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
-            logoutCookie.setPath("/");
-            logoutCookie.setMaxAge(0);  // This will lead to it being removed by the browser immediately.
-            logoutCookie.setHttpOnly(true);
-            logoutCookie.setSecure(true);
-            logoutCookie.setAttribute("SameSite", "Strict");
-
+            Cookie logoutCookie = generateSegueAuthCookie("", 0);
             response.addCookie(logoutCookie);
-        } catch (IllegalStateException e) {
-            log.info("The session has already been invalidated. " + "Unable to logout again...", e);
+            // FIXME old-cookies: remove once old cookies deprecated:
+            Cookie oldLogoutCookie = new Cookie(SEGUE_AUTH_COOKIE, "");
+            oldLogoutCookie.setMaxAge(0);
+            oldLogoutCookie.setPath("/");
+            response.addCookie(oldLogoutCookie);
+        } catch (final IllegalStateException e) {
+            log.info("The session has already been invalidated. Unable to logout again...", e);
         }
     }
     
@@ -595,7 +592,7 @@ public class UserAuthenticationManager {
                     + " has not been registered / implemented yet: " + provider);
         }
 
-        log.debug("Mapping provider: " + provider + " to " + enumProvider);
+        log.debug("Mapping provider: {} to {}", provider, enumProvider);
 
         return this.registeredAuthProviders.get(enumProvider);
     }
@@ -690,7 +687,7 @@ public class UserAuthenticationManager {
 
             // Generate reset token, whether or not they have a local password set up:
             String token = authenticator.createPasswordResetTokenForUser(userDO);
-            log.info(String.format("Sending password reset message to %s", userDO.getEmail()));
+            log.info("Sending password reset message to '{}'.", userDO.getEmail());
 
             Map<String, Object> emailValues = ImmutableMap.of("resetURL",
                     String.format("https://%s/resetpassword?token=%s",
@@ -707,7 +704,7 @@ public class UserAuthenticationManager {
             }
 
         } catch (ContentManagerException e) {
-            log.error("ContentManagerException " + e.getMessage());
+            log.error("ContentManagerException", e);
         }
     }
     
@@ -865,8 +862,7 @@ public class UserAuthenticationManager {
                     emailTokens, EmailType.SYSTEM);
 
         } catch (ContentManagerException contentException) {
-            log.error(String.format("Error sending federated email verification message - %s", 
-                            contentException.getMessage()));
+            log.error("Error sending federated email verification message!", contentException);
         }
     }
     
@@ -939,12 +935,12 @@ public class UserAuthenticationManager {
         String csrfTokenFromProvider = request.getParameter(key);
 
         if (null == csrfTokenFromUser || !csrfTokenFromUser.equals(csrfTokenFromProvider)) {
-            log.error("Invalid state parameter - Provider said: " + request.getParameter(STATE_PARAM_NAME)
-                    + " Session said: " + request.getSession().getAttribute(STATE_PARAM_NAME));
+            log.error("Invalid state parameter - Provider said: '{}' Session said: '{}'.",
+                    request.getParameter(STATE_PARAM_NAME), request.getSession().getAttribute(STATE_PARAM_NAME));
             return false;
         } else {
-            log.debug("State parameter matches - Provider said: " + request.getParameter(STATE_PARAM_NAME)
-                    + " Session said: " + request.getSession().getAttribute(STATE_PARAM_NAME));
+            log.debug("State parameter matches - Provider said: '{}' Session said: '{}'.",
+                    request.getParameter(STATE_PARAM_NAME), request.getSession().getAttribute(STATE_PARAM_NAME));
             return true;
         }
     }
@@ -1022,20 +1018,14 @@ public class UserAuthenticationManager {
             sessionInformationBuilder.put(HMAC, sessionHMAC);
 
             Map<String, String> sessionInformation = sessionInformationBuilder.build();
+            String cookieValue = Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes());
 
-            Cookie authCookie = new Cookie(SEGUE_AUTH_COOKIE,
-                    Base64.encodeBase64String(serializationMapper.writeValueAsString(sessionInformation).getBytes()));
-            authCookie.setMaxAge(sessionExpiryTimeInSeconds);
-            authCookie.setPath("/");
-            authCookie.setHttpOnly(true);
-            authCookie.setSecure(true);
-            authCookie.setAttribute("SameSite", "Strict");
-
-            log.debug(String.format("Creating AuthCookie for user (%s) with value %s", userId, authCookie.getValue()));
-
+            Cookie authCookie = generateSegueAuthCookie(cookieValue, sessionExpiryTimeInSeconds);
             response.addCookie(authCookie);
 
-        } catch (JsonProcessingException e1) {
+            log.debug("Creating SEGUE_AUTH_COOKIE for user ({}) with value ({})", userId, authCookie.getValue());
+
+        } catch (final JsonProcessingException e1) {
             log.error("Unable to save cookie.", e1);
         }
     }
@@ -1086,13 +1076,13 @@ public class UserAuthenticationManager {
 
         // Check no one has tampered with the cookie:
         if (!hasValidHmac(sessionInformation)) {
-            log.warn(String.format("Invalid Cookie HMAC detected for user id (%s)!", userId));
+            log.warn("Invalid Cookie HMAC detected for user id ({})!", userId);
             return false;
         }
 
         // Check that the session token is still valid:
         if (!userFromDatabase.getSessionToken().toString().equals(userSessionToken)) {
-            log.debug("Invalid session token detected for user id " + userId);
+            log.debug("Invalid session token detected for user id {}", userId);
             return false;
         }
 
@@ -1129,6 +1119,24 @@ public class UserAuthenticationManager {
         }
 
         return UserAuthenticationManager.calculateHMAC(key, sb.toString());
+    }
+
+    /**
+     * Create a new SEGUE_AUTH_COOKIE with standard security settings.
+     *
+     * @param cookieValue - string content of the cookie.
+     * @param maxAge - cookie lifetime.
+     * @return the new Cookie object.
+     */
+    private Cookie generateSegueAuthCookie(final String cookieValue, final int maxAge) {
+        Cookie authCookie = new Cookie(SECURE_SEGUE_AUTH_COOKIE, cookieValue);
+        authCookie.setMaxAge(maxAge);
+        authCookie.setPath("/");
+        authCookie.setHttpOnly(true);
+        authCookie.setSecure(true);
+        authCookie.setAttribute("SameSite", "Strict");
+
+        return authCookie;
     }
 
     /**
@@ -1204,13 +1212,23 @@ public class UserAuthenticationManager {
         }
 
         for (Cookie c : request.getCookies()) {
+            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, RequestIPExtractor.getClientIpAddr(request));
+                } else {
+                    segueAuthCookie = c;
+                }
+            } else if (c.getName().equals(SECURE_SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, RequestIPExtractor.getClientIpAddr(request));
+                }
                 segueAuthCookie = c;
             }
         }
 
         if (null == segueAuthCookie) {
-            throw new InvalidSessionException("There are no cookies set.");
+            throw new InvalidSessionException("There are no session cookies set.");
         }
 
         @SuppressWarnings("unchecked")
@@ -1234,13 +1252,23 @@ public class UserAuthenticationManager {
         }
 
         for (HttpCookie c : request.getCookies()) {
+            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, "websocket");
+                } else {
+                    segueAuthCookie = c;
+                }
+            } else if (c.getName().equals(SECURE_SEGUE_AUTH_COOKIE)) {
+                if (null != segueAuthCookie) {
+                    log.warn(DUPLICATE_COOKIES, "websocket");
+                }
                 segueAuthCookie = c;
             }
         }
 
         if (null == segueAuthCookie) {
-            throw new InvalidSessionException("There are no cookies set.");
+            throw new InvalidSessionException("There are no session cookies set.");
         }
 
         @SuppressWarnings("unchecked")
@@ -1273,7 +1301,7 @@ public class UserAuthenticationManager {
             String result = new String(Base64.encodeBase64(rawHmac));
             return result;
         } catch (GeneralSecurityException e) {
-            log.warn("Unexpected error while creating hash: " + e.getMessage(), e);
+            log.warn("Unexpected error while creating HMAC! ", e);
             throw new IllegalArgumentException();
         }
     }

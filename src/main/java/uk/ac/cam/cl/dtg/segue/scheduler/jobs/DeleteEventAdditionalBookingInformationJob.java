@@ -8,14 +8,14 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
@@ -30,11 +30,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.EVENT_TYPE;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.DATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.ENDDATE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.TYPE_FIELDNAME;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.SortOrder;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class DeleteEventAdditionalBookingInformationJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(DeleteEventAdditionalBookingInformationJob.class);
@@ -98,7 +95,7 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
 
                             int affectedRows = pst.executeUpdate();
                             if (affectedRows > 0) {
-                                log.info("Event " + page.getId() + " had " + affectedRows + " bookings which have been scrubbed of PII");
+                                log.info("Event ({}) had {} bookings which have been scrubbed of PII", page.getId(), affectedRows);
                             }
                         }
                     }

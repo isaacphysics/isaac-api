@@ -116,10 +116,9 @@ public class QuestionManager {
         IValidator validator = locateValidator(question.getClass());
 
         if (null == validator) {
-            log.error("Unable to locate a valid validator for this question " + question.getId());
-            return Response.serverError()
-                    .entity("Unable to detect question validator for " + "this object. Unable to verify answer")
-                    .build();
+            log.error("Unable to locate validator class for question ({})", question.getId());
+            return new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR,
+                    "There was an error attempting to mark this question!").toResponse();
         }
 
         Choice answerFromUser = mapper.map(submittedAnswer);
@@ -156,8 +155,7 @@ public class QuestionManager {
         // Does this class have the correct annotation?
         if (questionType.isAnnotationPresent(ValidatesWith.class)) {
 
-            log.debug("Validator for question validation found. Using : "
-                    + questionType.getAnnotation(ValidatesWith.class).value());
+            log.debug("Validator for question validation found. Using '{}'.", questionType.getAnnotation(ValidatesWith.class).value());
             Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(questionType.getAnnotation(ValidatesWith.class).value());
 
@@ -188,8 +186,7 @@ public class QuestionManager {
         // Does this class have the correct annotation?
         if (choiceClass.isAnnotationPresent(SpecifiesWith.class)) {
 
-            log.debug("Specifier for specifiation creation found. Using : "
-                + choiceClass.getAnnotation(SpecifiesWith.class).value());
+            log.debug("Specifier for specification creation found. Using : {}", choiceClass.getAnnotation(SpecifiesWith.class).value());
             Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
             return injector.getInstance(choiceClass.getAnnotation(SpecifiesWith.class).value());
 
@@ -317,7 +314,7 @@ public class QuestionManager {
 
             this.questionAttemptPersistenceManager.registerQuestionAttempt(registeredUser.getId(),
                 questionPageId, questionResponse.getQuestionId(), questionResponseDO);
-            log.debug("Question information recorded for user: " + registeredUser.getId());
+            log.debug("Question information recorded for user ({})", registeredUser.getId());
 
         } else if (user instanceof AnonymousUserDTO anonymousUserDTO) {
 
@@ -607,7 +604,7 @@ public class QuestionManager {
         ISpecifier specifier = locateSpecifier(answer.getClass());
 
         if (null == specifier) {
-            log.error("Unable to locate a valid specifier for this choice: " + answer);
+            log.error("Unable to locate a valid specifier for this choice: {}", answer);
             return Response.serverError()
                 .entity("Unable to detect question validator for " + "this object. Unable to verify answer")
                 .build();
