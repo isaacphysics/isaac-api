@@ -15,8 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.segue.api;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -36,7 +34,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Role;
-import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserIdMergeDTO;
@@ -59,14 +56,10 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.dao.schools.SchoolListReader;
-import uk.ac.cam.cl.dtg.segue.dao.schools.UnableToIndexSchoolsException;
 import uk.ac.cam.cl.dtg.segue.etl.GithubPushEventPayload;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
-import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.RequestIPExtractor;
-import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -93,14 +86,11 @@ import java.net.http.HttpResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -804,8 +794,6 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by role
      * @param schoolOther
      *            - if searching by school other field.
-     * @param postcode
-     *            - if searching by postcode.
      * @param schoolURN
      *            - if searching by school by the URN.
      * @param emailVerificationStatus
@@ -820,8 +808,6 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther,
-            @QueryParam("postcode") @Nullable final String postcode,
-            @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
             @QueryParam("schoolURN") @Nullable final String schoolURN,
             @QueryParam("emailVerificationStatus") @Nullable final EmailVerificationStatus emailVerificationStatus) {
 
@@ -839,8 +825,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     && (null == familyName || familyName.isEmpty())
                     && (null == schoolOther || schoolOther.isEmpty())
                     && (null == email || email.isEmpty())
-                    && (null == schoolURN || schoolURN.isEmpty())
-                    && (null == postcode || postcode.isEmpty())) {
+                    && (null == schoolURN || schoolURN.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -904,65 +889,6 @@ public class AdminFacade extends AbstractSegueFacade {
                 }
             } else {
                 foundUsers = this.userManager.findUsers(userPrototype);
-            }
-            Map<Long, RegisteredUserDTO> userMapById = foundUsers.parallelStream().collect(Collectors.toMap(RegisteredUserDTO::getId, Function.identity()));
-
-            // if postcode is set, filter found users
-            if (null != postcode) {
-                try {
-                    Map<String, List<Long>> postCodeAndUserIds = Maps.newHashMap();
-                    for (RegisteredUserDTO userDTO : foundUsers) {
-                        if (userDTO.getSchoolId() != null) {
-                            School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
-                            if (school != null) {
-                                String schoolPostCode = school.getPostcode();
-                                if (null == schoolPostCode || schoolPostCode.isEmpty()) {
-                                    continue;
-                                }
-                                List<Long> ids;
-                                if (postCodeAndUserIds.containsKey(schoolPostCode)) {
-                                    ids = postCodeAndUserIds.get(schoolPostCode);
-                                } else {
-                                    ids = Lists.newArrayList();
-                                }
-                                ids.add(userDTO.getId());
-                                postCodeAndUserIds.put(schoolPostCode, ids);
-                            }
-                        }
-                    }
-
-                    PostCodeRadius radius = PostCodeRadius.valueOf(postcodeRadius);
-
-                    List<Long> userIdsWithinRadius = locationManager.getUsersWithinPostCodeDistanceOf(
-                            postCodeAndUserIds, postcode, radius);
-
-                    // Make sure the list returned is users who have schools in our postcode radius
-                    List<RegisteredUserDTO> nearbyUsers = new ArrayList<>();
-                    for (Long id : userIdsWithinRadius) {
-                        RegisteredUserDTO user = userMapById.get(id); //this.userManager.getUserDTOById(id);
-                        if (user != null) {
-                            nearbyUsers.add(user);
-                        }
-                    }
-                    foundUsers = nearbyUsers;
-
-                } catch (LocationServerException e) {
-                    log.error("Location service unavailable. ", e);
-                    return new SegueErrorResponse(Status.SERVICE_UNAVAILABLE,
-                            "Unable to process request using 3rd party location provider").toResponse();
-                } catch (UnableToIndexSchoolsException | SegueSearchException e) {
-                    log.error("Unable to get school statistics", e);
-                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                            "Unable to process schools information").toResponse();
-                } catch (JsonParseException | JsonMappingException e) {
-                    log.error("Problem parsing school", e);
-                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Unable to read school")
-                            .toResponse();
-                } catch (IOException e) {
-                    log.error("Problem parsing school", e);
-                    return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
-                            "IOException while trying to communicate with the school service.").toResponse();
-                }
             }
 
             // Calculate the ETag
