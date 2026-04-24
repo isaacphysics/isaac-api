@@ -9,9 +9,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
 import java.sql.PreparedStatement;
-import java.util.ArrayList;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -55,13 +55,13 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
         // Assert: check response is OK and contains expected bookmarks
         assertEquals(Response.Status.OK.getStatusCode(), bookmarksResponse.getStatus());
 
-        ArrayList<ContentSummaryDTO> responseBody = (ArrayList<ContentSummaryDTO>) bookmarksResponse.getEntity();
+        List<ContentSummaryDTO> responseBody = (List<ContentSummaryDTO>) bookmarksResponse.getEntity();
         List<String> actualBookmarkIds = responseBody.stream().map(ContentSummaryDTO::getId).toList();
 
         List<String> expectedBookmarkIds = List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID,
                 ITConstants.SEARCH_TEST_CONCEPT_ID);
 
-        assertEquals(expectedBookmarkIds, actualBookmarkIds);
+        assertThat(actualBookmarkIds).containsExactlyInAnyOrderElementsOf(expectedBookmarkIds);
     }
 
     @Test
@@ -77,12 +77,12 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
         // Assert: check status code is OK and contains expected bookmarks
         assertEquals(Response.Status.OK.getStatusCode(), bookmarksResponse.getStatus());
 
-        ArrayList<ContentSummaryDTO> responseBody = (ArrayList<ContentSummaryDTO>) bookmarksResponse.getEntity();
+        List<ContentSummaryDTO> responseBody = (List<ContentSummaryDTO>) bookmarksResponse.getEntity();
         List<String> actualBookmarkIds = responseBody.stream().map(ContentSummaryDTO::getId).toList();
 
         List<String> expectedBookmarkIds = List.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID);
 
-        assertEquals(expectedBookmarkIds, actualBookmarkIds);
+        assertThat(actualBookmarkIds).containsExactlyInAnyOrderElementsOf(expectedBookmarkIds);
     }
 
     @Test
