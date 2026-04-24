@@ -5,15 +5,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.BookmarkDO;
 import uk.ac.cam.cl.dtg.isaac.dos.IBookmarks;
+import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A class to augment content with bookmark information, and bookmarks with content information.
@@ -48,16 +50,28 @@ public class BookmarksManager {
      */
     public List<ContentSummaryDTO> augmentContentSummaryListWithBookmarkInformation(final Long userId,
                                                                     final List<ContentSummaryDTO> contentSummaries) {
-
         List<BookmarkDO> bookmarks = this.bookmarksDbManager.getBookmarksForUser(userId);
+        return augmentContentSummaryListWithBookmarkInformation(bookmarks, contentSummaries);
+    }
+
+    /**
+     * Augment a list of content summaries with bookmark information.
+     *
+     * @param bookmarks the bookmarks to augment the content summaries with.
+     * @param contentSummaries the content summary list to augment.
+     * @return the augmented content summary list.
+     */
+    public List<ContentSummaryDTO> augmentContentSummaryListWithBookmarkInformation(final List<BookmarkDO> bookmarks,
+                                                                                    final List<ContentSummaryDTO> contentSummaries) {
+        Map<String, Date> bookmarkMap = new HashMap<>();
+        for (BookmarkDO bookmark : bookmarks) {
+            bookmarkMap.put(bookmark.contentId(), bookmark.created());
+        }
 
         for (ContentSummaryDTO contentSummary : contentSummaries) {
-            for (BookmarkDO bookmark : bookmarks) {
-                if (contentSummary.getId().equals(bookmark.contentId())) {
-                    Date created = bookmark.created();
-                    contentSummary.setBookmarked(created);
-                    break;
-                }
+            Date created = bookmarkMap.get(contentSummary.getId());
+            if (created != null) {
+                contentSummary.setBookmarked(created);
             }
         }
         return contentSummaries;
@@ -70,23 +84,19 @@ public class BookmarksManager {
      * @return the list of content summaries corresponding to the bookmarks.
      */
     public List<ContentSummaryDTO> mapBookmarkListToContentSummaryList(final List<BookmarkDO> bookmarks) {
+        List<String> bookmarkIDs = bookmarks.stream().map(BookmarkDO::contentId).toList();
+        ResultsWrapper<ContentDTO> content;
 
-        List<ContentSummaryDTO> contentSummaries = new ArrayList<>();
-
-        for (BookmarkDO bookmark : bookmarks) {
-            try {
-                ContentDTO content = this.contentManager.getContentById(bookmark.contentId());
-                ContentSummaryDTO contentSummary = this.mapper.mapContentDTOtoContentSummaryDTO(content);
-
-                Date created = bookmark.created();
-                contentSummary.setBookmarked(created);
-
-                contentSummaries.add(contentSummary);
-            } catch (final ContentManagerException e) {
-                log.warn("Error retrieving content for bookmark with content id {}: {}", bookmark.contentId(), e.getMessage());
-                throw new RuntimeException(e);
-            }
+        try {
+            content = this.contentManager.getUnsafeCachedContentDTOsMatchingIds(bookmarkIDs, 0, bookmarkIDs.size());
+        } catch (final ContentManagerException e) {
+            content = new ResultsWrapper<>();
+            log.error("Unable to locate content for bookmark", e);
         }
+
+        List<ContentSummaryDTO> contentSummaries = content.getResults().stream().map(this.mapper::mapContentDTOtoContentSummaryDTO).toList();
+        contentSummaries = augmentContentSummaryListWithBookmarkInformation(bookmarks, contentSummaries);
+
         return contentSummaries;
     }
 }
