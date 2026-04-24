@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.BookmarksManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
@@ -109,6 +110,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     private final GitContentManager contentManager;
     private final UserAttemptManager userAttemptManager;
     private final GameManager gameManager;
+    private final BookmarksManager bookmarksManager;
 
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
@@ -131,13 +133,15 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - So we can look up attempt information.
      * @param gameManager
      *            - For looking up gameboard information.
+     * @param bookmarksManager
+     *            - For looking up bookmark information.
      */
     @Inject
     public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
                        final ILogManager logManager, final MainMapper mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager,
                        final QuestionManager questionManager, final GameManager gameManager,
-                       final UserAttemptManager userAttemptManager) {
+                       final UserAttemptManager userAttemptManager, final BookmarksManager bookmarksManager) {
         super(propertiesLoader, logManager);
         this.api = api;
         this.mapper = mapper;
@@ -147,6 +151,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         this.questionManager = questionManager;
         this.gameManager = gameManager;
         this.userAttemptManager = userAttemptManager;
+        this.bookmarksManager = bookmarksManager;
     }
 
     /**
@@ -507,6 +512,10 @@ public class PagesFacade extends AbstractIsaacFacade {
                                 .filter(q -> filterByStatuses.contains(q.getState()))
                                 .collect(Collectors.toList());
                     }
+                }
+
+                if (user instanceof RegisteredUserDTO registeredUser) {
+                    summarizedResults = bookmarksManager.augmentContentSummaryListWithBookmarkInformation(registeredUser.getId(), summarizedResults);
                 }
 
                 if (limit < 0 || combinedResults.size() + summarizedResults.size() <= limit) {
