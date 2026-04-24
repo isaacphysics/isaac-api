@@ -13,8 +13,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.DELETE;
@@ -37,7 +39,7 @@ import java.util.List;
  */
 @Path("/bookmarks")
 @Tag(name = "BookmarksFacade", description = "/bookmarks")
-public class BookmarksFacade {
+public class BookmarksFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(BookmarksFacade.class);
 
     private final UserAccountManager userManager;
@@ -46,8 +48,11 @@ public class BookmarksFacade {
     private final IBookmarks bookmarksDbManager;
 
     @Inject
-    public BookmarksFacade(final UserAccountManager userManager, final GitContentManager contentManager,
+    public BookmarksFacade(final AbstractConfigLoader propertiesLoader, final ILogManager logManager,
+                           final UserAccountManager userManager, final GitContentManager contentManager,
                            final BookmarksManager bookmarksManager, final IBookmarks bookmarksDbManager) {
+        super(propertiesLoader, logManager);
+
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.bookmarksManager = bookmarksManager;

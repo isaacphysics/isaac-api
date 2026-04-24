@@ -22,7 +22,7 @@ public class BookmarksFacadeIT extends IsaacIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-        this.bookmarksFacade = new BookmarksFacade(userAccountManager, contentManager, bookmarksManager, bookmarksDbManager);
+        this.bookmarksFacade = new BookmarksFacade(properties, logManager, userAccountManager, contentManager, bookmarksManager, bookmarksDbManager);
     }
 
     @AfterEach
