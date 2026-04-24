@@ -209,11 +209,11 @@ public final class Constants {
     }
     public static final Set<String> ISAAC_CLIENT_LOG_TYPES = Arrays.stream(IsaacClientLogType.values()).map(IsaacClientLogType::name).collect(Collectors.toSet());
 
-    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = new HashSet<>() {{
-        addAll(SEGUE_SERVER_LOG_TYPES);
-        addAll(ISAAC_SERVER_LOG_TYPES);
-        addAll(ISAAC_CLIENT_LOG_TYPES);
-    }};
+    public static final Set<String> ALL_ACCEPTED_LOG_TYPES = ImmutableSet.<String>builder()
+            .addAll(SEGUE_SERVER_LOG_TYPES)
+            .addAll(ISAAC_SERVER_LOG_TYPES)
+            .addAll(ISAAC_CLIENT_LOG_TYPES)
+            .build();
 
     /**
      * Question search constants
