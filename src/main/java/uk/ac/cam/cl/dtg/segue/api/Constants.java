@@ -444,6 +444,7 @@ public final class Constants {
     public static final Integer MAX_SEARCH_RESULT_LIMIT = 350;
 
     public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
+    public static final Integer CONTACT_FORM_CHAR_LIMIT = 5000;
 
     public static final Integer NO_SEARCH_LIMIT = -1;
 
