@@ -79,14 +79,15 @@ public class LocationManager {
      *             - if there is an IO error
      */
     public void refreshLocation(final String ipAddress) throws SegueDatabaseException, IOException {
-        // do not attempt to record localhost IP addresses:
-        if (ipAddress == null || ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("127.0.0.1")) {
-            log.debug("Not geocoding ip address as it looks like localhost: {}", ipAddress);
+        // if the IP is missing or present in our cache, no need to look up again
+        if (ipAddress == null || ipAddress.isEmpty() || locationUpdatedRecentlyCache.getIfPresent(ipAddress) != null) {
             return;
         }
 
-        // if it is present in our cache, no need to look up again
-        if (locationUpdatedRecentlyCache.getIfPresent(ipAddress) != null) {
+        // do not attempt to record localhost IP addresses:
+        if (ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("127.0.0.1")) {
+            log.debug("Not geocoding ip address as it looks like localhost: {}", ipAddress);
+            this.locationUpdatedRecentlyCache.put(ipAddress, false);
             return;
         }
 
