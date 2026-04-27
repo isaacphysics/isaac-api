@@ -65,3 +65,6 @@ Configuration:
           additivity: false
           AppenderRef:
             - ref: Audit_Appender
+
+        - name: com.azure.core.http.jdk.httpclient.JdkHttpClient
+          level: error
