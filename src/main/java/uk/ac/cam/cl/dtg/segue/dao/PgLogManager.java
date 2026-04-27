@@ -268,12 +268,10 @@ public class PgLogManager implements ILogManager {
         }
 
         if (ipAddress != null) {
-            logEvent.setIpAddress(ipAddress.split(",")[0]);
+            logEvent.setIpAddress(ipAddress);
 
             try {
-                // split based on the fact that we usually get ip addresses of the form
-                // [user_ip], [balancer/gateway_ip]
-                locationManager.refreshLocation(ipAddress.split(",")[0]);
+                locationManager.refreshLocation(ipAddress);
             } catch (SegueDatabaseException | IOException e1) {
                 log.error("Unable to record location information for ip Address: {}", ipAddress, e1);
             }

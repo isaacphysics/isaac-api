@@ -20,7 +20,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.LocationHistoryEvent;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.Location;
@@ -36,23 +36,18 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * LocationHistoryManager. This class is intended to be used to maintain a database of geocoded ip addresses such that
- * we can look up historically where a particular ip address was. This is based on the assumption that ip address
- * allocation change over time.
- * 
- * @author sac92, ags46
+ * This manager governs access to IP and other location lookup services.
  *
  */
-public class LocationManager implements IPLocationResolver {
+public class LocationManager {
     private static final Logger log = LoggerFactory.getLogger(LocationManager.class);
     private static final int LOCATION_UPDATE_FREQUENCY_IN_DAYS = 30;
     private static final int NON_PERSISTENT_CACHE_TIME_IN_HOURS = 1;
 
-    private final LocationHistory dao;
+    private final ILocationHistory dao;
     private final IPLocationResolver ipLocationResolver;
     private final PostCodeLocationResolver postCodeLocationResolver;
-    private final Cache<String, Location> locationCache;
-    private final Cache<String, Location> failedLocationCache;
+    private final Cache<String, Boolean> locationUpdatedRecentlyCache;
 
     /**
      * @param dao
@@ -63,17 +58,14 @@ public class LocationManager implements IPLocationResolver {
      *            - the external postCode location resolver.
      */
     @Inject
-    public LocationManager(final LocationHistory dao, final IPLocationResolver ipLocationResolver,
-            final PostCodeLocationResolver postCodeLocationResolver) {
+    public LocationManager(final ILocationHistory dao, final IPLocationResolver ipLocationResolver,
+                           final PostCodeLocationResolver postCodeLocationResolver) {
         this.dao = dao;
         this.ipLocationResolver = ipLocationResolver;
         this.postCodeLocationResolver = postCodeLocationResolver;
 
-        // This cache is here to prevent lots of needless look ups to the database.
-        locationCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS)
-                .<String, Location> build();
-        failedLocationCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS)
-                .<String, Location> build();
+        // This cache is here to prevent lots of needless look-ups to the database.
+        locationUpdatedRecentlyCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS).build();
     }
 
     /**
@@ -87,70 +79,61 @@ public class LocationManager implements IPLocationResolver {
      *             - if there is an IO error
      */
     public void refreshLocation(final String ipAddress) throws SegueDatabaseException, IOException {
-        // special case
-        if (ipAddress == null || ipAddress.startsWith("localhost") || ipAddress.contains("0:0:0:0:0:0:0:1")
-                || ipAddress.contains("127.0.0.1")) {
-            // do not record
+        // if the IP is missing or present in our cache, no need to look up again
+        if (ipAddress == null || ipAddress.isEmpty() || locationUpdatedRecentlyCache.getIfPresent(ipAddress) != null) {
+            return;
+        }
+
+        // do not attempt to record localhost IP addresses:
+        if (ipAddress.equals("0:0:0:0:0:0:0:1") || ipAddress.equals("127.0.0.1")) {
             log.debug("Not geocoding ip address as it looks like localhost: {}", ipAddress);
+            this.locationUpdatedRecentlyCache.put(ipAddress, false);
             return;
         }
 
-        // if it is present in a local cache we have no need to hit the database
-        if (locationCache.getIfPresent(ipAddress) != null || failedLocationCache.getIfPresent(ipAddress) != null) {
+        // if it is a private subnet, lookup will fail, so skip lookup and cache this failure
+        if (ipAddress.startsWith("10.") || ipAddress.startsWith("192.168.")
+                || (ipAddress.startsWith("172.") && ipAddress.matches("^172\\.(?:1[6-9]|2[0-9]|3[01])\\..*"))) {
+            log.debug("Not geocoding ip address as it looks like a private subnet: {}", ipAddress);
+            this.locationUpdatedRecentlyCache.put(ipAddress, false);
             return;
         }
 
-        // do we have an existing location for this ip address.
+        // do we have an existing location for this ip address?
         LocationHistoryEvent latestByIPAddress = dao.getLatestByIPAddress(ipAddress);
-        Location locationToCache;
         try {
             if (latestByIPAddress != null) {
-                locationToCache = latestByIPAddress.getLocationInformation();
                 Calendar locationExpiry = Calendar.getInstance();
                 locationExpiry.setTime(latestByIPAddress.getLastUpdated());
                 locationExpiry.add(Calendar.DATE, LOCATION_UPDATE_FREQUENCY_IN_DAYS);
 
                 if (new Date().after(locationExpiry.getTime())) {
-                    // lookup to see if ip location data is different. If so update it.
-                    log.debug("Performing IP Location lookup.");
-                    Location locationInformation = ipLocationResolver
-                            .resolveAllLocationInformation(ipAddress);
+                    // check if ip location data has changed, and if so update it, else mark it still valid
+                    Location locationInformation = ipLocationResolver.resolveAllLocationInformation(ipAddress);
 
                     if (locationInformation.equals(latestByIPAddress.getLocationInformation())) {
                         dao.updateLocationEventDate(latestByIPAddress.getId(), true);
-                        log.debug("Ip address location is the same. Refreshing.");
+                        log.debug("Location for IP '{}' unchanged. Marking as current.", ipAddress);
 
                     } else {
                         dao.updateLocationEventDate(latestByIPAddress.getId(), false);
-                        locationToCache = dao.storeLocationEvent(ipAddress, locationInformation)
-                                .getLocationInformation();
-                        log.debug("Location Info Different. Updating to new value.");
+                        dao.storeLocationEvent(ipAddress, locationInformation);
+                        log.debug("Location for IP '{}' changed. Updating to new value.", ipAddress);
                     }
                 }
             } else {
                 Location locationInformation = ipLocationResolver.resolveAllLocationInformation(ipAddress);
-                locationToCache = dao.storeLocationEvent(ipAddress, locationInformation).getLocationInformation();
+                dao.storeLocationEvent(ipAddress, locationInformation);
+                log.debug("Recording location for IP '{}'.", ipAddress);
             }
 
-            this.locationCache.put(ipAddress, locationToCache);
-            log.debug("Location Cache currently has {} ip addresses", locationCache.size());
+            this.locationUpdatedRecentlyCache.put(ipAddress, true);
 
-        } catch (LocationServerException e) {
-            log.error("Unable to resolve location for ip address: {}. Skipping...", ipAddress, e);
-            // add it to the ephemeral failed cache for a while so we don't keep asking for an address with no info immediately.
-            this.failedLocationCache.put(ipAddress, new Location(null, 0.0, 0.0));
+        } catch (final LocationServerException e) {
+            log.error("Unable to resolve location for IP address: '{}'. {} ", ipAddress, e.getMessage());
+            // add to failed cache so we don't repeat failed lookups immediately
+            this.locationUpdatedRecentlyCache.put(ipAddress, false);
         }
-    }
-
-    @Override
-    public Location resolveAllLocationInformation(final String ipAddress) throws IOException, LocationServerException {
-        return ipLocationResolver.resolveAllLocationInformation(ipAddress);
-
-    }
-
-    @Override
-    public Location resolveCountryOnly(final String ipAddress) throws IOException, LocationServerException {
-        return ipLocationResolver.resolveCountryOnly(ipAddress);
     }
 
     /**

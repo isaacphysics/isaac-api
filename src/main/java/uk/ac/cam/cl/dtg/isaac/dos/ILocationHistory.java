@@ -25,7 +25,7 @@ import java.util.List;
 /**
  *
  */
-public interface LocationHistory {
+public interface ILocationHistory {
     /**
      * Get the latest location by an ip address.
      * 

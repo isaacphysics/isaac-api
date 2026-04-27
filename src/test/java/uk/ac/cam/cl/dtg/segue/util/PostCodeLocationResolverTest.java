@@ -15,6 +15,18 @@
  */
 package uk.ac.cam.cl.dtg.segue.util;
 
+import com.google.api.client.util.Maps;
+import org.easymock.EasyMock;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
+import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
+import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,21 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.easymock.EasyMock;
-
-import com.google.api.client.util.Maps;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.isaac.dos.LocationHistory;
-import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
-import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -50,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class PostCodeLocationResolverTest {
 
-    private LocationHistory locationHistory;
+    private ILocationHistory locationHistory;
     private PostCodeIOLocationResolver resolver;
     private PostgresSqlDb mockDatabase;
 
