@@ -26,7 +26,7 @@ import feign.FeignException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
@@ -59,12 +59,12 @@ public class MailGunEmailManager {
     private static final Logger log = LoggerFactory.getLogger(MailGunEmailManager.class);
 
     private MailgunMessagesApi mailgunMessagesApi;
-    private final AbstractUserPreferenceManager userPreferenceManager;
+    private final IUserPreferenceManager userPreferenceManager;
     private final AbstractConfigLoader globalProperties;
     private final ExecutorService executor;
 
     @Inject
-    public MailGunEmailManager(final Map<String, String> globalStringTokens, final AbstractConfigLoader globalProperties, final AbstractUserPreferenceManager userPreferenceManager) {
+    public MailGunEmailManager(final Map<String, String> globalStringTokens, final AbstractConfigLoader globalProperties, final IUserPreferenceManager userPreferenceManager) {
         this.globalStringTokens = globalStringTokens;
         this.userPreferenceManager = userPreferenceManager;
         this.globalProperties = globalProperties;

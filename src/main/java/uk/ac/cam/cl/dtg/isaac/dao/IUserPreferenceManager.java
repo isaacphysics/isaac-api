@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dos;
+package uk.ac.cam.cl.dtg.isaac.dao;
 
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 import java.util.List;
@@ -24,7 +25,7 @@ import java.util.List;
  *
  *  @author James Sharkey
  */
-public abstract class AbstractUserPreferenceManager {
+public interface IUserPreferenceManager {
 
     /**
      * Get a specific preference for a specific user.
@@ -34,7 +35,7 @@ public abstract class AbstractUserPreferenceManager {
      * @return the UserPreference object
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract UserPreference getUserPreference(final String preferenceType, final String preferenceName, final long userId)
+    UserPreference getUserPreference(final String preferenceType, final String preferenceName, final long userId)
             throws SegueDatabaseException;
 
     /**
@@ -44,7 +45,7 @@ public abstract class AbstractUserPreferenceManager {
      * @return a list of the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract List<UserPreference> getUserPreferences(final String preferenceType, final long userId)
+    List<UserPreference> getUserPreferences(final String preferenceType, final long userId)
             throws SegueDatabaseException;
 
     /**
@@ -53,7 +54,7 @@ public abstract class AbstractUserPreferenceManager {
      * @return a list of the UserPreference objects
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract List<UserPreference> getAllUserPreferences(final long userId)
+    List<UserPreference> getAllUserPreferences(final long userId)
             throws SegueDatabaseException;
 
     /**
@@ -61,6 +62,6 @@ public abstract class AbstractUserPreferenceManager {
      * @param userPreferences - a list of the UserPreference objects to save
      * @throws SegueDatabaseException - if a database error occurs
      */
-    public abstract void saveUserPreferences(final List<UserPreference> userPreferences)
+    void saveUserPreferences(final List<UserPreference> userPreferences)
             throws SegueDatabaseException;
 }

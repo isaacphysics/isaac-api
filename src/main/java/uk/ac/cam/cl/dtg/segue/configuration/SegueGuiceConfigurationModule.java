@@ -49,17 +49,17 @@ import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgLocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserAlerts;
-import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserStreakManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IQuestionAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacLLMFreeTextValidator;
@@ -432,7 +432,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
 
         bind(ICommunicator.class).to(EmailCommunicator.class);
 
-        bind(AbstractUserPreferenceManager.class).to(PgUserPreferenceManager.class);
+        bind(IUserPreferenceManager.class).to(PgUserPreferenceManager.class);
 
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
@@ -706,7 +706,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static EmailManager getMessageCommunicationQueue(final AbstractConfigLoader properties, final EmailCommunicator emailCommunicator,
-                                                             final AbstractUserPreferenceManager userPreferenceManager,
+                                                             final IUserPreferenceManager userPreferenceManager,
                                                              final GitContentManager contentManager,
                                                              final ILogManager logManager) {
 
@@ -749,7 +749,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     @Singleton
     private static MailGunEmailManager getMailGunEmailManager(final AbstractConfigLoader properties,
-                                                              final AbstractUserPreferenceManager userPreferenceManager) {
+                                                              final IUserPreferenceManager userPreferenceManager) {
         Map<String, String> globalTokens = Maps.newHashMap();
         globalTokens.put("sig", properties.getProperty(EMAIL_SIGNATURE));
         globalTokens.put("emailPreferencesURL", String.format("https://%s/account#emailpreferences",
@@ -842,7 +842,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
                                                final ILogManager logManager, final UserMapper userMapper,
                                                final UserAuthenticationManager userAuthenticationManager,
                                                final ISecondFactorAuthenticator secondFactorManager,
-                                               final AbstractUserPreferenceManager userPreferenceManager) {
+                                               final IUserPreferenceManager userPreferenceManager) {
         if (null == userManager) {
             userManager = new UserAccountManager(database, questionManager, properties, providersToRegister,
                     userMapper, emailQueue, temporaryUserCache, logManager, userAuthenticationManager,

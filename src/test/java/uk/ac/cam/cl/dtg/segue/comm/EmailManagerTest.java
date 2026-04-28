@@ -15,16 +15,8 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
+import com.google.api.client.util.Lists;
+import com.google.api.client.util.Maps;
 import com.google.common.collect.ImmutableMap;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -33,25 +25,31 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
+import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
+import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
-import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
-import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
-import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Test class for the EmailManager class.
@@ -71,7 +69,7 @@ public class EmailManagerTest {
     private GitContentManager mockContentManager;
     private Capture<EmailCommunicationMessage> capturedArgument;
     private SegueLocalAuthenticator mockAuthenticator;
-    private AbstractUserPreferenceManager userPreferenceManager;
+    private IUserPreferenceManager userPreferenceManager;
     private ILogManager logManager;
     private UserAccountManager userManager;
 

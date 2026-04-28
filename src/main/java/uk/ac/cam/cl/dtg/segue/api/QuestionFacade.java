@@ -22,7 +22,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
 import uk.ac.cam.cl.dtg.isaac.dos.TestCase;
@@ -99,7 +99,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     private final ContentSubclassMapper mapper;
     private final GitContentManager contentManager;
     private final UserAccountManager userManager;
-    private final AbstractUserPreferenceManager userPreferenceManager;
+    private final IUserPreferenceManager userPreferenceManager;
 
     private final QuestionManager questionManager;
     private final UserAssociationManager userAssociationManager;
@@ -173,7 +173,7 @@ public class QuestionFacade extends AbstractSegueFacade {
     @Inject
     public QuestionFacade(final AbstractConfigLoader properties, final ContentSubclassMapper mapper,
                           final GitContentManager contentManager, final UserAccountManager userManager,
-                          final AbstractUserPreferenceManager userPreferenceManager, final QuestionManager questionManager,
+                          final IUserPreferenceManager userPreferenceManager, final QuestionManager questionManager,
                           final ILogManager logManager, final IMisuseMonitor misuseMonitor,
                           final IUserStreaksManager userStreaksManager,
                           final UserAssociationManager userAssociationManager) {

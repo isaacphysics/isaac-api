@@ -16,7 +16,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.jupiter.api.Test;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserStreaksManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -50,7 +50,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class QuestionFacadeTest extends AbstractFacadeTest {
 
     private AbstractConfigLoader properties;
-    private AbstractUserPreferenceManager userPreferenceManager;
+    private IUserPreferenceManager userPreferenceManager;
     private IMisuseMonitor misuseMonitor;
     private QuestionFacade questionFacade;
 
@@ -125,7 +125,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         properties = createMock(AbstractConfigLoader.class);
         expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
 
-        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        userPreferenceManager = createMock(IUserPreferenceManager.class);
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", false);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
 
@@ -150,7 +150,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         properties = createMock(AbstractConfigLoader.class);
         expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
 
-        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        userPreferenceManager = createMock(IUserPreferenceManager.class);
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
 
@@ -179,7 +179,7 @@ public class QuestionFacadeTest extends AbstractFacadeTest {
         expect(properties.getProperty(LLM_MARKER_FEATURE)).andReturn(("on"));
         misuseMonitor = createMock(IMisuseMonitor.class);
         expect(misuseMonitor.getRemainingUses(adminUser.getId().toString(), "LLMFreeTextQuestionAttemptMisuseHandler")).andReturn(30);
-        userPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        userPreferenceManager = createMock(IUserPreferenceManager.class);
         UserPreference userPreference = new UserPreference(adminUser.getId(), "CONSENT", "OPENAI", true);
         expect(userPreferenceManager.getUserPreference("CONSENT", LLM_PROVIDER_NAME, adminUser.getId())).andReturn(userPreference);
         replay(properties, misuseMonitor, userPreferenceManager);

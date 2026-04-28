@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.isaac.dos;
+package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
@@ -32,7 +33,7 @@ import java.util.List;
 /**
  *  A Postgres specific User Preference Manager.
  */
-public class PgUserPreferenceManager extends AbstractUserPreferenceManager {
+public class PgUserPreferenceManager implements IUserPreferenceManager {
 
     private final PostgresSqlDb database;
     private static final Logger log = LoggerFactory.getLogger(PgUserPreferenceManager.class);

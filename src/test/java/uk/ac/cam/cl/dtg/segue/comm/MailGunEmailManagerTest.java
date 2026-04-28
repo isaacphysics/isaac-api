@@ -21,8 +21,8 @@ import com.mailgun.model.message.MessageResponse;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -38,7 +38,7 @@ import java.util.concurrent.Future;
  */
 public class MailGunEmailManagerTest {
     private AbstractConfigLoader mockPropertiesLoader;
-    private AbstractUserPreferenceManager userPreferenceManager;
+    private IUserPreferenceManager userPreferenceManager;
     private ILogManager logManager;
 
     /**

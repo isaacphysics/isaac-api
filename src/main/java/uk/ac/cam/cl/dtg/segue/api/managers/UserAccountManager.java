@@ -26,7 +26,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AccountDeletionToken;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
@@ -127,7 +127,7 @@ public class UserAccountManager implements IUserAccountManager {
 
     private final ISecondFactorAuthenticator secondFactorManager;
 
-    private final AbstractUserPreferenceManager userPreferenceManager;
+    private final IUserPreferenceManager userPreferenceManager;
 
     private final Pattern restrictedSignupEmailRegex;
     private static final int USER_NAME_MAX_LENGTH = 255;
@@ -154,7 +154,7 @@ public class UserAccountManager implements IUserAccountManager {
                               final EmailManager emailQueue, final IAnonymousUserDataManager temporaryUserCache,
                               final ILogManager logManager, final UserAuthenticationManager userAuthenticationManager,
                               final ISecondFactorAuthenticator secondFactorManager,
-                              final AbstractUserPreferenceManager userPreferenceManager) {
+                              final IUserPreferenceManager userPreferenceManager) {
 
         Objects.requireNonNull(properties.getProperty(HMAC_SALT));
         Objects.requireNonNull(properties.getProperty(SESSION_EXPIRY_SECONDS_DEFAULT));

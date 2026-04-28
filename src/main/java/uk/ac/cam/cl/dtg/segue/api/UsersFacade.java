@@ -26,7 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
@@ -104,7 +104,7 @@ public class UsersFacade extends AbstractSegueFacade {
     private final UserAccountManager userManager;
     private final UserAssociationManager userAssociationManager;
     private final IMisuseMonitor misuseMonitor;
-    private final AbstractUserPreferenceManager userPreferenceManager;
+    private final IUserPreferenceManager userPreferenceManager;
     private final SchoolListReader schoolListReader;
 
     /**
@@ -128,7 +128,7 @@ public class UsersFacade extends AbstractSegueFacade {
     @Inject
     public UsersFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                        final ILogManager logManager, final UserAssociationManager userAssociationManager,
-                       final IMisuseMonitor misuseMonitor, final AbstractUserPreferenceManager userPreferenceManager,
+                       final IMisuseMonitor misuseMonitor, final IUserPreferenceManager userPreferenceManager,
                        final SchoolListReader schoolListReader) {
         super(properties, logManager);
         this.userManager = userManager;

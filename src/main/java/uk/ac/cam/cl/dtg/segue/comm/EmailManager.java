@@ -27,7 +27,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.eclipse.jgit.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ExternalReference;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
@@ -66,7 +66,7 @@ import static uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics.QUEUED_EMAIL;
  *
  */
 public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationMessage> {
-    private final AbstractUserPreferenceManager userPreferenceManager;
+    private final IUserPreferenceManager userPreferenceManager;
     private final AbstractConfigLoader globalProperties;
     private final GitContentManager contentManager;
 
@@ -93,7 +93,7 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
      *                           static string.
      */
     @Inject
-    public EmailManager(final EmailCommunicator communicator, final AbstractUserPreferenceManager userPreferenceManager,
+    public EmailManager(final EmailCommunicator communicator, final IUserPreferenceManager userPreferenceManager,
                         final AbstractConfigLoader globalProperties, final GitContentManager contentManager,
                         final ILogManager logManager, final Map<String, String> globalStringTokens) {
         super(communicator);

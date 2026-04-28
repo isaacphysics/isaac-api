@@ -31,7 +31,7 @@ import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
@@ -128,7 +128,7 @@ public class AdminFacade extends AbstractSegueFacade {
 
     private final SchoolListReader schoolReader;
 
-    private final AbstractUserPreferenceManager userPreferenceManager;
+    private final IUserPreferenceManager userPreferenceManager;
     private final EventBookingManager eventBookingManager;
     private final IExternalAccountManager externalAccountManager;
     private final IMisuseMonitor misuseMonitor;
@@ -161,7 +161,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public AdminFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                        final GitContentManager contentManager, @Named(CONTENT_INDEX) final String contentIndex, final ILogManager logManager,
                        final StatisticsManager statsManager, final LocationManager locationManager,
-                       final SchoolListReader schoolReader, final AbstractUserPreferenceManager userPreferenceManager,
+                       final SchoolListReader schoolReader, final IUserPreferenceManager userPreferenceManager,
                        final EventBookingManager eventBookingManager, final SegueJobService segueJobService,
                        final IExternalAccountManager externalAccountManager, final IMisuseMonitor misuseMonitor) {
         super(properties, logManager);

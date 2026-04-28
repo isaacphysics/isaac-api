@@ -24,7 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.users.AnonymousUser;
 import uk.ac.cam.cl.dtg.isaac.dos.users.EmailVerificationStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.users.Gender;
@@ -99,7 +99,7 @@ public class UserManagerTest {
     private ISecondFactorAuthenticator dummySecondFactorAuthenticator;
     private IDeletionTokenPersistenceManager dummyDeletionTokenManager;
 
-    private AbstractUserPreferenceManager dummyUserPreferenceManager;
+    private IUserPreferenceManager dummyUserPreferenceManager;
 
     /**
      * Initial configuration of tests.
@@ -130,7 +130,7 @@ public class UserManagerTest {
         this.dummySecondFactorAuthenticator = createMock(ISecondFactorAuthenticator.class);
         this.dummyDeletionTokenManager = createMock(IDeletionTokenPersistenceManager.class);
 
-        this.dummyUserPreferenceManager = createMock(AbstractUserPreferenceManager.class);
+        this.dummyUserPreferenceManager = createMock(IUserPreferenceManager.class);
 
         expect(this.dummyPropertiesLoader.getProperty(Constants.HMAC_SALT)).andReturn(dummyHMACSalt).anyTimes();
         expect(this.dummyPropertiesLoader.getProperty(Constants.HOST_NAME)).andReturn(dummyHostName).anyTimes();

@@ -35,12 +35,12 @@ import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
-import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.quiz.PgQuestionAttempts;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.GroupManager;
@@ -160,7 +160,7 @@ public class AbstractIsaacIntegrationTest {
     // Services
     protected static AssignmentService assignmentService;
 
-    protected static AbstractUserPreferenceManager userPreferenceManager;
+    protected static IUserPreferenceManager userPreferenceManager;
 
     protected static ITUsers integrationTestUsers;
 
