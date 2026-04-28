@@ -538,12 +538,13 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             UserGroupDTO groupBasedOnId = groupManager.getGroupById(groupId);
 
-            if (!groupBasedOnId.getSelfRemoval() && !GroupManager.hasAdditionalManagerPrivileges(groupBasedOnId, currentRegisteredUser.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You are neither the owner of this group, nor an additional manager with additional privileges!").toResponse();
+            boolean hasGroupManagerPrivileges = GroupManager.hasAdditionalManagerPrivileges(groupBasedOnId, currentRegisteredUser.getId());
+            boolean isAllowedSelfRemoval = groupBasedOnId.getSelfRemoval() && currentRegisteredUser.getId().equals(userId);
+            if (!(hasGroupManagerPrivileges || isAllowedSelfRemoval)) {
+                return SegueErrorResponse.getForbiddenResponse("Only owners or additional manager with privileges can remove group members!");
             }
 
             RegisteredUserDTO userToRemove = userManager.getUserDTOById(userId);
-
             groupManager.removeUserFromGroup(groupBasedOnId, userToRemove);
 
             this.getLogManager().logEvent(currentRegisteredUser, request, SegueServerLogType.REMOVE_USER_FROM_GROUP,
@@ -552,7 +553,7 @@ public class GroupsFacade extends AbstractSegueFacade {
 
             return Response.ok().build();
         } catch (SegueDatabaseException e) {
-            log.error("Database error while trying to add user to a group. ", e);
+            log.error("Database error while trying to remove user from group. ", e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error", e).toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
