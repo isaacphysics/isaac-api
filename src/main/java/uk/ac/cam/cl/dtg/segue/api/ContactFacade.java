@@ -104,6 +104,11 @@ public class ContactFacade extends AbstractSegueFacade {
             return error.toResponse();
         }
 
+        if (form.get("message").length() > CONTACT_FORM_CHAR_LIMIT) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Your message is too long!");
+            return error.toResponse();
+        }
+
         try {
             String currentUserId;
             String currentUserRole;
