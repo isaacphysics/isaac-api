@@ -16,12 +16,9 @@
 
 package uk.ac.cam.cl.dtg.isaac.api;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.core.Request;
-import jakarta.ws.rs.core.Response;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupStatus;
 import uk.ac.cam.cl.dtg.isaac.dos.UserGroup;
@@ -30,6 +27,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.GroupsFacade;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Request;
+import jakarta.ws.rs.core.Response;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -37,8 +38,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.replay;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
 
@@ -214,7 +218,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code
-        assertEquals(Response.Status.OK.getStatusCode(), removeStudentResponse.getStatus());
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), removeStudentResponse.getStatus());
 
         assertFalse(groupManager.getUsersInGroup(groupManager.getGroupById(TEST_TEACHERS_AB_GROUP_ID)).stream()
                 .map(RegisteredUserDTO::getId)
@@ -255,7 +259,7 @@ public class GroupsFacadeIT extends IsaacIntegrationTest {
 
         // Assert
         // check status code
-        assertEquals(Response.Status.OK.getStatusCode(), removeStudentResponse.getStatus());
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), removeStudentResponse.getStatus());
 
         assertTrue(userAssociationManager.hasTeacherPermission(
                 userAccountManager.getUserDTOById(TEST_TEACHER_ID),
