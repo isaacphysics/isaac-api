@@ -20,11 +20,6 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
  * 
  */
 public class School {
-    // Old fieldnames, to be removed
-    private String urn;
-    private String name;
-    private String postcode;
-
     private String schoolId;
     private String countryCode;
     private String schoolName;
@@ -52,28 +47,6 @@ public class School {
      */
     public School() {
 
-    }
-
-    /**
-     * Full constructor.
-     * 
-     * @param urn
-     *            - unique id
-     * @param name
-     *            - name of the school.
-     * @param postcode
-     *            -postcode of the school
-     * @param dataSource
-     *            -dataSource of this information
-     * @param closed
-     *            - whether the school is closed
-     */
-    public School(final String urn, final String name, final String postcode, final Boolean closed, final SchoolDataSource dataSource) {
-        this.urn = urn;
-        this.name = name;
-        this.postcode = postcode;
-        this.dataSource = dataSource;
-        this.closed = closed;
     }
 
     /**
@@ -108,84 +81,24 @@ public class School {
         this.dataSource = dataSource;
     }
 
-
     /**
-     * Gets the urn.
-     * 
-     * @return the urn
-     */
-    public String getUrn() {
-        return urn;
-    }
-
-    /**
-     * Sets the urn.
-     * 
-     * @param urn
-     *            the urn to set
-     */
-    public void setUrn(final String urn) {
-        this.urn = urn;
-    }
-
-    /**
-     * Gets the name.
-     * 
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the name.
-     * 
-     * @param name
-     *            the name to set
-     */
-    public void setName(final String name) {
-        this.name = name;
-    }
-
-    /**
-     * Gets the postcode.
-     * 
-     * @return the postcode
-     */
-    public String getPostcode() {
-        return postcode;
-    }
-
-    /**
-     * Sets the postcode.
-     * 
-     * @param postcode
-     *            the postcode to set
-     */
-    public void setPostcode(final String postcode) {
-        this.postcode = postcode;
-    }
-
-
-    /**
-     * Gets the school id.
+     * Gets the school ID.
      *
-     * @return the school id
+     * @return the school ID
      */
     public String getSchoolId() {
         return schoolId;
     }
 
     /**
-     * Sets the school id.
+     * Sets the school ID.
      *
      * @param schoolId
-     *            the school id to set
+     *            the school ID to set
      */
     public void setSchoolId(final String schoolId) {
         this.schoolId = schoolId;
     }
-
 
     /**
      * Gets the country code.
@@ -324,7 +237,7 @@ public class School {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((urn == null) ? 0 : urn.hashCode());
+        result = prime * result + ((schoolId == null) ? 0 : schoolId.hashCode());
         return result;
     }
 
@@ -340,11 +253,11 @@ public class School {
             return false;
         }
         School other = (School) obj;
-        if (urn == null) {
-            if (other.urn != null) {
+        if (schoolId == null) {
+            if (other.schoolId != null) {
                 return false;
             }
-        } else if (!urn.equals(other.urn)) {
+        } else if (!schoolId.equals(other.schoolId)) {
             return false;
         }
         return true;
@@ -352,6 +265,6 @@ public class School {
 
     @Override
     public String toString() {
-        return "School [urn=" + urn + ", name=" + name + ", postcode=" + postcode + "]";
+        return "School [urn=" + schoolId + ", name=" + schoolName + ", postcode=" + postalCode + "]";
     }
 }

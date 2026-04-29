@@ -806,8 +806,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by school other field.
      * @param postcode
      *            - if searching by postcode.
-     * @param schoolURN
-     *            - if searching by school by the URN.
+     * @param schoolId
+     *            - if searching for school by ID.
      * @param emailVerificationStatus
      *            - if searching by email verification status
      * @return a userDTO or a segue error response
@@ -822,7 +822,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("schoolOther") @Nullable final String schoolOther,
             @QueryParam("postcode") @Nullable final String postcode,
             @QueryParam("postcodeRadius") @Nullable final String postcodeRadius,
-            @QueryParam("schoolURN") @Nullable final String schoolURN,
+            @QueryParam("schoolId") @Nullable final String schoolId,
             @QueryParam("emailVerificationStatus") @Nullable final EmailVerificationStatus emailVerificationStatus) {
 
         RegisteredUserDTO currentUser;
@@ -839,7 +839,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     && (null == familyName || familyName.isEmpty())
                     && (null == schoolOther || schoolOther.isEmpty())
                     && (null == email || email.isEmpty())
-                    && (null == schoolURN || schoolURN.isEmpty())
+                    && (null == schoolId || schoolId.isEmpty())
                     && (null == postcode || postcode.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
@@ -885,8 +885,8 @@ public class AdminFacade extends AbstractSegueFacade {
                 userPrototype.setSchoolOther(schoolOther);
             }
             
-            if (null != schoolURN) {
-                userPrototype.setSchoolId(schoolURN);
+            if (null != schoolId) {
+                userPrototype.setSchoolId(schoolId);
             }
 
             if (null != emailVerificationStatus) {
@@ -915,7 +915,7 @@ public class AdminFacade extends AbstractSegueFacade {
                         if (userDTO.getSchoolId() != null) {
                             School school = this.schoolReader.findSchoolById(userDTO.getSchoolId());
                             if (school != null) {
-                                String schoolPostCode = school.getPostcode();
+                                String schoolPostCode = school.getPostalCode();
                                 if (null == schoolPostCode || schoolPostCode.isEmpty()) {
                                     continue;
                                 }

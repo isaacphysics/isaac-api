@@ -94,8 +94,8 @@ public class SchoolListReader {
         Integer queryLimit = limit == null ? DEFAULT_RESULTS_LIMIT : limit;
 
         List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                searchQuery, 0, queryLimit, Map.of(SCHOOL_CLOSED_FIELDNAME_POJO, List.of("false")), null, SCHOOL_URN_FIELDNAME_POJO,
-                SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
+                searchQuery, 0, queryLimit, Map.of(SCHOOL_CLOSED_FIELDNAME, List.of("false")), null, SCHOOL_ID_FIELDNAME,
+                SCHOOL_NAME_FIELDNAME, SCHOOL_POSTCODE_FIELDNAME)
                 .getResults();
 
         List<School> resultList = Lists.newArrayList();
@@ -114,7 +114,7 @@ public class SchoolListReader {
     /**
      * Find school by Id.
      * 
-     * @param schoolURN
+     * @param schoolId
      *            - to search for.
      * @return school.
      * @throws UnableToIndexSchoolsException
@@ -126,7 +126,7 @@ public class SchoolListReader {
      * @throws JsonParseException
      *             - if the school data is malformed
      */
-    public School findSchoolById(final String schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
+    public School findSchoolById(final String schoolId) throws UnableToIndexSchoolsException, JsonParseException,
             JsonMappingException, IOException, SegueSearchException {
 
         if (!this.ensureSchoolList()) {
@@ -137,15 +137,15 @@ public class SchoolListReader {
         List<String> matchingSchoolList;
         
         matchingSchoolList = searchProvider.findByExactMatch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                schoolURN, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
+                SCHOOL_ID_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                schoolId, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;
         }
         
         if (matchingSchoolList.size() > 1) {
-            log.error("Error while looking up school up by id! More than one match for '{}' results: {}", schoolURN, matchingSchoolList);
+            log.error("Error while looking up school up by id! More than one match for '{}' results: {}", schoolId, matchingSchoolList);
         }
 
         return mapper.readValue(matchingSchoolList.getFirst(), School.class);

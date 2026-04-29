@@ -65,7 +65,7 @@ class SchoolIndexer {
 
         for (School school : schoolList) {
             try {
-                indexList.add(immutableEntry(school.getUrn(), objectMapper.writeValueAsString(school)));
+                indexList.add(immutableEntry(school.getSchoolId(), objectMapper.writeValueAsString(school)));
             } catch (JsonProcessingException e) {
                 log.error("Unable to serialize the school object into json.", e);
             }
@@ -138,8 +138,8 @@ class SchoolIndexer {
                             "true".equals(schoolArray[fieldNameMapping.get(Constants.SCHOOL_CLOSED_FIELDNAME)]),
                             source);
 
-                    if (null == schoolToSave.getPostcode() || schoolToSave.getPostcode().isEmpty()) {
-                        log.warn("School with missing postcode! URN: {}", schoolToSave.getUrn());
+                    if (null == schoolToSave.getPostalCode() || schoolToSave.getPostalCode().isEmpty()) {
+                        log.warn("School with missing postcode! School ID: {}", schoolToSave.getSchoolId());
                     }
 
                     schools.add(schoolToSave);
