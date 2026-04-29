@@ -20,9 +20,17 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
  * 
  */
 public class School {
+    // Old fieldnames, to be removed
     private String urn;
     private String name;
     private String postcode;
+
+    private String schoolId;
+    private String countryCode;
+    private String schoolName;
+    private String town;
+    private String postalCode;
+    private Boolean excluded;
     private Boolean closed;
 
     /**
@@ -67,6 +75,39 @@ public class School {
         this.dataSource = dataSource;
         this.closed = closed;
     }
+
+    /**
+     * Full constructor.
+     *
+     * @param schoolId
+     *            - unique school ID
+     * @param countryCode
+     *            - country code for the school
+     * @param schoolName
+     *            - name of the school
+     * @param town
+     *            - name of the town where the school is located
+     * @param postalCode
+     *            - postal code of the school
+     * @param excluded
+     *            - whether the school is excluded when searching for schools by name
+     * @param closed
+     *            - whether the school is closed
+     * @param dataSource
+     *            - data source of this information
+     */
+    public School(final String schoolId, final String countryCode, final String schoolName, final String town,
+                  final String postalCode, final Boolean excluded, final Boolean closed, final SchoolDataSource dataSource) {
+        this.schoolId = schoolId;
+        this.countryCode = countryCode;
+        this.schoolName = schoolName;
+        this.town = town;
+        this.postalCode = postalCode;
+        this.excluded = excluded;
+        this.closed = closed;
+        this.dataSource = dataSource;
+    }
+
 
     /**
      * Gets the urn.
@@ -127,11 +168,126 @@ public class School {
 
 
     /**
+     * Gets the school id.
+     *
+     * @return the school id
+     */
+    public String getSchoolId() {
+        return schoolId;
+    }
+
+    /**
+     * Sets the school id.
+     *
+     * @param schoolId
+     *            the school id to set
+     */
+    public void setSchoolId(final String schoolId) {
+        this.schoolId = schoolId;
+    }
+
+
+    /**
+     * Gets the country code.
+     *
+     * @return the country code
+     */
+    public String getCountryCode() {
+        return countryCode;
+    }
+
+    /**
+     * Sets the country code.
+     *
+     * @param countryCode
+     *            the country code to set
+     */
+    public void setCountryCode(final String countryCode) {
+        this.countryCode = countryCode;
+    }
+
+    /**
+     * Gets the school name.
+     *
+     * @return the school name
+     */
+    public String getSchoolName() {
+        return schoolName;
+    }
+
+    /**
+     * Sets the school name.
+     *
+     * @param schoolName
+     *            the school name to set
+     */
+    public void setSchoolName(final String schoolName) {
+        this.schoolName = schoolName;
+    }
+
+    /**
+     * Gets the town.
+     *
+     * @return the town
+     */
+    public String getTown() {
+        return town;
+    }
+
+    /**
+     * Sets the town.
+     *
+     * @param town
+     *            the town to set
+     */
+    public void setTown(final String town) {
+        this.town = town;
+    }
+
+    /**
+     * Gets the postal code.
+     *
+     * @return the postal code
+     */
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    /**
+     * Sets the postal code.
+     *
+     * @param postalCode
+     *            the postal code to set
+     */
+    public void setPostalCode(final String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    /**
+     * Gets the excluded status.
+     *
+     * @return whether the school is excluded when searching for schools by name
+     */
+    public Boolean getExcluded() {
+        return excluded;
+    }
+
+    /**
+     * Sets the excluded status.
+     *
+     * @param excluded
+     *            whether the school should be excluded when searching for schools by name
+     */
+    public void setExcluded(final Boolean excluded) {
+        this.excluded = excluded;
+    }
+
+    /**
      * Gets the closed status.
      *
      * @return whether the school is closed
      */
-    public Boolean isClosed() {
+    public Boolean getClosed() {
         return closed;
     }
 
@@ -146,19 +302,19 @@ public class School {
     }
 
     /**
-     * Gets the verifiedSchool.
+     * Gets the data source for the school information.
      * 
-     * @return the verifiedSchool
+     * @return the data source
      */
     public SchoolDataSource getDataSource() {
         return dataSource;
     }
 
     /**
-     * Sets the dataSource.
+     * Sets the data source for the school information.
      * 
      * @param dataSource
-     *            the dataSource to set
+     *            the data source to set
      */
     public void setDataSource(final SchoolDataSource dataSource) {
         this.dataSource = dataSource;
