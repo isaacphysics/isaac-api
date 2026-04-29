@@ -77,38 +77,6 @@ public interface ISearchProvider {
             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
     ) throws SegueSearchException;
 
-    /**
-     * Executes a fuzzy search on an array of fields and will consider the fieldsThatMustMatchMap.
-     * 
-     * This method should prioritise exact prefix matches and then fill it with fuzzy ones.
-     * 
-     * @param indexBase
-     *            - the base string for the name of the index
-     * @param indexType
-     *            - the name of the type of document being searched for
-     * @param searchString
-     *            - the string to use for fuzzy matching
-     * @param startIndex
-     *            - e.g. 0 for the first set of results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
-     * @param fieldsThatMustMatch
-     *            - Map of Must match field -> value
-     * @param filterInstructions
-     *            - post search filter instructions e.g. remove content of a certain type.
-     * @param fields
-     *            - array (var args) of fields to search using the searchString
-     * @return results
-     * @deprecated in favour of {@code BooleanInstruction}-based searches.
-     */
-    @Deprecated
-    ResultsWrapper<String> fuzzySearch(
-            final String indexBase, final String indexType, final String searchString,
-            final Integer startIndex, final Integer limit, final Map<String, List<String>> fieldsThatMustMatch,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
-            final String... fields
-    ) throws SegueSearchException;
-
     ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
             @NotNull final BooleanInstruction matchInstruction, @Nullable Long randomSeed,
