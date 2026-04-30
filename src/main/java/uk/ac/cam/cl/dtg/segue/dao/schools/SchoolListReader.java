@@ -147,8 +147,7 @@ public class SchoolListReader {
         List<String> matchingSchoolList;
         
         matchingSchoolList = searchProvider.findByExactMatch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                SCHOOL_ID_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                schoolId, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
+                SCHOOL_ID_FIELDNAME, schoolId, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;
