@@ -76,7 +76,7 @@ public class SchoolListReader {
     }
 
     /**
-     * findSchoolByNameOrPostCode.
+     * findSchoolByNameOrPostCode. Excludes schools marked as closed or excluded.
      *
      * @param searchQuery
      *            - school to search for - either name or postcode.
@@ -94,16 +94,14 @@ public class SchoolListReader {
 
         Integer queryLimit = limit == null ? DEFAULT_RESULTS_LIMIT : limit;
 
-        MatchInstruction excludeClosedSchools = new MatchInstruction(SCHOOL_CLOSED_FIELDNAME, "false", null, false);
-        MatchInstruction matchSchoolId = new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, null, true);
-        MatchInstruction matchSchoolName = new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, null, true);
-        MatchInstruction matchPostcode = new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, null, true);
-
         BooleanInstruction matchInstruction = new BooleanInstruction();
-        matchInstruction.must(excludeClosedSchools);
-        matchInstruction.should(matchSchoolId);
-        matchInstruction.should(matchSchoolName);
-        matchInstruction.should(matchPostcode);
+        // Exclude excluded/closed schools
+        matchInstruction.must(new MatchInstruction(SCHOOL_EXCLUDED_FIELDNAME, "false", null, false));
+        matchInstruction.must(new MatchInstruction(SCHOOL_CLOSED_FIELDNAME, "false", null, false));
+        // Attempt to match on school ID, name & postcode
+        matchInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, null, true));
+        matchInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, null, true));
+        matchInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, null, true));
 
         List<String> schoolSearchResults = searchProvider.nestedMatchSearch(SCHOOLS_INDEX_BASE,
                 SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, queryLimit, matchInstruction, null, null).getResults();
