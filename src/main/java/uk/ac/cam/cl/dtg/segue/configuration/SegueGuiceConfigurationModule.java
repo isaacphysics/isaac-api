@@ -144,8 +144,6 @@ import uk.ac.cam.cl.dtg.util.YamlLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.EventBookingMapper;
@@ -421,8 +419,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
      */
     private void configureApplicationManagers() {
         bind(ILocationHistory.class).to(PgLocationHistory.class);
-
-        bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
 
         bind(IUserDataManager.class).to(PgUsers.class);
 
