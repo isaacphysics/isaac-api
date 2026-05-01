@@ -63,15 +63,17 @@ public class BookmarksManager {
      */
     public List<ContentSummaryDTO> augmentContentSummaryListWithBookmarkInformation(final List<BookmarkDO> bookmarks,
                                                                                     final List<ContentSummaryDTO> contentSummaries) {
-        Map<String, Date> bookmarkMap = new HashMap<>();
-        for (BookmarkDO bookmark : bookmarks) {
-            bookmarkMap.put(bookmark.contentId(), bookmark.created());
-        }
+        if (!bookmarks.isEmpty()) {
+            Map<String, Date> bookmarkMap = new HashMap<>();
+            for (BookmarkDO bookmark : bookmarks) {
+                bookmarkMap.put(bookmark.contentId(), bookmark.created());
+            }
 
-        for (ContentSummaryDTO contentSummary : contentSummaries) {
-            Date created = bookmarkMap.get(contentSummary.getId());
-            if (created != null) {
-                contentSummary.setBookmarked(created);
+            for (ContentSummaryDTO contentSummary : contentSummaries) {
+                Date created = bookmarkMap.get(contentSummary.getId());
+                if (created != null) {
+                    contentSummary.setBookmarked(created);
+                }
             }
         }
         return contentSummaries;
