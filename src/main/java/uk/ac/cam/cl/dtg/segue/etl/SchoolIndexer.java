@@ -65,7 +65,7 @@ class SchoolIndexer {
 
         for (School school : schoolList) {
             try {
-                indexList.add(immutableEntry(school.getUrn(), objectMapper.writeValueAsString(school)));
+                indexList.add(immutableEntry(school.getSchoolId(), objectMapper.writeValueAsString(school)));
             } catch (JsonProcessingException e) {
                 log.error("Unable to serialize the school object into json.", e);
             }
@@ -121,22 +121,25 @@ class SchoolIndexer {
             }
 
             // We expect the columns to have the following names/structure and be UTF-8 encoded:
-            // URN | EstablishmentName | Postcode | Closed | DataSource
+            // schoolId | countryCode | schoolName | town | postalCode | excluded | closed | dataSource
             String[] schoolArray;
             while ((schoolArray = reader.readNext()) != null) {
                 try {
                     School.SchoolDataSource source = School.SchoolDataSource
                             .valueOf(schoolArray[fieldNameMapping.get(Constants.SCHOOL_DATA_SOURCE_FIELDNAME)]);
 
-                    School schoolToSave = new School(schoolArray[fieldNameMapping.get(Constants.SCHOOL_URN_FIELDNAME)],
-                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_ESTABLISHMENT_NAME_FIELDNAME)],
+                    School schoolToSave = new School(schoolArray[fieldNameMapping.get(Constants.SCHOOL_ID_FIELDNAME)],
+                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_COUNTRY_CODE_FIELDNAME)],
+                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_NAME_FIELDNAME)],
+                            schoolArray[fieldNameMapping.get(Constants.SCHOOL_TOWN_FIELDNAME)],
                             schoolArray[fieldNameMapping.get(Constants.SCHOOL_POSTCODE_FIELDNAME)],
-                            // CSV file contains string "t" and "f" values to denote true and false, but need a boolean:
-                            "t".equals(schoolArray[fieldNameMapping.get(Constants.SCHOOL_CLOSED_FIELDNAME)]),
+                            // CSV file contains string "true" and "false" values to denote true and false, but need a boolean:
+                            "true".equals(schoolArray[fieldNameMapping.get(Constants.SCHOOL_EXCLUDED_FIELDNAME)]),
+                            "true".equals(schoolArray[fieldNameMapping.get(Constants.SCHOOL_CLOSED_FIELDNAME)]),
                             source);
 
-                    if (null == schoolToSave.getPostcode() || schoolToSave.getPostcode().isEmpty()) {
-                        log.warn("School with missing postcode! URN: {}", schoolToSave.getUrn());
+                    if (null == schoolToSave.getPostalCode() || schoolToSave.getPostalCode().isEmpty()) {
+                        log.warn("School with missing postcode! School ID: {}", schoolToSave.getSchoolId());
                     }
 
                     schools.add(schoolToSave);

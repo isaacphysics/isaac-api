@@ -25,13 +25,14 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -75,17 +76,20 @@ public class SchoolListReader {
     }
 
     /**
-     * findSchoolByNameOrPostCode.
+     * Search for schools by ID, name or postcode. Filterable by country. Excludes schools marked as closed or excluded.
      *
      * @param searchQuery
-     *            - school to search for - either name or postcode.
+     *            - school to search for - either ID, name or postcode.
+     * @param countryCode
+     *            - country code to filter by.
      * @param limit
      *            - the number of results to return.
      * @return list of schools matching the criteria or an empty list.
      * @throws UnableToIndexSchoolsException
      *             - if there is an error access the index of schools.
      */
-    public List<School> findSchoolByNameOrPostCode(final String searchQuery, @Nullable final Integer limit) throws UnableToIndexSchoolsException, SegueSearchException {
+    public List<School> findSchoolByNameOrPostCode(final String searchQuery, @Nullable final String countryCode,
+                                                   @Nullable final Integer limit) throws UnableToIndexSchoolsException, SegueSearchException {
         if (!this.ensureSchoolList()) {
             log.error("Unable to ensure school search cache.");
             throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
@@ -93,10 +97,22 @@ public class SchoolListReader {
 
         Integer queryLimit = limit == null ? DEFAULT_RESULTS_LIMIT : limit;
 
-        List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                searchQuery, 0, queryLimit, Map.of(SCHOOL_CLOSED_FIELDNAME_POJO, List.of("false")), null, SCHOOL_URN_FIELDNAME_POJO,
-                SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
-                .getResults();
+        BooleanInstruction matchInstruction = new BooleanInstruction();
+        // Exclude excluded/closed schools
+        matchInstruction.must(new MatchInstruction(SCHOOL_EXCLUDED_FIELDNAME, "false", null, false));
+        matchInstruction.must(new MatchInstruction(SCHOOL_CLOSED_FIELDNAME, "false", null, false));
+        // Compulsorily match country code, if provided. Needs to be a raw field since GB- country codes contain hyphens.
+        if (null != countryCode && !countryCode.isEmpty()) {
+            matchInstruction.must(new MatchInstruction(SCHOOL_COUNTRY_CODE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                    countryCode, null, false));
+        }
+        // Attempt to match on school ID, name & postcode
+        matchInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, null, true));
+        matchInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, null, true));
+        matchInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, null, true));
+
+        List<String> schoolSearchResults = searchProvider.nestedMatchSearch(SCHOOLS_INDEX_BASE,
+                SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, queryLimit, matchInstruction, null, null).getResults();
 
         List<School> resultList = Lists.newArrayList();
         for (String schoolString : schoolSearchResults) {
@@ -114,7 +130,7 @@ public class SchoolListReader {
     /**
      * Find school by Id.
      * 
-     * @param schoolURN
+     * @param schoolId
      *            - to search for.
      * @return school.
      * @throws UnableToIndexSchoolsException
@@ -126,7 +142,7 @@ public class SchoolListReader {
      * @throws JsonParseException
      *             - if the school data is malformed
      */
-    public School findSchoolById(final String schoolURN) throws UnableToIndexSchoolsException, JsonParseException,
+    public School findSchoolById(final String schoolId) throws UnableToIndexSchoolsException, JsonParseException,
             JsonMappingException, IOException, SegueSearchException {
 
         if (!this.ensureSchoolList()) {
@@ -137,15 +153,14 @@ public class SchoolListReader {
         List<String> matchingSchoolList;
         
         matchingSchoolList = searchProvider.findByExactMatch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                SCHOOL_URN_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                schoolURN, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
+                SCHOOL_ID_FIELDNAME, schoolId, 0, DEFAULT_RESULTS_LIMIT, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;
         }
         
         if (matchingSchoolList.size() > 1) {
-            log.error("Error while looking up school up by id! More than one match for '{}' results: {}", schoolURN, matchingSchoolList);
+            log.error("Error while looking up school up by id! More than one match for '{}' results: {}", schoolId, matchingSchoolList);
         }
 
         return mapper.readValue(matchingSchoolList.getFirst(), School.class);

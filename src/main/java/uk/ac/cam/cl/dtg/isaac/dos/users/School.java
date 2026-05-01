@@ -20,16 +20,19 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
  * 
  */
 public class School {
-    private String urn;
-    private String name;
-    private String postcode;
+    private String schoolId;
+    private String countryCode;
+    private String schoolName;
+    private String town;
+    private String postalCode;
+    private Boolean excluded;
     private Boolean closed;
 
     /**
      * Enum to represent where this school object was created.
      */
     public enum SchoolDataSource {
-        GOVERNMENT_UK, GOVERNMENT_IE, GOVERNMENT_SCO, GOVERNMENT_WAL, GOVERNMENT_NI, USER_ENTERED;
+        GOVERNMENT_UK, GOVERNMENT_IE, GOVERNMENT_SCT, GOVERNMENT_SCT_IND, GOVERNMENT_WLS, GOVERNMENT_NIR, USER_ENTERED;
 
         @Override
         public String toString() {
@@ -48,90 +51,156 @@ public class School {
 
     /**
      * Full constructor.
-     * 
-     * @param urn
-     *            - unique id
-     * @param name
-     *            - name of the school.
-     * @param postcode
-     *            -postcode of the school
-     * @param dataSource
-     *            -dataSource of this information
+     *
+     * @param schoolId
+     *            - unique school ID
+     * @param countryCode
+     *            - country code for the school
+     * @param schoolName
+     *            - name of the school
+     * @param town
+     *            - name of the town where the school is located
+     * @param postalCode
+     *            - postal code of the school
+     * @param excluded
+     *            - whether the school is excluded when searching for schools by name
      * @param closed
      *            - whether the school is closed
+     * @param dataSource
+     *            - data source of this information
      */
-    public School(final String urn, final String name, final String postcode, final Boolean closed, final SchoolDataSource dataSource) {
-        this.urn = urn;
-        this.name = name;
-        this.postcode = postcode;
-        this.dataSource = dataSource;
+    public School(final String schoolId, final String countryCode, final String schoolName, final String town,
+                  final String postalCode, final Boolean excluded, final Boolean closed, final SchoolDataSource dataSource) {
+        this.schoolId = schoolId;
+        this.countryCode = countryCode;
+        this.schoolName = schoolName;
+        this.town = town;
+        this.postalCode = postalCode;
+        this.excluded = excluded;
         this.closed = closed;
+        this.dataSource = dataSource;
     }
 
     /**
-     * Gets the urn.
-     * 
-     * @return the urn
+     * Gets the school ID.
+     *
+     * @return the school ID
      */
-    public String getUrn() {
-        return urn;
+    public String getSchoolId() {
+        return schoolId;
     }
 
     /**
-     * Sets the urn.
-     * 
-     * @param urn
-     *            the urn to set
+     * Sets the school ID.
+     *
+     * @param schoolId
+     *            the school ID to set
      */
-    public void setUrn(final String urn) {
-        this.urn = urn;
+    public void setSchoolId(final String schoolId) {
+        this.schoolId = schoolId;
     }
 
     /**
-     * Gets the name.
-     * 
-     * @return the name
+     * Gets the country code.
+     *
+     * @return the country code
      */
-    public String getName() {
-        return name;
+    public String getCountryCode() {
+        return countryCode;
     }
 
     /**
-     * Sets the name.
-     * 
-     * @param name
-     *            the name to set
+     * Sets the country code.
+     *
+     * @param countryCode
+     *            the country code to set
      */
-    public void setName(final String name) {
-        this.name = name;
+    public void setCountryCode(final String countryCode) {
+        this.countryCode = countryCode;
     }
 
     /**
-     * Gets the postcode.
-     * 
-     * @return the postcode
+     * Gets the school name.
+     *
+     * @return the school name
      */
-    public String getPostcode() {
-        return postcode;
+    public String getSchoolName() {
+        return schoolName;
     }
 
     /**
-     * Sets the postcode.
-     * 
-     * @param postcode
-     *            the postcode to set
+     * Sets the school name.
+     *
+     * @param schoolName
+     *            the school name to set
      */
-    public void setPostcode(final String postcode) {
-        this.postcode = postcode;
+    public void setSchoolName(final String schoolName) {
+        this.schoolName = schoolName;
     }
 
+    /**
+     * Gets the town.
+     *
+     * @return the town
+     */
+    public String getTown() {
+        return town;
+    }
+
+    /**
+     * Sets the town.
+     *
+     * @param town
+     *            the town to set
+     */
+    public void setTown(final String town) {
+        this.town = town;
+    }
+
+    /**
+     * Gets the postal code.
+     *
+     * @return the postal code
+     */
+    public String getPostalCode() {
+        return postalCode;
+    }
+
+    /**
+     * Sets the postal code.
+     *
+     * @param postalCode
+     *            the postal code to set
+     */
+    public void setPostalCode(final String postalCode) {
+        this.postalCode = postalCode;
+    }
+
+    /**
+     * Gets the excluded status.
+     *
+     * @return whether the school is excluded when searching for schools by name
+     */
+    public Boolean getExcluded() {
+        return excluded;
+    }
+
+    /**
+     * Sets the excluded status.
+     *
+     * @param excluded
+     *            whether the school should be excluded when searching for schools by name
+     */
+    public void setExcluded(final Boolean excluded) {
+        this.excluded = excluded;
+    }
 
     /**
      * Gets the closed status.
      *
      * @return whether the school is closed
      */
-    public Boolean isClosed() {
+    public Boolean getClosed() {
         return closed;
     }
 
@@ -146,19 +215,19 @@ public class School {
     }
 
     /**
-     * Gets the verifiedSchool.
+     * Gets the data source for the school information.
      * 
-     * @return the verifiedSchool
+     * @return the data source
      */
     public SchoolDataSource getDataSource() {
         return dataSource;
     }
 
     /**
-     * Sets the dataSource.
+     * Sets the data source for the school information.
      * 
      * @param dataSource
-     *            the dataSource to set
+     *            the data source to set
      */
     public void setDataSource(final SchoolDataSource dataSource) {
         this.dataSource = dataSource;
@@ -168,7 +237,7 @@ public class School {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((urn == null) ? 0 : urn.hashCode());
+        result = prime * result + ((schoolId == null) ? 0 : schoolId.hashCode());
         return result;
     }
 
@@ -184,11 +253,11 @@ public class School {
             return false;
         }
         School other = (School) obj;
-        if (urn == null) {
-            if (other.urn != null) {
+        if (schoolId == null) {
+            if (other.schoolId != null) {
                 return false;
             }
-        } else if (!urn.equals(other.urn)) {
+        } else if (!schoolId.equals(other.schoolId)) {
             return false;
         }
         return true;
@@ -196,6 +265,6 @@ public class School {
 
     @Override
     public String toString() {
-        return "School [urn=" + urn + ", name=" + name + ", postcode=" + postcode + "]";
+        return "School [id=" + schoolId + ", name=" + schoolName + ", postcode=" + postalCode + "]";
     }
 }

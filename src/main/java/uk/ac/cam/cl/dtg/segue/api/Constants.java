@@ -509,18 +509,15 @@ public final class Constants {
     public static final String ID_SEPARATOR = "|";
     public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
 
-    // School List loading - raw data
-    public static final String SCHOOL_URN_FIELDNAME = "URN";
-    public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
-    public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
-    public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "DataSource";
-    public static final String SCHOOL_CLOSED_FIELDNAME = "Closed";
-
-    // School List loading POJO fields
-    public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
-    public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
-    public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
-    public static final String SCHOOL_CLOSED_FIELDNAME_POJO = "closed";
+    // School List loading
+    public static final String SCHOOL_ID_FIELDNAME = "schoolId";
+    public static final String SCHOOL_COUNTRY_CODE_FIELDNAME = "countryCode";
+    public static final String SCHOOL_NAME_FIELDNAME = "schoolName";
+    public static final String SCHOOL_TOWN_FIELDNAME = "town";
+    public static final String SCHOOL_POSTCODE_FIELDNAME = "postalCode";
+    public static final String SCHOOL_EXCLUDED_FIELDNAME = "excluded";
+    public static final String SCHOOL_CLOSED_FIELDNAME = "closed";
+    public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "dataSource";
 
     // User School Reporting
 
