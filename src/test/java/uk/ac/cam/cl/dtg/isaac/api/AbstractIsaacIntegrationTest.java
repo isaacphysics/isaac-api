@@ -16,6 +16,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.BookmarksManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventBookingManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.EventsManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.FastTrackManger;
@@ -32,10 +33,12 @@ import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dao.EventBookingPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
@@ -146,6 +149,7 @@ public class AbstractIsaacIntegrationTest {
     protected static PgPasswordDataManager passwordDataManager;
     protected static UserAttemptManager userAttemptManager;
     protected static FastTrackManger fastTrackManger;
+    protected static BookmarksManager bookmarksManager;
 
     // Manager dependencies
     protected static IQuizAssignmentPersistenceManager quizAssignmentPersistenceManager;
@@ -156,6 +160,7 @@ public class AbstractIsaacIntegrationTest {
     protected static QuizQuestionManager quizQuestionManager;
     protected static PgUsers pgUsers;
     protected static ContentSubclassMapper contentMapper;
+    protected static IBookmarks bookmarksDbManager;
 
     // Services
     protected static AssignmentService assignmentService;
@@ -311,6 +316,8 @@ public class AbstractIsaacIntegrationTest {
         quizQuestionManager = new QuizQuestionManager(questionManager, mainMapper, quizQuestionAttemptPersistenceManager, quizManager, quizAttemptManager);
         userAttemptManager = new UserAttemptManager(questionManager);
         fastTrackManger = new FastTrackManger(properties, contentManager, gameManager);
+        bookmarksDbManager = new PgBookmarks(postgresSqlDb);
+        bookmarksManager = new BookmarksManager(bookmarksDbManager, contentManager, mainMapper);
 
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.2 (Debian 16.2-1.pgdg120+2)
--- Dumped by pg_dump version 16.2 (Debian 16.2-1.pgdg120+2)
+-- Dumped from database version 18.3
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -49,7 +49,6 @@ CREATE TABLE public.archived_users (
 
 
 ALTER TABLE public.archived_users OWNER TO rutherford;
-
 
 --
 -- Name: assignments; Type: TABLE; Schema: public; Owner: rutherford
@@ -501,7 +500,6 @@ CREATE TABLE public.scheduled_emails (
 
 ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
-
 --
 -- Name: temporary_user_store; Type: TABLE; Schema: public; Owner: rutherford
 --
@@ -586,6 +584,20 @@ CREATE TABLE public.user_associations_tokens (
 
 
 ALTER TABLE public.user_associations_tokens OWNER TO rutherford;
+
+--
+-- Name: user_bookmarks; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.user_bookmarks (
+    user_id integer NOT NULL,
+    content_id text NOT NULL,
+    content_type text NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.user_bookmarks OWNER TO rutherford;
 
 --
 -- Name: user_credentials; Type: TABLE; Schema: public; Owner: rutherford
@@ -1046,6 +1058,14 @@ ALTER TABLE ONLY public.user_associations
 
 
 --
+-- Name: user_bookmarks user_bookmarks_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_bookmarks
+    ADD CONSTRAINT user_bookmarks_pk PRIMARY KEY (user_id, content_id);
+
+
+--
 -- Name: user_gameboards user_gameboard_composite_key; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1433,6 +1453,14 @@ ALTER TABLE ONLY public.quiz_question_attempts
 
 ALTER TABLE ONLY public.user_associations_tokens
     ADD CONSTRAINT token_owner_user_id FOREIGN KEY (owner_user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_bookmarks user_bookmarks_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_bookmarks
+    ADD CONSTRAINT user_bookmarks_user_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --

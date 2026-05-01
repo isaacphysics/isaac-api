@@ -43,7 +43,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     public void setUp() {
         this.pagesFacade = new PagesFacade(new ContentService(contentManager), properties, logManager,
                 mainMapper, contentManager, userAccountManager, new URIManager(properties), questionManager,
-                gameManager, userAttemptManager);
+                gameManager, userAttemptManager, bookmarksManager);
     }
 
     @Test
