@@ -84,7 +84,8 @@ public class SchoolLookupServiceFacade {
     @GZIP
     @Operation(summary = "List all schools matching provided criteria.")
     public Response schoolSearch(@Context final Request request, @QueryParam("query") final String searchQuery,
-            @QueryParam("schoolId") final String schoolId, @QueryParam("limit") final Integer limit) {
+            @QueryParam("countryCode") final String countryCode, @QueryParam("schoolId") final String schoolId,
+            @QueryParam("limit") final Integer limit) {
 
         if ((null == searchQuery || searchQuery.isEmpty()) && (null == schoolId || schoolId.isEmpty())) {
             return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query or school ID")
@@ -112,7 +113,7 @@ public class SchoolLookupServiceFacade {
             if (schoolId != null && !schoolId.isEmpty()) {
                 list = Collections.singletonList(schoolListReader.findSchoolById(schoolId));
             } else {
-                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery, limit);
+                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery, countryCode, limit);
             }
             
         } catch (UnableToIndexSchoolsException | SegueSearchException | IOException e) {
