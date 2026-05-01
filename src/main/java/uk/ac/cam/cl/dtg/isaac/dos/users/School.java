@@ -265,6 +265,6 @@ public class School {
 
     @Override
     public String toString() {
-        return "School [urn=" + schoolId + ", name=" + schoolName + ", postcode=" + postalCode + "]";
+        return "School [id=" + schoolId + ", name=" + schoolName + ", postcode=" + postalCode + "]";
     }
 }
