@@ -76,10 +76,12 @@ public class SchoolListReader {
     }
 
     /**
-     * findSchoolByNameOrPostCode. Excludes schools marked as closed or excluded.
+     * Search for schools by ID, name or postcode. Filterable by country. Excludes schools marked as closed or excluded.
      *
      * @param searchQuery
-     *            - school to search for - either name or postcode.
+     *            - school to search for - either ID, name or postcode.
+     * @param countryCode
+     *            - country code to filter by.
      * @param limit
      *            - the number of results to return.
      * @return list of schools matching the criteria or an empty list.
