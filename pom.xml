@@ -15,23 +15,23 @@
         <resteasy.version>6.2.14.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
         <oauth-client.version>1.39.0</oauth-client.version>
-        <jackson.version>2.21.2</jackson.version>
-        <jackson-databind.version>2.21.2</jackson-databind.version>  <!-- separate in case updated separately -->
+        <jackson.version>2.21.3</jackson.version>
+        <jackson-databind.version>2.21.3</jackson-databind.version>  <!-- separate in case updated separately -->
         <jackson-annotations.version>2.21</jackson-annotations.version>  <!-- now not release with patch versions -->
         <mockito.version>5.23.0</mockito.version>
-        <junit-5.version>5.14.1</junit-5.version>
+        <junit-5.version>6.0.3</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
         <prometheus.version>0.16.0</prometheus.version>
         <jetty-version>12.1.8</jetty-version>
         <jetty.port.api>8080</jetty.port.api>
         <jetty.port.etl>8090</jetty.port.etl>
-        <testcontainers.version>2.0.4</testcontainers.version>
+        <testcontainers.version>2.0.5</testcontainers.version>
         <web.xml>web-api-live.xml</web.xml>
         <web.xml.etl>web-etl.xml</web.xml.etl>
         <web.xml.local>web-api-local.xml</web.xml.local>
-        <dependency-check.version>12.1.8</dependency-check.version>
+        <dependency-check.version>12.2.1</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
-        <swagger-core.version>2.2.48</swagger-core.version>
+        <swagger-core.version>2.2.49</swagger-core.version>
         <jgit.version>6.10.1.202505221210-r</jgit.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <surefire.jacoco.args />
@@ -78,13 +78,13 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-core-http-jdk-httpclient</artifactId>
-            <version>1.1.3</version>
+            <version>1.1.4</version>
         </dependency>
 
         <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
-            <version>3.30.2-GA</version>
+            <version>3.31.0-GA</version>
         </dependency>
 
         <dependency>
@@ -158,7 +158,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.5.0-jre</version>
+            <version>33.6.0-jre</version>
         </dependency>
 
         <dependency>
@@ -234,12 +234,12 @@
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
-            <version>4.5.1</version>
+            <version>4.5.2</version>
         </dependency>
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>jwks-rsa</artifactId>
-            <version>0.23.0</version>
+            <version>0.23.1</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -333,7 +333,7 @@
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.21.0</version>
+            <version>2.22.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -390,7 +390,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.10</version>
+            <version>42.7.11</version>
         </dependency>
 
         <dependency>
@@ -402,7 +402,7 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.14.1</version>
+            <version>2.14.2</version>
         </dependency>
 
         <dependency>
