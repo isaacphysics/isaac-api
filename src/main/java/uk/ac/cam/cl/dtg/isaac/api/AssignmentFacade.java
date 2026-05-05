@@ -527,6 +527,10 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                     assignmentId, timestampFormat.format(Date.from(Instant.now(clock))), currentlyLoggedInUser.getGivenName(),
                     currentlyLoggedInUser.getFamilyName()));
 
+            if (null != toDate) {
+                headerBuilder.append(String.format("Assignment status as at %s\n\n", timestampFormat.format(toDate)));
+            }
+
             List<String> headerRow = Lists.newArrayList(Arrays.asList("", ""));
             if (includeUserIDs) {
                 headerRow.add("");
