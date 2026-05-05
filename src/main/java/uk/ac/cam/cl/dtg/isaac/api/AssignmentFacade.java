@@ -459,6 +459,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * @param formatMode
      *            - whether to format the file in a special way. Currently only "excel" is supported,
      *            to include a UTF-8 BOM to allow Unicode student names to show correctly in Microsoft Excel.
+     * @param toDate
+     *          - if specified, only question attempts before this date will be included in the results.
      * @param request
      *            - so that we can identify the current user.
      * @return the assignment object.
@@ -471,7 +473,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Operation(summary = "Download the progress of a specific assignment.")
     public Response getAssignmentProgressDownloadCSV(@Context final HttpServletRequest request,
                                                      @PathParam("assignment_id") final Long assignmentId,
-                                                     @QueryParam("format") final String formatMode) {
+                                                     @QueryParam("format") final String formatMode,
+                                                     @QueryParam("to_date") final Long toDate) {
 
         try {
             RegisteredUserDTO currentlyLoggedInUser = userManager.getCurrentRegisteredUser(request);
@@ -499,7 +502,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 questionPageIds.add(questionPage.getId());
             }
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
-            questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds);
+            questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds, new Date(toDate));
 
             Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                     questionAttemptsForAllUsersOfInterest = new HashMap<>();
@@ -666,6 +669,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
      * @param formatMode
      *            - whether to format the file in a special way. Currently only "excel" is supported,
      *            to include a UTF-8 BOM to allow Unicode student names to show correctly in Microsoft Excel.
+     * @param toDate
+     *            - if specified, only question attempts before this date will be included in the results.
      * @param request
      *            - so that we can identify the current user.
      * @return the assignment object.
@@ -678,7 +683,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
     @Operation(summary = "Download the progress of a group on all assignments set.")
     public Response getGroupAssignmentsProgressDownloadCSV(@Context final HttpServletRequest request,
                                                            @PathParam("group_id") final Long groupId,
-                                                           @QueryParam("format") final String formatMode) {
+                                                           @QueryParam("format") final String formatMode,
+                                                           @QueryParam("to_date") final Long toDate) {
 
         try {
             // Fetch the currently logged in user
@@ -723,7 +729,7 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
             try {
-                questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds);
+                questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds, new Date(toDate));
             } catch (IllegalArgumentException e) {
                 questionAttempts = new HashMap<>();
             }
