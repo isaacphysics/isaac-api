@@ -502,7 +502,12 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 questionPageIds.add(questionPage.getId());
             }
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
-            questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds, new Date(toDate));
+
+            if (null != toDate) {
+                questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds, new Date(toDate));
+            } else {
+                questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds);
+            }
 
             Map<RegisteredUserDTO, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
                     questionAttemptsForAllUsersOfInterest = new HashMap<>();
