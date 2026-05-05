@@ -738,7 +738,11 @@ public class AssignmentFacade extends AbstractIsaacFacade {
             List<String> questionPageIds = gameboardItems.stream().map(GameboardItem::getId).collect(Collectors.toList());
             Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> questionAttempts;
             try {
-                questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds, new Date(toDate));
+                if (null != toDate) {
+                    questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds, new Date(toDate));
+                } else {
+                    questionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(groupMembers, questionPageIds);
+                }
             } catch (IllegalArgumentException e) {
                 questionAttempts = new HashMap<>();
             }
