@@ -29,15 +29,13 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.resetToNice;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
 
 public class QuizAssignmentManagerTest extends AbstractManagerTest {
@@ -51,15 +49,13 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
     @BeforeEach
     public void setUp() throws ContentManagerException, SegueDatabaseException {
-        AbstractConfigLoader properties = createMock(AbstractConfigLoader.class);
-        emailService = createMock(EmailService.class);
-        quizAssignmentPersistenceManager = createMock(IQuizAssignmentPersistenceManager.class);
+        AbstractConfigLoader properties = mock(AbstractConfigLoader.class);
+        emailService = mock(EmailService.class);
+        quizAssignmentPersistenceManager = mock(IQuizAssignmentPersistenceManager.class);
 
         quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, emailService, quizManager, groupManager, properties);
 
-        expect(properties.getProperty(HOST_NAME)).andStubReturn("example.com.invalid");
-
-        replay(properties, emailService, quizAssignmentPersistenceManager);
+        when(properties.getProperty(HOST_NAME)).thenReturn("example.com.invalid");
     }
 
     @BeforeEach
@@ -76,11 +72,12 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
         Long returnedId = 0xF00L;
 
         withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByQuizIdAndGroup(
-                studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.emptyList());
-            expect(m.saveAssignment(newAssignment)).andReturn(returnedId);
+            when(m.getAssignmentsByQuizIdAndGroup(studentQuiz.getId(), studentGroup.getId()))
+                    .thenReturn(Collections.emptyList());
+            when(m.saveAssignment(newAssignment)).thenReturn(returnedId);
         });
-        withMock(emailService, m -> m.sendAssignmentEmailToGroup(eq(newAssignment), eq(studentQuiz), anyObject(), eq("email-template-group-quiz-assignment")));
+        withMock(emailService, m -> m.sendAssignmentEmailToGroup(eq(newAssignment), eq(studentQuiz), any(),
+                eq("email-template-group-quiz-assignment")));
 
         QuizAssignmentDTO createdAssignment = quizAssignmentManager.createAssignment(newAssignment);
 
@@ -92,11 +89,10 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     public void createAnotherAssignmentAfterFirstIsDueSucceeds() throws SegueDatabaseException, ContentManagerException {
 
         withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByQuizIdAndGroup(
-                studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(overdueAssignment));
-            expect(m.saveAssignment(newAssignment)).andReturn(0L);
+            when(m.getAssignmentsByQuizIdAndGroup(studentQuiz.getId(), studentGroup.getId()))
+                    .thenReturn(Collections.singletonList(overdueAssignment));
+            when(m.saveAssignment(newAssignment)).thenReturn(0L);
         });
-        resetToNice(emailService);
 
         quizAssignmentManager.createAssignment(newAssignment);
     }
@@ -113,8 +109,8 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     public void createDuplicateAssignmentFails() {
         assertThrows(DuplicateAssignmentException.class, () -> {
             withMock(quizAssignmentPersistenceManager, m -> {
-                expect(m.getAssignmentsByQuizIdAndGroup(
-                        studentQuiz.getId(), studentGroup.getId())).andReturn(Collections.singletonList(studentAssignment));
+                when(m.getAssignmentsByQuizIdAndGroup(studentQuiz.getId(), studentGroup.getId()))
+                        .thenReturn(Collections.singletonList(studentAssignment));
             });
 
             quizAssignmentManager.createAssignment(newAssignment);
@@ -124,7 +120,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     @Test
     public void getAssignedQuizzes() throws SegueDatabaseException {
         withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(teacherAssignmentsToTheirGroups);
+            when(m.getAssignmentsByGroupList(studentGroups)).thenReturn(teacherAssignmentsToTheirGroups);
         });
         List<QuizAssignmentDTO> assignedQuizzes = quizAssignmentManager.getAssignedQuizzes(student);
 
@@ -134,7 +130,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
     @Test
     public void getActiveQuizAssignments() throws SegueDatabaseException {
         withMock(quizAssignmentPersistenceManager, m -> {
-            expect(m.getAssignmentsByGroupList(studentGroups)).andReturn(teacherAssignmentsToTheirGroups);
+            when(m.getAssignmentsByGroupList(studentGroups)).thenReturn(teacherAssignmentsToTheirGroups);
         });
 
         List<QuizAssignmentDTO> activeQuizAssignments = quizAssignmentManager.getActiveQuizAssignments(studentQuiz, student);

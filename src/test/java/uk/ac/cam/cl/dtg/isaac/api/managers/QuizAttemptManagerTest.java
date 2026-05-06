@@ -55,7 +55,7 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
     }
 
     @Test
-    public void fetchOrCreateWithExistingCompletedAttemptFails() throws AttemptCompletedException, SegueDatabaseException {
+    public void fetchOrCreateWithExistingCompletedAttemptFails() {
         assertThrows(AttemptCompletedException.class, () -> {
             withMock(quizAttemptPersistenceManager, forStudentAssignmentReturn(completedAttempt));
             quizAttemptManager.fetchOrCreate(studentAssignment, student);

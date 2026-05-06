@@ -15,11 +15,10 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.List;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class QuizManagerTest extends AbstractManagerTest {
 
@@ -29,23 +28,21 @@ public class QuizManagerTest extends AbstractManagerTest {
 
     @BeforeEach
     public void setUp() {
-        properties = createMock(AbstractConfigLoader.class);
+        properties = mock(AbstractConfigLoader.class);
 
-        ContentService contentService = createMock(ContentService.class);
-        GitContentManager contentManager = createMock(GitContentManager.class);
-        ContentSummarizerService contentSummarizerService = createMock(ContentSummarizerService.class);
+        ContentService contentService = mock(ContentService.class);
+        GitContentManager contentManager = mock(GitContentManager.class);
+        ContentSummarizerService contentSummarizerService = mock(ContentSummarizerService.class);
         quizManager = new QuizManager(properties, contentService, contentManager, contentSummarizerService);
 
         brokenQuiz = new IsaacQuizDTO();
         brokenQuiz.setChildren(ImmutableList.of(quizSection1, new ContentDTO(), quizSection2));
-
-        replay(properties, contentService, contentManager, contentSummarizerService);
     }
 
     @Test
     public void extractSectionObjectsInDev() throws ContentManagerException {
         withMock(properties, m ->
-            expect(m.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.DEV.name())
+            when(m.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).thenReturn(Constants.EnvironmentType.DEV.name())
         );
 
         List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(studentQuiz);
@@ -57,7 +54,7 @@ public class QuizManagerTest extends AbstractManagerTest {
     @Test
     public void extractSectionObjectsInProd() throws ContentManagerException {
         withMock(properties, m ->
-            expect(m.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).andStubReturn(Constants.EnvironmentType.PROD.name())
+            when(m.getProperty(Constants.SEGUE_APP_ENVIRONMENT)).thenReturn(Constants.EnvironmentType.PROD.name())
         );
 
         List<IsaacQuizSectionDTO> sections = quizManager.extractSectionObjects(studentQuiz);
@@ -67,7 +64,7 @@ public class QuizManagerTest extends AbstractManagerTest {
         assertCorrectSections(sections);
     }
 
-    private void assertCorrectSections(List<IsaacQuizSectionDTO> sections) {
+    private void assertCorrectSections(final List<IsaacQuizSectionDTO> sections) {
         assertEquals(ImmutableList.of(quizSection1, quizSection2), sections);
     }
 }
