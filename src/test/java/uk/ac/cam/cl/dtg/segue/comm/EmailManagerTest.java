@@ -15,35 +15,14 @@
  */
 package uk.ac.cam.cl.dtg.segue.comm;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import com.google.common.collect.ImmutableMap;
-import org.easymock.Capture;
-import org.easymock.EasyMock;
-import org.easymock.IAnswer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-
-import uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
-import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
-import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
-import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
-import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import com.google.common.collect.ImmutableMap;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.PgUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.UserPreference;
@@ -51,7 +30,29 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.RegisteredUser;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.segue.api.Constants.SegueUserPreferences;
+import uk.ac.cam.cl.dtg.segue.auth.SegueLocalAuthenticator;
+import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
+import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.after;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Test class for the EmailManager class.
@@ -60,20 +61,17 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 public class EmailManagerTest {
     private final String CONTENT_VERSION = "liveVersion";
 
+    private static final Logger log = LoggerFactory.getLogger(EmailManagerTest.class);
     private EmailCommunicator emailCommunicator;
     private RegisteredUser user;
-    private RegisteredUser userWithNulls;
     private RegisteredUserDTO userDTO;
     private RegisteredUserDTO userDTOWithNulls;
-    private static final Logger log = LoggerFactory.getLogger(EmailManagerTest.class);
     private EmailCommunicationMessage email = null;
     private AbstractConfigLoader mockPropertiesLoader;
     private GitContentManager mockContentManager;
-    private Capture<EmailCommunicationMessage> capturedArgument;
-    private SegueLocalAuthenticator mockAuthenticator;
+    private ArgumentCaptor<EmailCommunicationMessage> capturedArgument;
     private AbstractUserPreferenceManager userPreferenceManager;
     private ILogManager logManager;
-    private UserAccountManager userManager;
 
     /**
      * Initial configuration of tests.
@@ -93,7 +91,7 @@ public class EmailManagerTest {
         user.setEmailVerificationToken("verificationToken");
 
         // Create dummy user with nulls
-        userWithNulls = new RegisteredUser();
+        RegisteredUser userWithNulls = new RegisteredUser();
         userWithNulls.setId(1L);
         userWithNulls.setEmail("test@test.com");
         userWithNulls.setGivenName(null);
@@ -115,59 +113,35 @@ public class EmailManagerTest {
         userDTOWithNulls.setFamilyName(null);
 
         // Create dummy email communicator
-        emailCommunicator = EasyMock.createMock(EmailCommunicator.class);
+        emailCommunicator = mock(EmailCommunicator.class);
 
         // Create dummy email preferences
-        userPreferenceManager = EasyMock.createMock(PgUserPreferenceManager.class);
+        userPreferenceManager = mock(PgUserPreferenceManager.class);
 
-        mockPropertiesLoader = EasyMock.createMock(AbstractConfigLoader.class);
-        EasyMock.expect(mockPropertiesLoader.getProperty("HOST_NAME")).andReturn("dev.isaacphysics.org").anyTimes();
-        EasyMock.expect(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).andReturn("test-reply@test.com").anyTimes();
-        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS")).andReturn("no-reply@isaacphysics.org").anyTimes();
-        EasyMock.expect(mockPropertiesLoader.getProperty("MAIL_NAME")).andReturn("Isaac Physics").anyTimes();
-
-        EasyMock.replay(mockPropertiesLoader);
-
+        mockPropertiesLoader = mock(AbstractConfigLoader.class);
+        when(mockPropertiesLoader.getProperty("HOST_NAME")).thenReturn("dev.isaacphysics.org");
+        when(mockPropertiesLoader.getProperty("REPLY_TO_ADDRESS")).thenReturn("test-reply@test.com");
+        when(mockPropertiesLoader.getProperty("MAIL_FROM_ADDRESS")).thenReturn("no-reply@isaacphysics.org");
+        when(mockPropertiesLoader.getProperty("MAIL_NAME")).thenReturn("Isaac Physics");
 
         // Create content manager
-        mockContentManager = EasyMock.createMock(GitContentManager.class);
+        mockContentManager = mock(GitContentManager.class);
 
         // Create log manager
-        logManager = EasyMock.createMock(ILogManager.class);
-        logManager.logInternalEvent(null, null, null);
-        EasyMock.expectLastCall().anyTimes();
+        logManager = mock(ILogManager.class);
 
-        // Create user manager
-        userManager = EasyMock.createMock(UserAccountManager.class);
-
-        capturedArgument = Capture.newInstance();
+        capturedArgument = ArgumentCaptor.forClass(EmailCommunicationMessage.class);
 
         // Mock the emailCommunicator methods so we can see what is sent
-        try {
-            emailCommunicator.sendMessage(EasyMock.and(EasyMock.capture(capturedArgument),
-                    EasyMock.isA(EmailCommunicationMessage.class)));
-        } catch (CommunicationException e1) {
-            e1.printStackTrace();
-            fail();
-        }
+        doNothing().when(emailCommunicator).sendMessage(capturedArgument.capture());
 
-        EasyMock.replay(emailCommunicator);
-        System.out.println("setup");
+        SegueLocalAuthenticator mockAuthenticator = mock(SegueLocalAuthenticator.class);
 
-        mockAuthenticator = EasyMock.createMock(SegueLocalAuthenticator.class);
-
-        EasyMock.expect(mockAuthenticator.createEmailVerificationTokenForUser(user, user.getEmail())).andAnswer(
-                new IAnswer<RegisteredUser>() {
-
-                    @Override
-                    public RegisteredUser answer() throws Throwable {
-                        user.setEmailVerificationToken("emailVerificationToken");
-                        return user;
-                    }
-
+        when(mockAuthenticator.createEmailVerificationTokenForUser(eq(user), eq(user.getEmail())))
+                .thenAnswer(invocation -> {
+                    user.setEmailVerificationToken("emailVerificationToken");
+                    return user;
                 });
-
-        EasyMock.replay(mockAuthenticator);
     }
 
     /**
@@ -210,9 +184,7 @@ public class EmailManagerTest {
      * @throws CommunicationException
      */
     @Test
-    public final void sendTemplatedEmailToUser_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
-        EasyMock.replay(userManager);
-
+    public final void sendTemplatedEmailToUser_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() throws CommunicationException {
         EmailTemplateDTO template = createDummyEmailTemplate("""
                 Hi, {{givenName}}.\
                 
@@ -227,20 +199,11 @@ public class EmailManagerTest {
 
         ContentDTO asciiTemplate = createDummyContentTemplate("{{content}}");
         try {
-            EasyMock.expect(
-                    mockContentManager.getContentById("email-template-registration-confirmation"))
-                    .andReturn(template);
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-html")).andReturn(
-                    htmlTemplate);
-            EasyMock.expect(mockContentManager.getContentById("email-template-ascii")).andReturn(
-                    asciiTemplate);
-
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-            EasyMock.replay(mockContentManager);
-
-        } catch (ContentManagerException e) {
+            when(mockContentManager.getContentById("email-template-registration-confirmation")).thenReturn(template);
+            when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+            when(mockContentManager.getContentById("email-template-ascii")).thenReturn(asciiTemplate);
+            when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
+        } catch (final ContentManagerException e) {
             e.printStackTrace();
             fail();
         }
@@ -252,10 +215,7 @@ public class EmailManagerTest {
             manager.sendTemplatedEmailToUser(userDTO,
                     manager.getEmailTemplateDTO("email-template-registration-confirmation"),
                     emailTokens, EmailType.SYSTEM);
-        } catch (ContentManagerException e) {
-            e.printStackTrace();
-            fail();
-        } catch (SegueDatabaseException e) {
+        } catch (ContentManagerException | SegueDatabaseException e) {
             e.printStackTrace();
             fail();
         }
@@ -281,16 +241,8 @@ public class EmailManagerTest {
                 Physics Project</body></html>""";
 
         // Wait for the emailQueue to spin up and send our message
-        int i = 0;
-        while (!capturedArgument.hasCaptured() && i < 5) {
-            try {
-                Thread.sleep(100);
-                i++;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                fail();
-            }
-        }
+        verify(emailCommunicator, timeout(500)).sendMessage(capturedArgument.capture());
+
         email = capturedArgument.getValue();
         assertNotNull(email);
         assertEquals(expectedMessagePlainText, email.getPlainTextMessage());
@@ -304,7 +256,7 @@ public class EmailManagerTest {
      * @throws CommunicationException
      */
     @Test
-    public final void sendFederatedPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
+    public final void sendFederatedPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() throws CommunicationException {
 
         EmailTemplateDTO template = createDummyEmailTemplate("""
                 Hello, {{givenName}}.
@@ -319,19 +271,10 @@ public class EmailManagerTest {
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         try {
-            EasyMock.expect(
-                    mockContentManager.getContentById("email-template-federated-password-reset"))
-                    .andReturn(template);
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-html")).andReturn(
-                    htmlTemplate);
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-ascii")).andReturn(
-                    htmlTemplate);
-
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-            EasyMock.replay(mockContentManager);
+            when(mockContentManager.getContentById("email-template-federated-password-reset")).thenReturn(template);
+            when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+            when(mockContentManager.getContentById("email-template-ascii")).thenReturn(htmlTemplate);
+            when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
         } catch (ContentManagerException e) {
             e.printStackTrace();
             fail();
@@ -345,14 +288,10 @@ public class EmailManagerTest {
                     manager.getEmailTemplateDTO("email-template-federated-password-reset"),
                     emailTokens, EmailType.SYSTEM);
 
-        } catch (ContentManagerException e) {
+        } catch (ContentManagerException | SegueDatabaseException e) {
             e.printStackTrace();
             fail();
             log.debug(e.getMessage());
-        } catch (SegueDatabaseException e) {
-            e.printStackTrace();
-            log.debug(e.getMessage());
-            fail();
         }
 
         final String expectedMessage = """
@@ -367,16 +306,7 @@ public class EmailManagerTest {
                 Isaac Physics Project""";
 
         // Wait for the emailQueue to spin up and send our message
-        int i = 0;
-        while (!capturedArgument.hasCaptured() && i < 5) {
-            try {
-                Thread.sleep(100);
-                i++;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                fail();
-            }
-        }
+        verify(emailCommunicator, timeout(500)).sendMessage(capturedArgument.capture());
         email = capturedArgument.getValue();
         assertNotNull(email);
         assertEquals(expectedMessage, email.getPlainTextMessage());
@@ -390,7 +320,7 @@ public class EmailManagerTest {
      * @throws CommunicationException
      */
     @Test
-    public final void sendPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() {
+    public final void sendPasswordReset_checkForTemplateCompletion_emailShouldBeSentWithTemplateTagsFilledIn() throws CommunicationException {
 
         EmailTemplateDTO template = createDummyEmailTemplate("""
                 Hello, {{givenName}}.
@@ -408,20 +338,11 @@ public class EmailManagerTest {
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
 
         try {
-            EasyMock.expect(mockContentManager.getContentById("email-template-password-reset"))
-                    .andReturn(template).once();
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-html"))
-                    .andReturn(htmlTemplate).once();
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-ascii")).andReturn(
-                    htmlTemplate);
-
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-            EasyMock.replay(mockContentManager);
-
-        } catch (ContentManagerException e) {
+            when(mockContentManager.getContentById("email-template-password-reset")).thenReturn(template);
+            when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+            when(mockContentManager.getContentById("email-template-ascii")).thenReturn(htmlTemplate);
+            when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
+        } catch (final ContentManagerException e) {
             e.printStackTrace();
             fail();
         }
@@ -436,10 +357,7 @@ public class EmailManagerTest {
                     manager.getEmailTemplateDTO("email-template-password-reset"),
                     emailValues, EmailType.SYSTEM);
 
-        } catch (ContentManagerException e) {
-            e.printStackTrace();
-            fail();
-        } catch (SegueDatabaseException e) {
+        } catch (ContentManagerException | SegueDatabaseException e) {
             e.printStackTrace();
             fail();
         }
@@ -459,19 +377,9 @@ public class EmailManagerTest {
                 Isaac Physics Project""";
 
         // Wait for the emailQueue to spin up and send our message
-        int i = 0;
-        while (!capturedArgument.hasCaptured() && i < 5) {
-            try {
-                Thread.sleep(100);
-                i++;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                fail();
-            }
-        }
+        verify(emailCommunicator, timeout(500)).sendMessage(capturedArgument.capture());
         email = capturedArgument.getValue();
         assertNotNull(email);
-
         assertEquals(expectedMessage, email.getPlainTextMessage());
     }
 
@@ -495,18 +403,10 @@ public class EmailManagerTest {
             ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
             // Create content manager
             try {
-                EasyMock.expect(
-                                mockContentManager.getContentById("email-template-registration-confirmation"))
-                        .andReturn(template).once();
-
-                EasyMock.expect(mockContentManager.getContentById("email-template-html"))
-                        .andReturn(htmlTemplate).once();
-
-                EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-                EasyMock.replay(mockContentManager);
-
-            } catch (ContentManagerException e) {
+                when(mockContentManager.getContentById("email-template-registration-confirmation")).thenReturn(template);
+                when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+                when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
+            } catch (final ContentManagerException e) {
                 e.printStackTrace();
                 fail();
             }
@@ -520,10 +420,7 @@ public class EmailManagerTest {
                         template,
                         emailTokens, EmailType.SYSTEM);
 
-            } catch (ContentManagerException e) {
-                e.printStackTrace();
-                fail();
-            } catch (SegueDatabaseException e) {
+            } catch (ContentManagerException | SegueDatabaseException e) {
                 e.printStackTrace();
                 fail();
             }
@@ -532,30 +429,23 @@ public class EmailManagerTest {
 
     /**
      * Verify that the system responds correctly when there are fewer tags than expected in the email template.
+     *
+     * @throws CommunicationException
      */
     @Test
-    public final void sendRegistrationConfirmation_checkTemplatesWithNoTagsWorks_emailIsGeneratedWithoutTemplateContent() {
+    public final void sendRegistrationConfirmation_checkTemplatesWithNoTagsWorks_emailIsGeneratedWithoutTemplateContent() throws CommunicationException {
         EmailTemplateDTO template = createDummyEmailTemplate("this is a template with no tags");
 
         // Create content manager
-        GitContentManager mockContentManager = EasyMock.createMock(GitContentManager.class);
+        GitContentManager mockContentManager = mock(GitContentManager.class);
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         try {
-            EasyMock.expect(
-                    mockContentManager.getContentById("email-template-registration-confirmation"))
-                    .andReturn(template);
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-ascii")).andReturn(
-                    htmlTemplate);
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-html")).andReturn(
-                    htmlTemplate);
-
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-            EasyMock.replay(mockContentManager);
-        } catch (ContentManagerException e) {
+            when(mockContentManager.getContentById("email-template-registration-confirmation")).thenReturn(template);
+            when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+            when(mockContentManager.getContentById("email-template-ascii")).thenReturn(htmlTemplate);
+            when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
+        } catch (final ContentManagerException e) {
             e.printStackTrace();
             fail();
         }
@@ -568,25 +458,13 @@ public class EmailManagerTest {
             manager.sendTemplatedEmailToUser(userDTO,
                     template,
                     emailTokens, EmailType.SYSTEM);
-        } catch (ContentManagerException e) {
-            e.printStackTrace();
-            fail();
-        } catch (SegueDatabaseException e) {
+        } catch (ContentManagerException | SegueDatabaseException e) {
             e.printStackTrace();
             fail();
         }
 
         // Wait for the emailQueue to spin up and send our message
-        int i = 0;
-        while (!capturedArgument.hasCaptured() && i < 5) {
-            try {
-                Thread.sleep(100);
-                i++;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                fail();
-            }
-        }
+        verify(emailCommunicator, timeout(500)).sendMessage(capturedArgument.capture());
         email = capturedArgument.getValue();
         assertNotNull(email);
         assertEquals("this is a template with no tags", email.getPlainTextMessage());
@@ -595,22 +473,17 @@ public class EmailManagerTest {
 
     /**
      * Make sure that when the templates are published:false, that the method reacts appropriately.
+     *
+     * @throws CommunicationException
      */
     @Test
-    public void sendRegistrationConfirmation_checkNullContentDTO_exceptionThrownAndDealtWith() {
+    public void sendRegistrationConfirmation_checkNullContentDTO_exceptionThrownAndDealtWith() throws CommunicationException {
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         try {
-            EasyMock.expect(
-                    mockContentManager.getContentById("email-template-registration-confirmation"))
-                    .andReturn(null);
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-html")).andReturn(
-                    htmlTemplate);
-
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-            EasyMock.replay(mockContentManager);
-        } catch (ContentManagerException e) {
+            when(mockContentManager.getContentById("email-template-registration-confirmation")).thenReturn(null);
+            when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+            when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
+        } catch (final ContentManagerException e) {
             e.printStackTrace();
             fail();
         }
@@ -624,27 +497,16 @@ public class EmailManagerTest {
                     manager.getEmailTemplateDTO("email-template-registration-confirmation"),
                     emailTokens, EmailType.SYSTEM);
 
-        } catch (ContentManagerException e) {
+        } catch (final ContentManagerException e) {
             e.printStackTrace();
             fail();
-        } catch (SegueDatabaseException e) {
+        } catch (final SegueDatabaseException e) {
             e.printStackTrace();
             log.info(e.getMessage());
         }
 
-        // Wait for the emailQueue to spin up and send our message (if it exists)
-        int i = 0;
-        while (!capturedArgument.hasCaptured() && i < 5) {
-            try {
-                Thread.sleep(100);
-                i++;
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                fail();
-            }
-        }
-        // We expect there to be nothing captured because the content was not returned
-        assertFalse(capturedArgument.hasCaptured());
+        // Assert that the emailQueue never sends our message
+        verify(emailCommunicator, after(500).never()).sendMessage(capturedArgument.capture());
     }
 
     /**
@@ -660,15 +522,15 @@ public class EmailManagerTest {
         allSelectedUsers.add(userDTOWithNulls);
         allSelectedUsers.add(userDTOWithNulls);
 
-        UserPreference userPreference = new UserPreference(userDTOWithNulls.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", false);
+        UserPreference userPreference = new UserPreference(userDTOWithNulls.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(),
+                "ASSIGNMENTS", false);
         try {
-            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
-            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
-        } catch (SegueDatabaseException e1) {
-            e1.printStackTrace();
+            when(userPreferenceManager.getUserPreference(eq(SegueUserPreferences.EMAIL_PREFERENCE.name()),
+                    eq("ASSIGNMENTS"), eq(userDTOWithNulls.getId()))).thenReturn(userPreference);
+        } catch (final SegueDatabaseException e) {
+            e.printStackTrace();
             fail();
         }
-        EasyMock.replay(userPreferenceManager);
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         EmailTemplateDTO emailTemplate = createDummyEmailTemplate("Hello {{givenName}}, "
@@ -676,18 +538,11 @@ public class EmailManagerTest {
         String contentObjectId = "test-email-template";
 
         try {
-            EasyMock.expect(mockContentManager.getContentById(contentObjectId)).andReturn(
-                    emailTemplate);
+            when(mockContentManager.getContentById(contentObjectId)).thenReturn(emailTemplate);
+            when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+            when(mockContentManager.getContentById("email-template-ascii")).thenReturn(htmlTemplate);
+            when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
 
-            EasyMock.expect(mockContentManager.getContentById("email-template-html"))
-                    .andReturn(htmlTemplate).times(allSelectedUsers.size());
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-ascii"))
-                    .andReturn(htmlTemplate).times(allSelectedUsers.size());
-
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-            EasyMock.replay(mockContentManager);
         } catch (ContentManagerException e) {
             e.printStackTrace();
             fail();
@@ -695,9 +550,7 @@ public class EmailManagerTest {
 
         try {
             manager.sendCustomEmail(userDTOWithNulls, contentObjectId, allSelectedUsers, EmailType.ASSIGNMENTS);
-        } catch (SegueDatabaseException e) {
-            fail();
-        } catch (ContentManagerException e) {
+        } catch (SegueDatabaseException | ContentManagerException e) {
             fail();
         }
 
@@ -718,13 +571,12 @@ public class EmailManagerTest {
 
         UserPreference userPreference = new UserPreference(userDTOWithNulls.getId(), SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", false);
         try {
-            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
-            EasyMock.expect(userPreferenceManager.getUserPreference(SegueUserPreferences.EMAIL_PREFERENCE.name(), "ASSIGNMENTS", userDTOWithNulls.getId())).andReturn(userPreference);
-        } catch (SegueDatabaseException e1) {
-            e1.printStackTrace();
+            when(userPreferenceManager.getUserPreference(eq(SegueUserPreferences.EMAIL_PREFERENCE.name()), eq("ASSIGNMENTS"), eq(userDTOWithNulls.getId())))
+                    .thenReturn(userPreference);
+        } catch (final SegueDatabaseException e) {
+            e.printStackTrace();
             fail();
         }
-        EasyMock.replay(userPreferenceManager);
 
         ContentDTO htmlTemplate = createDummyContentTemplate("{{content}}");
         String htmlContent = "hi {{givenName}}<br><br>This is a test";
@@ -737,26 +589,17 @@ public class EmailManagerTest {
         emailTemplate.setSubject(subject);
 
         try {
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-html"))
-                    .andReturn(htmlTemplate).times(allSelectedUsers.size());
-
-            EasyMock.expect(mockContentManager.getContentById("email-template-ascii"))
-                    .andReturn(htmlTemplate).times(allSelectedUsers.size());
-
-            EasyMock.expect(mockContentManager.getCurrentContentSHA()).andReturn(CONTENT_VERSION).atLeastOnce();
-
-            EasyMock.replay(mockContentManager);
-        } catch (ContentManagerException e) {
+            when(mockContentManager.getContentById("email-template-html")).thenReturn(htmlTemplate);
+            when(mockContentManager.getContentById("email-template-ascii")).thenReturn(htmlTemplate);
+            when(mockContentManager.getCurrentContentSHA()).thenReturn(CONTENT_VERSION);
+        } catch (final ContentManagerException e) {
             e.printStackTrace();
             fail();
         }
 
         try {
             manager.sendCustomContentEmail(userDTOWithNulls, emailTemplate, allSelectedUsers, EmailType.ASSIGNMENTS);
-        } catch (SegueDatabaseException e) {
-            fail();
-        } catch (ContentManagerException e) {
+        } catch (SegueDatabaseException | ContentManagerException e) {
             fail();
         }
 
@@ -777,10 +620,10 @@ public class EmailManagerTest {
         inputMap.put("date", someDate);
         Map<String, String> mapUnderTest = manager.flattenTokenMap(inputMap, Maps.newHashMap(), "");
 
-        assert(mapUnderTest.get("address.line1").equals("Computer Laboratory"));
+        assert mapUnderTest.get("address.line1").equals("Computer Laboratory");
     }
 
-    private Map generateGlobalTokenMap() {
+    private Map<String, String> generateGlobalTokenMap() {
         Map<String, String> globalTokens = Maps.newHashMap();
         globalTokens.put("sig", "Isaac Physics Project");
         globalTokens.put("emailPreferencesURL", "https://test/assignments");
