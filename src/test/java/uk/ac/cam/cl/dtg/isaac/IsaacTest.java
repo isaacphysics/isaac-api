@@ -54,15 +54,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.anyLong;
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.getCurrentArguments;
-import static org.easymock.EasyMock.partialMockBuilder;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.reset;
-import static org.easymock.EasyMock.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 public class IsaacTest {
     protected static Date somePastDate = new Date(System.currentTimeMillis() - 7*24*60*60*1000);
@@ -255,63 +254,63 @@ public class IsaacTest {
     }
 
     protected void initializeMocks() throws ContentManagerException, SegueDatabaseException {
-        quizManager = createMock(QuizManager.class);
+        quizManager = mock(QuizManager.class);
 
         registerDefaultsFor(quizManager, m -> {
-            expect(m.getAvailableQuizzes("STUDENT", 0, 9000, false)).andStubReturn(wrap(studentQuizSummary));
-            expect(m.getAvailableQuizzes("TEACHER", 0, 9000, false)).andStubReturn(wrap(studentQuizSummary, teacherQuizSummary));
-            expect(m.findQuiz(studentQuiz.getId())).andStubReturn(studentQuiz);
-            expect(m.findQuiz(studentQuizPreQuizAnswerChange.getId())).andStubReturn(studentQuizPreQuizAnswerChange);
-            expect(m.findQuiz(studentQuizPostQuizAnswerChange.getId())).andStubReturn(studentQuizPostQuizAnswerChange);
-            expect(m.findQuiz(teacherQuiz.getId())).andStubReturn(teacherQuiz);
-            expect(m.findQuiz(otherQuiz.getId())).andStubReturn(otherQuiz);
-            expect(m.extractSectionObjects(studentQuiz)).andStubReturn(ImmutableList.of(quizSection1, quizSection2));
+            when(m.getAvailableQuizzes("STUDENT", 0, 9000, false)).thenReturn(wrap(studentQuizSummary));
+            when(m.getAvailableQuizzes("TEACHER", 0, 9000, false)).thenReturn(wrap(studentQuizSummary, teacherQuizSummary));
+            when(m.findQuiz(studentQuiz.getId())).thenReturn(studentQuiz);
+            when(m.findQuiz(studentQuizPreQuizAnswerChange.getId())).thenReturn(studentQuizPreQuizAnswerChange);
+            when(m.findQuiz(studentQuizPostQuizAnswerChange.getId())).thenReturn(studentQuizPostQuizAnswerChange);
+            when(m.findQuiz(teacherQuiz.getId())).thenReturn(teacherQuiz);
+            when(m.findQuiz(otherQuiz.getId())).thenReturn(otherQuiz);
+            when(m.extractSectionObjects(studentQuiz)).thenReturn(ImmutableList.of(quizSection1, quizSection2));
         });
 
         // We want to actually test the behaviour of the real GroupManager::filterItemsBasedOnMembershipContext, but
         // otherwise want to mock the methods. Unfortunately, this method internally calls the groupDatabase object
         // we cannot mock straightforwardly, hence this partial mock madness.
-        groupDatabase = createMock(IUserGroupPersistenceManager.class);
-        UserAccountManager userAccountManager = createMock(UserAccountManager.class);
-        GameManager gameManager = createMock(GameManager.class);
-        MainMapper mainMapper = createMock(MainMapper.class);
-        groupManager = partialMockBuilder(GroupManager.class)
-                .withConstructor(groupDatabase, userAccountManager, gameManager, mainMapper)
-                .addMockedMethod("getGroupById").addMockedMethod("isUserInGroup").addMockedMethod("getGroupMembershipList", RegisteredUserDTO.class, boolean.class)
-                .addMockedMethod("getUsersInGroup").addMockedMethod("getUserMembershipMapForGroup").addMockedMethod("getAllGroupsOwnedAndManagedByUser")
-                .createMock();
+        groupDatabase = mock(IUserGroupPersistenceManager.class);
+        UserAccountManager userAccountManager = mock(UserAccountManager.class);
+        GameManager gameManager = mock(GameManager.class);
+        MainMapper mainMapper = mock(MainMapper.class);
+        groupManager = spy(new GroupManager(groupDatabase, userAccountManager, gameManager, mainMapper));
 
-        expect(groupManager.getGroupById(anyLong())).andStubAnswer(() -> {
-            Object[] arguments = getCurrentArguments();
-            if (arguments[0] == studentGroup.getId()) {
+        doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            if (id.equals(studentGroup.getId())) {
                 return studentGroup;
             } else {
                 throw new SegueDatabaseException("No such group.");
             }
-        });
-        expect(groupManager.isUserInGroup(anyObject(), anyObject())).andStubAnswer(() -> {
-            Object[] arguments = getCurrentArguments();
-            if ((arguments[0] == student) && (arguments[1] == studentGroup || arguments[1] == studentInactiveGroup)) {
+        }).when(groupManager).getGroupById(anyLong());
+
+        doAnswer(invocation -> {
+            Object user = invocation.getArgument(0);
+            Object group = invocation.getArgument(1);
+            if ((user == student) && (group == studentGroup || group == studentInactiveGroup)) {
                 return true;
-            } else if (arguments[0] == secondStudent && arguments[1] == studentGroup) {
+            } else if (user == secondStudent && group == studentGroup) {
                 return true;
             } else {
                 return false;
             }
-        });
-        expect(groupManager.getGroupMembershipList(student, false)).andStubReturn(ImmutableList.of(studentGroup, studentInactiveGroup));
-        expect(groupManager.getGroupMembershipList(secondStudent, false)).andStubReturn(ImmutableList.of(studentGroup));
-        expect(groupManager.getUsersInGroup(studentGroup)).andStubReturn(ImmutableList.of(student, secondStudent));
+        }).when(groupManager).isUserInGroup(any(), any());
+
+        doReturn(ImmutableList.of(studentGroup, studentInactiveGroup)).when(groupManager).getGroupMembershipList(student, false);
+        doReturn(ImmutableList.of(studentGroup)).when(groupManager).getGroupMembershipList(secondStudent, false);
+        doReturn(ImmutableList.of(student, secondStudent)).when(groupManager).getUsersInGroup(studentGroup);
+
         Date beforeSomePastDate = new Date(somePastDate.getTime() - 1000L);
-        expect(groupDatabase.getGroupMembershipMapForUser(student.getId())).andStubReturn(ImmutableMap.of(
+
+        when(groupDatabase.getGroupMembershipMapForUser(student.getId())).thenReturn(ImmutableMap.of(
                 studentGroup.getId(), new GroupMembership(studentGroup.getId(), student.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate),
                 studentInactiveGroup.getId(), new GroupMembership(studentInactiveGroup.getId(), student.getId(), GroupMembershipStatus.INACTIVE, null, beforeSomePastDate)
         ));
-        expect(groupDatabase.getGroupMembershipMapForUser(student.getId())).andStubReturn(ImmutableMap.of(
+
+        when(groupDatabase.getGroupMembershipMapForUser(secondStudent.getId())).thenReturn(ImmutableMap.of(
                 studentGroup.getId(), new GroupMembership(studentGroup.getId(), secondStudent.getId(), GroupMembershipStatus.ACTIVE, null, somePastDate)
         ));
-
-        replay(quizManager, groupManager, groupDatabase, userAccountManager, gameManager, mainMapper);
     }
 
 
@@ -331,22 +330,21 @@ public class IsaacTest {
     /**
      * If a mock needs to have some expectations as well as stub returns, put the stub return setup in a call to this function.
      */
-    protected <T> void registerDefaultsFor(T mock, MockConfigurer<T> defaults) {
+    protected <T> void registerDefaultsFor(final T mock, final MockConfigurer<T> defaults) {
         defaultsMap.put(mock, defaults);
         defaults.configure(mock);
     }
 
     @SafeVarargs
-    protected final <T> void withMock(T mock, MockConfigurer<T>... setups) {
-        verify(mock);
+    protected final <T> void withMock(final T mock, final MockConfigurer<T>... setups) {
         reset(mock);
         if (defaultsMap.containsKey(mock)) {
             ((MockConfigurer<T>) defaultsMap.get(mock)).configure(mock);
         }
-        for (MockConfigurer<T> setup: setups) {
+
+        for (MockConfigurer<T> setup : setups) {
             setup.configure(mock);
         }
-        replay(mock);
     }
 
     /**
