@@ -15,10 +15,9 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import org.easymock.EasyMock;
-import org.easymock.IArgumentMatcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -28,11 +27,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class QuizAttemptManagerTest extends AbstractManagerTest {
     private static final Long TEST_ID = 0xC0000000000L;
@@ -42,11 +41,9 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
 
     @BeforeEach
     public void setUp() {
-        quizAttemptPersistenceManager = createMock(IQuizAttemptPersistenceManager.class);
+        quizAttemptPersistenceManager = mock(IQuizAttemptPersistenceManager.class);
 
         quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);
-
-        replay(quizAttemptPersistenceManager);
     }
 
     @Test
@@ -69,8 +66,8 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
     public void fetchOrCreateCreatesNewAttempt() throws AttemptCompletedException, SegueDatabaseException {
         withMock(quizAttemptPersistenceManager,
             forStudentAssignmentReturn(null),
-            m -> expect(m.saveAttempt(attemptMatcher(student.getId(), studentAssignment.getId(), studentAssignment.getQuizId())))
-                .andReturn(TEST_ID));
+            m -> when(m.saveAttempt(attemptMatcher(student.getId(), studentAssignment.getId(), studentAssignment.getQuizId())))
+                .thenReturn(TEST_ID));
 
         QuizAttemptDTO attempt = quizAttemptManager.fetchOrCreate(studentAssignment, student);
         assertEquals(TEST_ID, attempt.getId());
@@ -107,45 +104,44 @@ public class QuizAttemptManagerTest extends AbstractManagerTest {
     @Test
     public void augmentAssignmentsFor() throws SegueDatabaseException {
         withMock(quizAttemptPersistenceManager,
-            m -> expect(m.getByQuizAssignmentIdsAndUserId(Collections.singletonList(studentAssignment.getId()), student.getId()))
-                .andReturn(Collections.singletonMap(studentAssignment.getId(), studentAttempt)));
+            m -> when(m.getByQuizAssignmentIdsAndUserId(Collections.singletonList(studentAssignment.getId()), student.getId()))
+                .thenReturn(Collections.singletonMap(studentAssignment.getId(), studentAttempt)));
         quizAttemptManager.augmentAssignmentsFor(student, Collections.singletonList(studentAssignment));
 
         assertEquals(studentAttempt, studentAssignment.getAttempt());
     }
 
-    private MockConfigurer<IQuizAttemptPersistenceManager> forStudentAssignmentReturn(QuizAttemptDTO attempt) {
-        return m -> expect(m.getByQuizAssignmentIdAndUserId(studentAssignment.getId(), student.getId())).andReturn(attempt);
+    private MockConfigurer<IQuizAttemptPersistenceManager> forStudentAssignmentReturn(final QuizAttemptDTO attempt) {
+        return m -> when(m.getByQuizAssignmentIdAndUserId(studentAssignment.getId(), student.getId())).thenReturn(attempt);
     }
 
-    private MockConfigurer<IQuizAttemptPersistenceManager> forStudentQuizReturn(List<QuizAttemptDTO> attempts) {
-        return m -> expect(m.getByQuizIdAndUserId(studentQuiz.getId(), student.getId())).andReturn(attempts);
+    private MockConfigurer<IQuizAttemptPersistenceManager> forStudentQuizReturn(final List<QuizAttemptDTO> attempts) {
+        return m -> when(m.getByQuizIdAndUserId(studentQuiz.getId(), student.getId())).thenReturn(attempts);
     }
 
     private MockConfigurer<IQuizAttemptPersistenceManager> returnTestIdForSaveAttempt() {
-        return m -> expect(m.saveAttempt(attemptMatcher(student.getId(), null, studentQuiz.getId())))
-            .andReturn(TEST_ID);
+        return m -> when(m.saveAttempt(attemptMatcher(student.getId(), null, studentQuiz.getId()))).thenReturn(TEST_ID);
     }
 
-    private static QuizAttemptDTO attemptMatcher(final Long userId, final Long assignmentId, final String quizId){
-        EasyMock.reportMatcher(new IArgumentMatcher() {
+    private static QuizAttemptDTO attemptMatcher(final Long userId, final Long assignmentId, final String quizId) {
+        argThat(new ArgumentMatcher<QuizAttemptDTO>() {
             @Override
-            public boolean matches(Object argument) {
-                if (argument instanceof QuizAttemptDTO attempt) {
-                    return attempt.getUserId().equals(userId)
-                        && Objects.equals(attempt.getQuizAssignmentId(), assignmentId)
-                        && attempt.getQuizId().equals(quizId)
-                        && new Date().getTime() - attempt.getStartDate().getTime() < 1000;
+            public boolean matches(final QuizAttemptDTO attempt) {
+                if (attempt == null) {
+                    return false;
                 }
-                return false;
+
+                return Objects.equals(attempt.getUserId(), userId)
+                        && Objects.equals(attempt.getQuizAssignmentId(), assignmentId)
+                        && Objects.equals(attempt.getQuizId(), quizId)
+                        && Math.abs(new Date().getTime() - attempt.getStartDate().getTime()) < 1000;
             }
 
             @Override
-            public void appendTo(StringBuffer buffer) {
-                buffer.append("attempt(userId=" + userId + ", assignmentId=" + assignmentId + ", quizId=" + quizId + ")");
+            public String toString() {
+                return "attempt(userId=" + userId + ", assignmentId=" + assignmentId + ", quizId=" + quizId + ")";
             }
         });
         return null;
     }
-
 }
