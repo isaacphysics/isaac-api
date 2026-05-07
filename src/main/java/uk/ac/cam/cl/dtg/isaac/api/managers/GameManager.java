@@ -339,6 +339,31 @@ public class GameManager {
     }
 
     /**
+     * Get a list of gameboards by their ids, augmented with whether or not the user has it saved to their boards.
+     *
+     * @param gameboardIds
+     *            - to look up.
+     * @param user
+     *            - the user to augment the gameboard for.
+     * @return the gameboards or null.
+     * @throws SegueDatabaseException
+     *             - if there is a problem retrieving the gameboards in the database
+     */
+    public final List<GameboardDTO> getGameboardsWithUserSavedInformation(final List<String> gameboardIds, final RegisteredUserDTO user)
+            throws SegueDatabaseException {
+        if (null == gameboardIds || gameboardIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
+        for (GameboardDTO gameboard : gameboardsByIds) {
+            augmentGameboardWithUserSavedInformation(gameboard, user);
+        }
+
+        return gameboardsByIds;
+    }
+
+    /**
      * Get a gameboard by its id.
      * 
      * @param gameboardId
@@ -777,6 +802,25 @@ public class GameManager {
         return gameboardDTO;
     }
 
+    /**
+     * Augments a gameboard with whether or not the user has it in their boards.
+     *
+     * @param gameboardDTO
+     *            - the DTO of the gameboard.
+     * @param user
+     *            - the user to check whether the board is in their boards list
+     * @return Augmented Gameboard.
+     * @throws SegueDatabaseException
+     *             - if there is an error retrieving the content requested.
+     */
+    private GameboardDTO augmentGameboardWithUserSavedInformation(final GameboardDTO gameboardDTO, final AbstractSegueUserDTO user)
+            throws SegueDatabaseException {
+        if (user instanceof RegisteredUserDTO registeredUser) {
+            gameboardDTO.setSavedToCurrentUser(this.isBoardLinkedToUser(registeredUser, gameboardDTO.getId()));
+        }
+
+        return gameboardDTO;
+    }
 
     /**
      * Augments the gameboards with question attempt information NOT whether the user has it in their my board page.
@@ -786,8 +830,6 @@ public class GameManager {
      * @param questionAttemptsFromUser
      *            - the users question attempt data.
      * @return Augmented Gameboard.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
      */
     private GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
                                                                         final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser)
