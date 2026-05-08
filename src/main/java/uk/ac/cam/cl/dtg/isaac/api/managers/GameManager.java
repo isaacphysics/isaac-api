@@ -383,7 +383,8 @@ public class GameManager {
         }
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
-        List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
+        List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream)
+                .map(GameboardItem::getId).collect(Collectors.toList());
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
                 questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
         for (GameboardDTO gameboard : gameboardsByIds) {
@@ -435,7 +436,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user, ///////////////////////
+    public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user,
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
 
@@ -857,6 +858,8 @@ public class GameManager {
      * @param questionAttemptsFromUser
      *            - the users question attempt data.
      * @return Augmented Gameboard.
+     * @throws ContentManagerException
+     *             - if there is an error retrieving the content requested.
      */
     private GameboardDTO augmentGameboardWithQuestionAttemptInformation(final GameboardDTO gameboardDTO,
                                                                         final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser)
