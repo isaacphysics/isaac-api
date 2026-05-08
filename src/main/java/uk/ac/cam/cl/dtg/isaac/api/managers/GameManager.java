@@ -339,7 +339,7 @@ public class GameManager {
     }
 
     /**
-     * Get a list of gameboards by their ids, augmented with whether or not the user has it saved to their boards.
+     * Get a list of gameboards by their ids, augmented with whether the user has it saved to their boards.
      *
      * @param gameboardIds
      *            - to look up.
@@ -357,6 +357,37 @@ public class GameManager {
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
         for (GameboardDTO gameboard : gameboardsByIds) {
+            augmentGameboardWithUserSavedInformation(gameboard, user);
+        }
+
+        return gameboardsByIds;
+    }
+
+    /**
+     * Get a list of gameboards by their ids, augmented with attempt information and whether the user has it saved to their boards.
+     *
+     * @param gameboardIds
+     *            - to look up.
+     * @param user
+     *            - the user to augment the gameboard for.
+     * @return the gameboards or null.
+     * @throws SegueDatabaseException
+     *             - if there is a problem retrieving the gameboards in the database.
+     * @throws ContentManagerException
+     *             - if there is a problem resolving content
+     */
+    public final List<GameboardDTO> getGameboardsWithAttemptsAndUserSavedInformation(final List<String> gameboardIds, final RegisteredUserDTO user)
+            throws SegueDatabaseException, ContentManagerException {
+        if (null == gameboardIds || gameboardIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
+        List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
+        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
+                questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
+        for (GameboardDTO gameboard : gameboardsByIds) {
+            augmentGameboardWithQuestionAttemptInformation(gameboard, userQuestionAttempts);
             augmentGameboardWithUserSavedInformation(gameboard, user);
         }
 
