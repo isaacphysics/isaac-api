@@ -364,7 +364,7 @@ public class GameManager {
     }
 
     /**
-     * Get a list of gameboards by their ids, augmented with attempt information and whether the user has it saved to their boards.
+     * Get a list of gameboards by their ids, augmented with attempt information AND whether the user has it saved to their boards.
      *
      * @param gameboardIds
      *            - to look up.
@@ -387,8 +387,7 @@ public class GameManager {
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
                 questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
         for (GameboardDTO gameboard : gameboardsByIds) {
-            augmentGameboardWithQuestionAttemptInformation(gameboard, userQuestionAttempts);
-            augmentGameboardWithUserSavedInformation(gameboard, user);
+            augmentGameboardWithQuestionAttemptInformationAndUserInformation(gameboard, userQuestionAttempts, user);
         }
 
         return gameboardsByIds;
@@ -436,7 +435,7 @@ public class GameManager {
      * @throws ContentManagerException
      *             - if there is an error retrieving the content requested.
      */
-    public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user,
+    public final GameboardDTO getGameboard(final String gameboardId, final AbstractSegueUserDTO user, ///////////////////////
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
 
@@ -834,23 +833,20 @@ public class GameManager {
     }
 
     /**
-     * Augments a gameboard with whether or not the user has it in their boards.
+     * Augments a gameboard with whether the user has it in their boards.
      *
      * @param gameboardDTO
      *            - the DTO of the gameboard.
      * @param user
      *            - the user to check whether the board is in their boards list
-     * @return Augmented Gameboard.
      * @throws SegueDatabaseException
      *             - if there is an error retrieving the content requested.
      */
-    private GameboardDTO augmentGameboardWithUserSavedInformation(final GameboardDTO gameboardDTO, final AbstractSegueUserDTO user)
+    private void augmentGameboardWithUserSavedInformation(final GameboardDTO gameboardDTO, final AbstractSegueUserDTO user)
             throws SegueDatabaseException {
         if (user instanceof RegisteredUserDTO registeredUser) {
             gameboardDTO.setSavedToCurrentUser(this.isBoardLinkedToUser(registeredUser, gameboardDTO.getId()));
         }
-
-        return gameboardDTO;
     }
 
     /**
