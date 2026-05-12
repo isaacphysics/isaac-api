@@ -574,7 +574,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getAssignmentProgressDownloadCSV(downloadAssignmentRequest,
-                        ITConstants.ASSIGNMENTS_TEST_EXISTING_HARRY_AB_ASSIGNMENT_ID, "excel");
+                        ITConstants.ASSIGNMENTS_TEST_EXISTING_HARRY_AB_ASSIGNMENT_ID, "excel", null);
         String downloadAssignmentContents = downloadAssignmentResponse.getEntity().toString();
 
         // Assert
@@ -598,7 +598,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getAssignmentProgressDownloadCSV(downloadAssignmentRequest,
-                        ITConstants.ASSIGNMENTS_TEST_EXISTING_HARRY_AB_ASSIGNMENT_ID, "excel");
+                        ITConstants.ASSIGNMENTS_TEST_EXISTING_HARRY_AB_ASSIGNMENT_ID, "excel", null);
 
         // Assert
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), downloadAssignmentResponse.getStatus());
@@ -616,7 +616,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest,
-                       ITConstants.HARRY_TEACHERS_AB_GROUP_ID, "excel");
+                       ITConstants.HARRY_TEACHERS_AB_GROUP_ID, "excel", null);
         String downloadAssignmentContents = downloadAssignmentResponse.getEntity().toString();
 
         // Assert
@@ -640,7 +640,7 @@ public class AssignmentFacadeIT extends IsaacIntegrationTest {
         // Act
         Response downloadAssignmentResponse =
                 assignmentFacade.getGroupAssignmentsProgressDownloadCSV(downloadAssignmentRequest,
-                        ITConstants.HARRY_TEACHERS_AB_GROUP_ID, "excel");
+                        ITConstants.HARRY_TEACHERS_AB_GROUP_ID, "excel", null);
 
         // Assert
         assertEquals(Response.Status.FORBIDDEN.getStatusCode(), downloadAssignmentResponse.getStatus());
