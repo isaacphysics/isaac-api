@@ -417,9 +417,7 @@ public class GameManager {
 
         // we need to augment the DTO with whether this gameboard is in a users my boards list.
         if (user instanceof RegisteredUserDTO registeredUser) {
-            Set<String> savedBoardIDs = this.gameboardPersistenceManager
-                    .getGameboardIdsLinkedToUser(registeredUser.getId(), Collections.singletonList(gameboardId));
-            gameboard.setSavedToCurrentUser(savedBoardIDs.contains(gameboardId));
+            gameboard.setSavedToCurrentUser(isBoardLinkedToUser(registeredUser, gameboardId));
         }
 
         return gameboard;
