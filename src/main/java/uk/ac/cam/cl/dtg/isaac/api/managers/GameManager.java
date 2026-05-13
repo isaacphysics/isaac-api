@@ -785,23 +785,6 @@ public class GameManager {
     }
 
     /**
-     * Augments a gameboard with whether the user has it in their boards.
-     *
-     * @param gameboardDTO
-     *            - the DTO of the gameboard.
-     * @param user
-     *            - the user to check whether the board is in their boards list
-     * @throws SegueDatabaseException
-     *             - if there is an error retrieving the content requested.
-     */
-    private void augmentGameboardWithUserSavedInformation(final GameboardDTO gameboardDTO, final AbstractSegueUserDTO user)
-            throws SegueDatabaseException {
-        if (user instanceof RegisteredUserDTO registeredUser) {
-            gameboardDTO.setSavedToCurrentUser(this.isBoardLinkedToUser(registeredUser, gameboardDTO.getId()));
-        }
-    }
-
-    /**
      * Augments the gameboards with question attempt information NOT whether the user has it in their my board page.
      *
      * @param gameboardDTO
