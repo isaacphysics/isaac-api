@@ -306,39 +306,6 @@ public class GameManager {
     }
 
     /**
-     * Get a list of gameboards by their ids, augmented with attempt information.
-     *
-     * Note: These gameboards WILL be augmented with user attempt information, but not whether the gameboard is saved
-     * to the user's boards.
-     *
-     * @param gameboardIds
-     *            - to look up.
-     * @param user
-     *            - the user to augment the gameboard for.
-     * @return the gameboards or null.
-     * @throws SegueDatabaseException
-     *             - if there is a problem retrieving the gameboards in the database.
-     * @throws ContentManagerException
-     *             - if there is a problem resolving content
-     */
-    public final List<GameboardDTO> getGameboardsWithAttempts(final List<String> gameboardIds, final RegisteredUserDTO user)
-            throws SegueDatabaseException, ContentManagerException {
-        if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
-        List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream).map(GameboardItem::getId).collect(Collectors.toList());
-        Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
-                questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
-        for (GameboardDTO gb : gameboardsByIds) {
-            augmentGameboardWithQuestionAttemptInformation(gb, userQuestionAttempts);
-        }
-
-        return gameboardsByIds;
-    }
-
-    /**
      * Get a list of gameboards by their ids, augmented with whether the user has it saved to their boards.
      *
      * @param gameboardIds
