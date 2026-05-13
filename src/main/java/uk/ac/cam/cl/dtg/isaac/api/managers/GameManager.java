@@ -356,8 +356,10 @@ public class GameManager {
         }
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
+        Set<String> savedBoardIds = this.gameboardPersistenceManager.getGameboardIdsLinkedToUser(user.getId(), gameboardIds);
+
         for (GameboardDTO gameboard : gameboardsByIds) {
-            augmentGameboardWithUserSavedInformation(gameboard, user);
+            gameboard.setSavedToCurrentUser(savedBoardIds.contains(gameboard.getId()));
         }
 
         return gameboardsByIds;
