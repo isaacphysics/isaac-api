@@ -60,7 +60,6 @@ import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -294,7 +293,7 @@ public class GameManager {
                                                   final Map<String, Map<String, List<QuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
@@ -319,7 +318,7 @@ public class GameManager {
     public final List<GameboardDTO> getGameboardsWithUserSavedInformation(final List<String> gameboardIds, final RegisteredUserDTO user)
             throws SegueDatabaseException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
@@ -348,7 +347,7 @@ public class GameManager {
     public final List<GameboardDTO> getGameboardsWithAttemptsAndUserSavedInformation(final List<String> gameboardIds, final RegisteredUserDTO user)
             throws SegueDatabaseException, ContentManagerException {
         if (null == gameboardIds || gameboardIds.isEmpty()) {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
 
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
