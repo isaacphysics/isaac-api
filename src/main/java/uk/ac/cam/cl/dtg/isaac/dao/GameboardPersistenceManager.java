@@ -23,6 +23,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +78,7 @@ public class GameboardPersistenceManager {
     private static final Logger log = LoggerFactory.getLogger(GameboardPersistenceManager.class);
     private static final Long GAMEBOARD_TTL_MINUTES = 30L;
     private static final int GAMEBOARD_ITEM_MAP_BATCH_SIZE = 1000;
+    private static final int MAX_GAMEBOARD_IDS_TO_MATCH = 50;
 
     private final PostgresSqlDb database;
     private final Cache<String, GameboardDO> gameboardNonPersistentStorage;
@@ -260,34 +262,70 @@ public class GameboardPersistenceManager {
     }
 
     /**
-     * Determines whether a given game board is already in a users my boards list. Only boards in persistent storage
-     * should be linked to a user.
-     * 
-     * @param userId
-     *            to check
-     * @param gameboardId
-     *            to look up
-     * @return true if it is false if not
-     * @throws SegueDatabaseException
-     *             if there is a database error
+     * Determines which of a given collection of gameboard IDs are in a user's saved gameboards.
+     *
+     * IMPORTANT: If too many gameboard IDs are provided, this instead returns ALL of the user's saved board IDs.
+     *
+     * @param userId the user to check saved gameboards for
+     * @param gameboardIds the list of gameboard IDs to check
+     * @return the subset of the provided gameboard IDs that the user has saved OR all of a user's saved gameboard IDs
+     *          if the provided list of gameboard IDs is too long.
+     * @throws SegueDatabaseException if there is a database error
      */
-    public boolean isBoardLinkedToUser(final Long userId, final String gameboardId) throws SegueDatabaseException {
-        if (userId == null || gameboardId == null) {
-            return false;
+    public Set<String> getGameboardIdsLinkedToUser(final Long userId, final Collection<String> gameboardIds) throws SegueDatabaseException {
+        if (gameboardIds.size() > MAX_GAMEBOARD_IDS_TO_MATCH) {
+            log.debug("Attempting to match too many ({}) gameboard IDs; returning all saved boards for the user instead!",
+                    gameboardIds.size());
+            return getGameboardIdsLinkedToUser(userId);
         }
 
-        String query = "SELECT COUNT(*) AS TOTAL FROM user_gameboards WHERE user_id = ? AND gameboard_id = ?;";
+        Set<String> linkedGameboardIds = Sets.newHashSet();
+
+        String query = "SELECT gameboard_id FROM user_gameboards WHERE user_id = ? AND gameboard_id = ANY(?);";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
             pst.setLong(1, userId);
-            pst.setObject(2, gameboardId);
+
+            Array gameboardIdArray = conn.createArrayOf("TEXT", gameboardIds.toArray());
+            pst.setArray(2, gameboardIdArray);
 
             try (ResultSet results = pst.executeQuery()) {
-                results.next();
-                return results.getInt("TOTAL") == 1;
+                while (results.next()) {
+                    linkedGameboardIds.add(results.getString("gameboard_id"));
+                }
+                return linkedGameboardIds;
+            } finally {
+                gameboardIdArray.free();
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    /**
+     * Gets the gameboard IDs that a user has in their saved boards.
+     *
+     * @param userId the user to check saved gameboards for
+     * @return a set of the user's saved gameboard IDs
+     * @throws SegueDatabaseException if there is a database error
+     */
+    public Set<String> getGameboardIdsLinkedToUser(final Long userId) throws SegueDatabaseException {
+        Set<String> linkedGameboardIds = Sets.newHashSet();
+
+        String query = "SELECT gameboard_id FROM user_gameboards WHERE user_id = ?;";
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setLong(1, userId);
+
+            try (ResultSet results = pst.executeQuery()) {
+                while (results.next()) {
+                    linkedGameboardIds.add(results.getString("gameboard_id"));
+                }
+                return linkedGameboardIds;
+            }
+        } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }

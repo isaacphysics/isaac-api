@@ -1029,8 +1029,10 @@ public class GameManager {
      */
     private boolean isBoardLinkedToUser(final RegisteredUserDTO user, final String gameboardId)
             throws SegueDatabaseException {
-        return this.gameboardPersistenceManager.isBoardLinkedToUser(user.getId(), gameboardId);
-    }    
+        Set<String> linkedIds = this.gameboardPersistenceManager
+                .getGameboardIdsLinkedToUser(user.getId(), Collections.singleton(gameboardId));
+        return linkedIds.contains(gameboardId);
+    }
     
     /**
      * Store a gameboard in a public location.
