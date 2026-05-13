@@ -385,17 +385,13 @@ public class GameManager {
         List<GameboardDTO> gameboardsByIds = this.gameboardPersistenceManager.getGameboardsByIds(gameboardIds);
         List<String> questionPageIds = gameboardsByIds.stream().map(GameboardDTO::getContents).flatMap(Collection::stream)
                 .map(GameboardItem::getId).collect(Collectors.toList());
+
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
                 questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
+        Set<String> savedBoardIds = this.gameboardPersistenceManager.getGameboardIdsLinkedToUser(user.getId(), gameboardIds);
+
         for (GameboardDTO gameboard : gameboardsByIds) {
             augmentGameboardWithQuestionAttemptInformation(gameboard, userQuestionAttempts);
-        }
-
-        Set<String> savedBoardIds = this.gameboardPersistenceManager.getGameboardIdsLinkedToUser(user.getId(), gameboardIds);
-        // getGameboardIdsLinkedToUser may return IDs that weren't in the original list, so take the intersection:
-        savedBoardIds.retainAll(gameboardIds);
-
-        for (GameboardDTO gameboard : gameboardsByIds) {
             gameboard.setSavedToCurrentUser(savedBoardIds.contains(gameboard.getId()));
         }
 
