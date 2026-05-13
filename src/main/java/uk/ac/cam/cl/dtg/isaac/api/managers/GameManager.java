@@ -388,7 +388,15 @@ public class GameManager {
         Map<String, Map<String, List<LightweightQuestionValidationResponse>>> userQuestionAttempts =
                 questionManager.getMatchingLightweightQuestionAttempts(user, questionPageIds);
         for (GameboardDTO gameboard : gameboardsByIds) {
-            augmentGameboardWithQuestionAttemptInformationAndUserInformation(gameboard, userQuestionAttempts, user);
+            augmentGameboardWithQuestionAttemptInformation(gameboard, userQuestionAttempts);
+        }
+
+        Set<String> savedBoardIds = this.gameboardPersistenceManager.getGameboardIdsLinkedToUser(user.getId(), gameboardIds);
+        // getGameboardIdsLinkedToUser may return IDs that weren't in the original list, so take the intersection:
+        savedBoardIds.retainAll(gameboardIds);
+
+        for (GameboardDTO gameboard : gameboardsByIds) {
+            gameboard.setSavedToCurrentUser(savedBoardIds.contains(gameboard.getId()));
         }
 
         return gameboardsByIds;
@@ -440,10 +448,17 @@ public class GameManager {
             final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> userQuestionAttempts)
             throws SegueDatabaseException, ContentManagerException {
 
+        GameboardDTO gameboard = this.gameboardPersistenceManager.getGameboardById(gameboardId);
+        gameboard = augmentGameboardWithQuestionAttemptInformation(gameboard, userQuestionAttempts);
 
         // we need to augment the DTO with whether this gameboard is in a users my boards list.
-        return augmentGameboardWithQuestionAttemptInformationAndUserInformation(
-                this.gameboardPersistenceManager.getGameboardById(gameboardId), userQuestionAttempts, user);
+        if (user instanceof RegisteredUserDTO registeredUser) {
+            Set<String> savedBoardIDs = this.gameboardPersistenceManager
+                    .getGameboardIdsLinkedToUser(registeredUser.getId(), Collections.singletonList(gameboardId));
+            gameboard.setSavedToCurrentUser(savedBoardIDs.contains(gameboardId));
+        }
+
+        return gameboard;
     }
 
     /**
@@ -802,35 +817,6 @@ public class GameManager {
         dfs = depthFirstDOQuestionSearch(content, dfs);
 
         return filterDOQuestionParts(dfs);
-    }
-
-    /**
-     * Augments the gameboards with question attempt information AND whether or not the user has it in their boards.
-     *
-     * @param gameboardDTO
-     *            - the DTO of the gameboard.
-     * @param questionAttemptsFromUser
-     *            - the users question attempt data.
-     * @param user
-     *            - the user to check whether the board is in their boards list
-     * @return Augmented Gameboard.
-     * @throws SegueDatabaseException
-     *             - if there is an error retrieving the content requested.
-     * @throws ContentManagerException
-     *             - if there is an error retrieving the content requested.
-     */
-    private GameboardDTO augmentGameboardWithQuestionAttemptInformationAndUserInformation(final GameboardDTO gameboardDTO,
-                                                                                          final Map<String, ? extends Map<String, ? extends List<? extends LightweightQuestionValidationResponse>>> questionAttemptsFromUser,
-                                                                                          final AbstractSegueUserDTO user)
-            throws SegueDatabaseException, ContentManagerException {
-        if (user instanceof RegisteredUserDTO registeredUser) {
-            gameboardDTO
-                    .setSavedToCurrentUser(this.isBoardLinkedToUser(registeredUser, gameboardDTO.getId()));
-        }
-
-        this.augmentGameboardWithQuestionAttemptInformation(gameboardDTO, questionAttemptsFromUser);
-
-        return gameboardDTO;
     }
 
     /**
