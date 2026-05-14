@@ -1007,7 +1007,14 @@ public class PagesFacade extends AbstractIsaacFacade {
             List<String> additionalGameboardIds = Objects.requireNonNullElse(bookPageDO.getExtensionGameboards(), Collections.emptyList());
             List<String> allGameboardIds = Stream.of(gameboardIds, additionalGameboardIds)
                     .flatMap(Collection::stream).collect(Collectors.toList());
-            List<GameboardDTO> linkedGameboards = gameManager.getGameboards(allGameboardIds);
+
+            List<GameboardDTO> linkedGameboards;
+            try {
+                RegisteredUserDTO registeredUser = userManager.getCurrentRegisteredUser(httpServletRequest);
+                linkedGameboards = gameManager.getGameboardsWithUserSavedInformation(allGameboardIds, registeredUser);
+            } catch (final NoUserLoggedInException e) {
+                linkedGameboards = gameManager.getGameboards(allGameboardIds);
+            }
 
             bookPageDTO.setGameboards(linkedGameboards
                     .stream()
