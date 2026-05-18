@@ -71,6 +71,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -962,7 +963,9 @@ public class ContentIndexer {
                     int sizeInKiloBytes = fileData.size() / 1024;
                     this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
                             f.getSrc(), sizeInKiloBytes), indexProblemCache);
-                } else if (f.getSrc().endsWith(".svg")) {
+                }
+
+                if (f.getSrc().endsWith(".svg") && null != fileData) {
                     // Check file contents for svg with either no defined width or a %-based width
                     String fileContents = fileData.toString();
                     Pattern pattern = Pattern.compile("(<svg[^>]*width\\s*=\\s*\"\\d+%\"[^>]*>|<svg(?![^>]*width)[^>]*>)\\n?");
@@ -973,6 +976,15 @@ public class ContentIndexer {
                                 indexProblemCache
                         );
                     }
+                }
+
+                Pattern badCharacters = Pattern.compile("[^a-zA-Z0-9-_.~/ ]");
+                Matcher badCharactersMatcher = badCharacters.matcher(f.getSrc());
+                if (badCharactersMatcher.find()) {
+                    this.registerContentProblem(content, String.format("Filename '%s' contains illegal character '%s'.",
+                                    f.getSrc(), badCharactersMatcher.group()),
+                            indexProblemCache
+                    );
                 }
             }
 
