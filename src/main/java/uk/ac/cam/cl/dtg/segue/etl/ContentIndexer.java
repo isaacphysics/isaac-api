@@ -992,7 +992,7 @@ public class ContentIndexer {
         }
 
         if (content instanceof ChoiceQuestion question
-                && !(content.getType().equals("isaacQuestion"))) {
+                && !(content.getType().equals("isaacQuestion") || content.getType().equals("isaacLLMFreeTextQuestion"))) {
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,
