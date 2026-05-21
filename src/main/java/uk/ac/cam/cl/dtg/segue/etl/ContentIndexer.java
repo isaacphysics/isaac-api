@@ -17,18 +17,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.*;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
@@ -1004,7 +993,7 @@ public class ContentIndexer {
         }
 
         if (content instanceof ChoiceQuestion question
-                && !(content.getType().equals("isaacQuestion"))) {
+                && !(content.getType().equals("isaacQuestion") || content.getType().equals("isaacLLMFreeTextQuestion"))) {
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,
@@ -1212,6 +1201,14 @@ public class ContentIndexer {
                         }
                     }
                 }
+            }
+        }
+
+        if (content instanceof IsaacLLMFreeTextQuestion q) {
+            if (null == q.getMarkScheme() || q.getMarkScheme().isEmpty()) {
+                this.registerContentProblem(content,
+                        String.format("LLM Free Text Question: %s has no mark scheme set. This question cannot be marked.", q.getId()),
+                    indexProblemCache);
             }
         }
     }
