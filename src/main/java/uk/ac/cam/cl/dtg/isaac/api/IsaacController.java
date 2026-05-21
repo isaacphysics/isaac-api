@@ -440,8 +440,8 @@ public class IsaacController extends AbstractIsaacFacade {
 
             if (null == fileContent) {
                 String refererHeader = httpServletRequest.getHeader("Referer");
-                log.warn("Unable to locate sitemap file. Referer: ({})", refererHeader);
-                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate sitemap file.").toResponse();
+                log.warn("Unable to locate file. Referer: ({})", refererHeader);
+                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate file.").toResponse();
             }
 
             return Response.ok(fileContent.toByteArray()).type(APPLICATION_XML)
@@ -450,7 +450,7 @@ public class IsaacController extends AbstractIsaacFacade {
                     .build();
 
         } catch (final IOException e) {
-            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading sitemap file!");
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading file!");
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (final UnsupportedOperationException e) {
