@@ -63,6 +63,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import static jakarta.ws.rs.core.MediaType.APPLICATION_XML;
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -414,6 +415,48 @@ public class IsaacController extends AbstractIsaacFacade {
             return error.toResponse();
         } catch (NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Endpoint to allow xml files to be requested from the content database.
+     *
+     * @param httpServletRequest
+     *            - used for the Referer header for helpful error messages.
+     * @return a Response containing the file contents as Content-Disposition: attachment, or a SegueErrorResponse.
+     */
+    @GET
+    @Produces(APPLICATION_XML)
+    @Path("/xml/{path:.*}")
+    @Operation(summary = "Get an xml file from the content database.")
+    public final Response getXMLByPath(@Context final HttpServletRequest httpServletRequest, @PathParam("path") final String path) {
+        if (!Files.getFileExtension(path).equalsIgnoreCase("xml")) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid file type requested");
+            return error.toResponse();
+        }
+
+        try {
+            ByteArrayOutputStream fileContent = this.contentManager.getFileBytes(path);
+
+            if (null == fileContent) {
+                String refererHeader = httpServletRequest.getHeader("Referer");
+                log.warn("Unable to locate sitemap file. Referer: ({})", refererHeader);
+                return new SegueErrorResponse(Status.NOT_FOUND, "Unable to locate sitemap file.").toResponse();
+            }
+
+            return Response.ok(fileContent.toByteArray()).type(APPLICATION_XML)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                    .header("Content-Disposition", "attachment")  // Do not show this file in the browser.
+                    .build();
+
+        } catch (final IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error reading sitemap file!");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (final UnsupportedOperationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Multiple files match the path provided.");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
         }
     }
 
