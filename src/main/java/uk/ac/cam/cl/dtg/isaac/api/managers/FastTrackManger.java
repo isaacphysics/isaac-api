@@ -11,9 +11,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Arrays;
@@ -68,11 +69,10 @@ public class FastTrackManger {
      * @throws ContentManagerException if content cant be found which matches the question ID.
      */
     public final String getConceptFromQuestionId(final String questionId) throws ContentManagerException {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
-        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
-        ResultsWrapper<ContentDTO> resultsList = contentManager.findByFieldNames(
-                ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, DEFAULT_RESULTS_LIMIT);
+        BooleanInstruction fieldsToMatch = new BooleanInstruction();
+        fieldsToMatch.must(new MatchInstruction(TYPE_FIELDNAME, FAST_TRACK_QUESTION_TYPE));
+        fieldsToMatch.must(new MatchInstruction(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, questionId));
+        ResultsWrapper<ContentDTO> resultsList = this.contentManager.nestedMatchSearch(fieldsToMatch, 0, DEFAULT_RESULTS_LIMIT, null, null);
 
         String upperConceptTitle = "";
         if (resultsList.getTotalResults() == 1) {
