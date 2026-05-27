@@ -136,7 +136,7 @@ public class InfoFacade extends AbstractSegueFacade {
      */
     @GET
     @Produces(APPLICATION_XML)
-    @Path("/sitemap")
+    @Path("/sitemap.xml")
     @Operation(summary = "Get the sitemap file from the content database.")
     public final Response getSitemap() {
         String path = "sitemap.xml";
@@ -145,7 +145,7 @@ public class InfoFacade extends AbstractSegueFacade {
 
             if (null == fileContent) {
                 log.warn("Unable to locate sitemap file.");
-                return new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to locate sitemap file.").toResponse();
+                return Response.status(Response.Status.NOT_FOUND).type(APPLICATION_XML).build();
             }
 
             return Response.ok(fileContent.toByteArray()).type(APPLICATION_XML)
