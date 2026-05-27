@@ -106,7 +106,8 @@ public class GameboardPersistenceManager {
         this.database = database;
         this.mapper = mapper;
         this.contentManager = contentManager;
-        this.objectMapper = objectMapper.getSharedContentObjectMapper();;
+        this.objectMapper = objectMapper.getSharedContentObjectMapper();
+        // FIXME: since removal of generateRandomGameboard, no more temporary boards to store, so this can go too:
         this.gameboardNonPersistentStorage = CacheBuilder.newBuilder()
                 .expireAfterAccess(GAMEBOARD_TTL_MINUTES, TimeUnit.MINUTES).<String, GameboardDO> build();
     }
@@ -163,21 +164,6 @@ public class GameboardPersistenceManager {
      */
     public List<GameboardDTO> getLiteGameboardsByIds(final Collection<String> gameboardIds) throws SegueDatabaseException {
         return this.getGameboardsByIds(gameboardIds, false);
-    }
-
-    /**
-     * Keep generated gameboard in non-persistent storage.
-     * 
-     * This will be removed if the gameboard is saved to persistent storage.
-     * 
-     * @param gameboard
-     *            to temporarily store.
-     * @return gameboard id
-     */
-    public String temporarilyStoreGameboard(final GameboardDTO gameboard) {
-        this.gameboardNonPersistentStorage.put(gameboard.getId(), this.convertToGameboardDO(gameboard));
-
-        return gameboard.getId();
     }
 
     /**

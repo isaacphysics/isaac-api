@@ -587,37 +587,6 @@ public class GitContentManager {
         return finalResults;
     }
 
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit
-    ) throws ContentManagerException {
-        return this.findByFieldNamesRandomOrder(fieldsToMatch, startIndex, limit, null);
-    }
-
-    @Deprecated
-    public ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit, @Nullable final Long randomSeed
-    ) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults;
-
-        ResultsWrapper<String> searchHits;
-        searchHits = searchProvider.randomisedMatchSearch(
-                contentIndex, CONTENT_INDEX_TYPE.CONTENT.toString(), fieldsToMatch, startIndex, limit,
-                randomSeed, this.getBaseFilters());
-
-        // setup object mapper to use pre-configured deserializer module.
-        // Required to deal with type polymorphism
-        List<Content> result = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
-
-        List<ContentDTO> contentDTOResults = contentSubclassMapper.getDTOByDOList(result);
-
-        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
-
-        return finalResults;
-    }
-
     public final ByteArrayOutputStream getFileBytes(final String filename) throws IOException {
         return database.getFileByCommitSHA(getCurrentContentSHA(), filename);
     }
