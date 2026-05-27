@@ -52,6 +52,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
@@ -624,16 +626,13 @@ public class GameManager {
      *             - if we cannot access the content requested.
      */
     public List<IsaacWildcardDTO> getWildcards() throws NoWildcardException, ContentManagerException {
-        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, BooleanOperator.OR, Collections.singletonList(WILDCARD_TYPE)));
+        BooleanInstruction searchInstruction = new BooleanInstruction();
+        searchInstruction.should(new MatchInstruction(TYPE_FIELDNAME, WILDCARD_TYPE));
 
         Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
 
-        ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.findByFieldNames(
-                fieldsToMap, 0, -1, sortInstructions);
+        ResultsWrapper<ContentDTO> wildcardResults = this.contentManager.nestedMatchSearch(searchInstruction, 0, -1, null, sortInstructions);
 
         if (wildcardResults.getTotalResults() == 0) {
             throw new NoWildcardException();
