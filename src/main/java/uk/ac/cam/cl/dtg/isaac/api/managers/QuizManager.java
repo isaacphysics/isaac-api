@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +36,11 @@ import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.annotation.Nullable;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +58,6 @@ public class QuizManager {
     private static final Logger log = LoggerFactory.getLogger(QuizManager.class);
 
     private final AbstractConfigLoader properties;
-    private final ContentService contentService;
     private final GitContentManager contentManager;
     private final ContentSummarizerService contentSummarizerService;
 
@@ -79,29 +78,25 @@ public class QuizManager {
                        final GitContentManager contentManager,
                        final ContentSummarizerService contentSummarizerService) {
         this.properties = properties;
-        this.contentService = contentService;
         this.contentManager = contentManager;
         this.contentSummarizerService = contentSummarizerService;
     }
 
-    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(String visibleToRole, @Nullable Integer startIndex, @Nullable Integer limit, boolean showNoFilterQuizzes) throws ContentManagerException {
+    public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(final String visibleToRole, @Nullable final Integer startIndex,
+                                                                 @Nullable final Integer limit, final boolean showNoFilterQuizzes) throws ContentManagerException {
 
-        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(QUIZ_TYPE)));
+        BooleanInstruction searchInstruction = new BooleanInstruction();
+        searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, QUIZ_TYPE));
 
         if (!showNoFilterQuizzes) {
-            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(TAGS_FIELDNAME, BooleanOperator.NOT,
-                    Collections.singletonList(HIDE_FROM_FILTER_TAG)));
+            searchInstruction.mustNot(new MatchInstruction(TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
         }
 
         if (null != visibleToRole) {
-            fieldsToMatch.add(new GitContentManager.BooleanSearchClause(HIDDEN_FROM_ROLES_FIELDNAME,
-                    BooleanOperator.NOT, Collections.singletonList(visibleToRole)));
+            searchInstruction.mustNot(new MatchInstruction(HIDDEN_FROM_ROLES_FIELDNAME, visibleToRole));
         }
 
-        ResultsWrapper<ContentDTO> content = this.contentService.findMatchingContent(fieldsToMatch, startIndex, limit);
-
+        ResultsWrapper<ContentDTO> content = this.contentManager.nestedMatchSearch(searchInstruction, startIndex, limit, null, null);
         return this.contentSummarizerService.extractContentSummaryFromResultsWrapper(content, QuizSummaryDTO.class);
     }
 
