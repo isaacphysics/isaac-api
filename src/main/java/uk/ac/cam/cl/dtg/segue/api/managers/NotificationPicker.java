@@ -30,6 +30,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ResourceNotFoundException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 
 import java.util.Calendar;
 import java.util.Collections;
@@ -73,12 +75,11 @@ public class NotificationPicker {
     public List<ContentDTO> getAvailableNotificationsForUser(final RegisteredUserDTO user)
             throws ContentManagerException, SegueDatabaseException {
         // get users notification record
-        List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-        fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("notification")));
+        BooleanInstruction searchInstruction = new BooleanInstruction();
+        searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, "notification"));
 
         ResultsWrapper<ContentDTO> allContentNotifications = this.contentManager
-                .findByFieldNames(fieldsToMatch, 0, -1);
+                .nestedMatchSearch(searchInstruction, 0, -1, null, null);
 
         Map<String, IUserNotification> listOfRecordedNotifications = getMapOfRecordedNotifications(user);
 
