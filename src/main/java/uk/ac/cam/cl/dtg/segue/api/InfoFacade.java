@@ -134,7 +134,7 @@ public class InfoFacade extends AbstractSegueFacade {
      *
      * @param httpServletRequest
      *            - used for the Referer header for helpful error messages.
-     * @return a Response containing the sitemap file contents as Content-Disposition: attachment, or a SegueErrorResponse.
+     * @return a Response containing the sitemap file, or a SegueErrorResponse.
      */
     @GET
     @Produces(APPLICATION_XML)
@@ -153,7 +153,6 @@ public class InfoFacade extends AbstractSegueFacade {
 
             return Response.ok(fileContent.toByteArray()).type(APPLICATION_XML)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
-                    .header("Content-Disposition", "attachment")  // Do not show this file in the browser.
                     .build();
 
         } catch (final IOException e) {
