@@ -132,22 +132,19 @@ public class InfoFacade extends AbstractSegueFacade {
     /**
      * Gets the sitemap from the content database.
      *
-     * @param httpServletRequest
-     *            - used for the Referer header for helpful error messages.
      * @return a Response containing the sitemap file, or a SegueErrorResponse.
      */
     @GET
     @Produces(APPLICATION_XML)
     @Path("/sitemap")
     @Operation(summary = "Get the sitemap file from the content database.")
-    public final Response getSitemap(@Context final HttpServletRequest httpServletRequest) {
+    public final Response getSitemap() {
         String path = "sitemap.xml";
         try {
             ByteArrayOutputStream fileContent = this.contentManager.getFileBytes(path);
 
             if (null == fileContent) {
-                String refererHeader = httpServletRequest.getHeader("Referer");
-                log.warn("Unable to locate sitemap file. Referer: ({})", refererHeader);
+                log.warn("Unable to locate sitemap file.");
                 return new SegueErrorResponse(Response.Status.NOT_FOUND, "Unable to locate sitemap file.").toResponse();
             }
 
