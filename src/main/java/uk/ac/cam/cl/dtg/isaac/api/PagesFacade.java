@@ -53,7 +53,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.AnonymousUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.QuestionManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -104,7 +103,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class PagesFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(PagesFacade.class);
 
-    private final ContentService api;
     private final MainMapper mapper;
     private final UserAccountManager userManager;
     private final URIManager uriManager;
@@ -117,8 +115,6 @@ public class PagesFacade extends AbstractIsaacFacade {
     /**
      * Creates an instance of the pages controller which provides the REST endpoints for accessing page content.
      *
-     * @param api
-     *            - Instance of ContentService
      * @param propertiesLoader
      *            - Instance of properties Loader
      * @param logManager
@@ -139,13 +135,12 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - For looking up bookmark information.
      */
     @Inject
-    public PagesFacade(final ContentService api, final AbstractConfigLoader propertiesLoader,
+    public PagesFacade(final AbstractConfigLoader propertiesLoader,
                        final ILogManager logManager, final MainMapper mapper, final GitContentManager contentManager,
                        final UserAccountManager userManager, final URIManager uriManager,
                        final QuestionManager questionManager, final GameManager gameManager,
                        final UserAttemptManager userAttemptManager, final BookmarksManager bookmarksManager) {
         super(propertiesLoader, logManager);
-        this.api = api;
         this.mapper = mapper;
         this.contentManager = contentManager;
         this.userManager = userManager;
@@ -1300,44 +1295,6 @@ public class PagesFacade extends AbstractIsaacFacade {
             }
         }
         return listOfContentInfo;
-    }
-
-    /**
-     * Helper method to query segue for a list of content objects.
-     * 
-     * This method will only use the latest version of the content.
-     * 
-     * @param fieldsToMatch
-     *            - expects a map of the form fieldname -> list of queries to match
-     * @param booleanOperatorOverrideMap
-     *            - an optional map of the form fieldname -> one of 'AND', 'OR' or 'NOT', to specify the
-     *              type of matching needed for that field. Overrides any other default matching behaviour
-     *              for the given fields
-     * @param startIndex
-     *            - the initial index for the first result.
-     * @param limit
-     *            - the maximums number of results to return
-     * @return Response builder containing a list of content summary objects or containing a SegueErrorResponse
-     */
-    private Response.ResponseBuilder listContentObjects(final Map<String,
-                List<String>> fieldsToMatch,
-                @Nullable final Map<String, BooleanOperator> booleanOperatorOverrideMap,
-                final Integer startIndex,
-                final Integer limit)
-            throws ContentManagerException {
-        ResultsWrapper<ContentDTO> c;
-
-        c = api.findMatchingContent(
-                ContentService.generateDefaultFieldToMatch(fieldsToMatch, booleanOperatorOverrideMap),
-                startIndex,
-                limit
-        );
-
-        ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
-                this.extractContentSummaryFromList(c.getResults()),
-                c.getTotalResults());
-
-        return Response.ok(summarizedContent);
     }
 
     /**

@@ -33,7 +33,6 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.QuizSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
@@ -66,16 +65,13 @@ public class QuizManager {
      *
      * @param properties
      *            - global properties map
-     * @param contentService
-     *            - so we can look up content
      * @param contentManager
      *            - so we can fetch specific content.
      * @param contentSummarizerService
      *            - so we can summarize content with links
      */
     @Inject
-    public QuizManager(final AbstractConfigLoader properties, final ContentService contentService,
-                       final GitContentManager contentManager,
+    public QuizManager(final AbstractConfigLoader properties, final GitContentManager contentManager,
                        final ContentSummarizerService contentSummarizerService) {
         this.properties = properties;
         this.contentManager = contentManager;
