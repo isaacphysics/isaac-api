@@ -182,31 +182,25 @@ public class PagesFacade extends AbstractIsaacFacade {
             @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, List.of(CONCEPT_TYPE));
-
         StringBuilder etagCodeBuilder = new StringBuilder();
-
-        Integer newLimit = null;
+        Integer newLimit = limit;
 
         if (limit != null) {
-            newLimit = limit;
             etagCodeBuilder.append(limit);
         }
 
-        // options
+        List<String> idsList = null;
         if (ids != null) {
-            List<String> idsList = Arrays.asList(ids.split(","));
-            fieldsToMatch.put(ID_FIELDNAME, idsList);
+            idsList = Arrays.asList(ids.split(","));
             newLimit = idsList.size();
             etagCodeBuilder.append(ids);
         }
 
+        List<String> tagList = null;
         if (tags != null) {
-            fieldsToMatch.put(TAGS_FIELDNAME, Arrays.asList(tags.split(",")));
+            tagList = Arrays.asList(tags.split(","));
             etagCodeBuilder.append(tags);
         }
-        Map<String, BooleanOperator> booleanOperatorOverrideMap = ImmutableMap.of(TAGS_FIELDNAME, BooleanOperator.OR);
 
         // Calculate the ETag on last modified date of tags list
         // NOTE: Assumes that the latest version of the content is being used.
@@ -220,10 +214,37 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            return listContentObjects(fieldsToMatch, booleanOperatorOverrideMap, startIndex, newLimit).tag(etag)
+            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                    .buildBaseInstructions(new BooleanInstruction());
+            searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, CONCEPT_TYPE));
+
+            if (idsList != null && !idsList.isEmpty()) {
+                BooleanInstruction idsInstruction = new BooleanInstruction();
+                for (String id : idsList) {
+                    idsInstruction.should(new MatchInstruction(ID_FIELDNAME, id));
+                }
+                searchInstruction.must(idsInstruction);
+            }
+
+            if (tagList != null && !tagList.isEmpty()) {
+                BooleanInstruction tagsInstruction = new BooleanInstruction();
+                for (String tag : tagList) {
+                    tagsInstruction.should(new MatchInstruction(TAGS_FIELDNAME, tag));
+                }
+                searchInstruction.must(tagsInstruction);
+            }
+
+            ResultsWrapper<ContentDTO> c = this.contentManager.nestedMatchSearch(
+                    searchInstruction, startIndex, newLimit, null, null);
+
+            ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
+                    this.extractContentSummaryFromList(c.getResults()),
+                    c.getTotalResults());
+
+            return Response.ok(summarizedContent).tag(etag)
                     .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true))
                     .build();
-        } catch (ContentManagerException e1) {
+        } catch (final ContentManagerException e1) {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
                     "Error locating the content requested", e1);
             log.error(error.getErrorMessage(), e1);
