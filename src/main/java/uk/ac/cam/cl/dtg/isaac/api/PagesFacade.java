@@ -59,6 +59,8 @@ import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
@@ -1159,17 +1161,17 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-            fieldsToMatch.put(TYPE_FIELDNAME, List.of(POD_FRAGMENT_TYPE));
-            fieldsToMatch.put(TAGS_FIELDNAME, List.of(subject));
+            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                    .buildBaseInstructions(new BooleanInstruction());
+            searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, POD_FRAGMENT_TYPE));
+            searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, subject));
 
             Map<String, SortOrder> sortInstructions = new HashMap<>();
             sortInstructions.put("id.raw", SortOrder.DESC); // Sort by ID (i.e. most recent; all pod ids start yyyymmdd)
             // We would ideally also sort by presence of 'featured' tag, tricky with current implementation
 
-            ResultsWrapper<ContentDTO> pods = api.findMatchingContent(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, MAX_PODS_TO_RETURN,
-                    sortInstructions);
+            ResultsWrapper<ContentDTO> pods = this.contentManager.nestedMatchSearch(
+                    searchInstruction, startIndex, MAX_PODS_TO_RETURN, null, sortInstructions);
 
             return Response.ok(pods).cacheControl(getCacheControl(NUMBER_SECONDS_IN_TEN_MINUTES, true))
                     .tag(etag)
