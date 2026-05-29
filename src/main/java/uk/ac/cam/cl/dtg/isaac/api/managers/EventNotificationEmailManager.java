@@ -16,20 +16,19 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
-import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.RangeInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -97,22 +96,22 @@ public class EventNotificationEmailManager {
         // Magic number
         Integer limit = 10000;
         Integer startIndex = 0;
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        Map<String, AbstractFilterInstruction> filterInstructions = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime threeDaysAhead = now.plusDays(3);
-        DateRangeFilterInstruction
-            eventsWithinThreeDays = new DateRangeFilterInstruction(new Date(), Date.from(threeDaysAhead.toInstant()));
-        filterInstructions.put(DATE_FIELDNAME, eventsWithinThreeDays);
+
+        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                .buildBaseInstructions(new BooleanInstruction());
+        searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, EVENT_TYPE));
+        searchInstruction.must(new RangeInstruction<Long>(DATE_FIELDNAME)
+                .greaterThanOrEqual(new Date().getTime())
+                .lessThanOrEqual(Date.from(threeDaysAhead.toInstant()).getTime()));
 
         try {
-            ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
-                    filterInstructions);
-            for (ContentDTO contentResult : findByFieldNames.getResults()) {
+            ResultsWrapper<ContentDTO> results = this.contentManager.nestedMatchSearch(
+                    searchInstruction, startIndex, limit, null, sortInstructions);
+            for (ContentDTO contentResult : results.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO event) {
                     // Skip sending emails for cancelled events
                     if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
@@ -138,23 +137,22 @@ public class EventNotificationEmailManager {
         // Magic number
         Integer limit = 10000;
         Integer startIndex = 0;
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        Map<String, AbstractFilterInstruction> filterInstructions = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime sixtyDaysAgo = now.plusDays(-60);
 
-        DateRangeFilterInstruction eventsInLastSixtyDays = new DateRangeFilterInstruction(
-                Date.from(sixtyDaysAgo.toInstant()), new Date());
-        filterInstructions.put(DATE_FIELDNAME, eventsInLastSixtyDays);
+        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                .buildBaseInstructions(new BooleanInstruction());
+        searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, EVENT_TYPE));
+        searchInstruction.must(new RangeInstruction<Long>(DATE_FIELDNAME)
+                .greaterThanOrEqual(Date.from(sixtyDaysAgo.toInstant()).getTime())
+                .lessThanOrEqual(new Date().getTime()));
 
         try {
-            ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch), startIndex, limit, sortInstructions,
-                    filterInstructions);
-            for (ContentDTO contentResult : findByFieldNames.getResults()) {
+            ResultsWrapper<ContentDTO> results = this.contentManager.nestedMatchSearch(
+                    searchInstruction, startIndex, limit, null, sortInstructions);
+            for (ContentDTO contentResult : results.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO event) {
                     // Skip sending emails for cancelled events
                     if (EventStatus.CANCELLED.equals(event.getEventStatus())) {
