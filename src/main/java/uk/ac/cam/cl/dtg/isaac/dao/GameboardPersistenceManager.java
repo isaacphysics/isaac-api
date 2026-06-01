@@ -37,12 +37,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.util.mappers.MainMapper;
 
 import jakarta.annotation.Nullable;
@@ -431,21 +432,28 @@ public class GameboardPersistenceManager {
     public List<String> getInvalidQuestionIdsFromGameboard(final GameboardDTO gameboardDTO) {
         GameboardDO gameboardDO = this.convertToGameboardDO(gameboardDTO);
 
+        List<String> questionIds = gameboardDO.getContents().stream().map(GameboardContentDescriptor::getId).toList();
+
         // build query the db to get full question information
-        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
+        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                .buildBaseInstructions(new BooleanInstruction());
 
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-            Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.OR,
-                gameboardDO.getContents().stream().map(GameboardContentDescriptor::getId).collect(Collectors.toList())));
+        BooleanInstruction idsInstruction = new BooleanInstruction();
+        for (String questionId : questionIds) {
+            idsInstruction.should(new MatchInstruction(ID_FIELDNAME + '.' + UNPROCESSED_SEARCH_FIELD_SUFFIX, questionId));
+        }
+        searchInstruction.must(idsInstruction);
 
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, Constants.BooleanOperator.OR, QUESTION_PAGE_TYPES));
+        BooleanInstruction questionTypesInstruction = new BooleanInstruction();
+        for (String questionPageType : QUESTION_PAGE_TYPES) {
+            questionTypesInstruction.should(new MatchInstruction(TYPE_FIELDNAME, questionPageType));
+        }
+        searchInstruction.must(questionTypesInstruction);
 
-        // Search for questions that match the ids.       
+        // Search for questions that match the ids.
         ResultsWrapper<ContentDTO> results;
         try {
-            results = this.contentManager.findByFieldNames(
-                    fieldsToMap, 0, gameboardDO.getContents().size());
+            results = this.contentManager.nestedMatchSearch(searchInstruction, 0, gameboardDO.getContents().size(), null, null);
         } catch (ContentManagerException e) {
             results = new ResultsWrapper<>();
             log.error("Unable to select questions for gameboard.", e);
