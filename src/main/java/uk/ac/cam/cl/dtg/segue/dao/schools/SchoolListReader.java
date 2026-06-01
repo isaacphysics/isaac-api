@@ -25,13 +25,14 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.users.School;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -93,10 +94,19 @@ public class SchoolListReader {
 
         Integer queryLimit = limit == null ? DEFAULT_RESULTS_LIMIT : limit;
 
-        List<String> schoolSearchResults = searchProvider.fuzzySearch(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(),
-                searchQuery, 0, queryLimit, Map.of(SCHOOL_CLOSED_FIELDNAME_POJO, List.of("false")), null, SCHOOL_URN_FIELDNAME_POJO,
-                SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, SCHOOL_POSTCODE_FIELDNAME_POJO)
-                .getResults();
+        BooleanInstruction schoolSearchInstruction = new BooleanInstruction();
+        schoolSearchInstruction.must(new MatchInstruction(SCHOOL_CLOSED_FIELDNAME_POJO, "false"));
+
+        // At least one of these fields must match, with some fuzziness
+        BooleanInstruction textSearchInstruction = new BooleanInstruction();
+        textSearchInstruction.should(new MatchInstruction(SCHOOL_URN_FIELDNAME_POJO, searchQuery, 2L, true));
+        textSearchInstruction.should(new MatchInstruction(SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO, searchQuery, 2L, true));
+        textSearchInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME_POJO, searchQuery, 2L, true));
+        schoolSearchInstruction.must(textSearchInstruction);
+
+        List<String> schoolSearchResults = searchProvider.nestedMatchSearch(SCHOOLS_INDEX_BASE,
+                SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, queryLimit, schoolSearchInstruction, null, null
+        ).getResults();
 
         List<School> resultList = Lists.newArrayList();
         for (String schoolString : schoolSearchResults) {
