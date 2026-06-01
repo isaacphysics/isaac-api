@@ -302,32 +302,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> findByExactMatch(final String indexBase, final String indexType,
-                                                   final String fieldname, final String needle, final int startIndex,
-                                                   final int limit,
-                                                   final Map<String, AbstractFilterInstruction> filterInstructions)
-            throws SegueSearchException {
-        ResultsWrapper<String> resultList;
-
-        Query query = MatchQuery.of(m -> m
-                .field(fieldname)
-                .query(needle)
-        )._toQuery();
-
-        if (filterInstructions != null) {
-            Query matchQuery = query;
-            query = BoolQuery.of(bq -> bq
-                    .must(matchQuery)
-                    .filter(generateFilterQuery(filterInstructions))
-            )._toQuery();
-        }
-
-        resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
-
-        return resultList;
-    }
-
-    @Override
     public ResultsWrapper<String> findByPrefix(final String indexBase, final String indexType, final String fieldname,
                                                final String prefix, final int startIndex, final int limit,
                                                final Map<String, AbstractFilterInstruction> filterInstructions)
