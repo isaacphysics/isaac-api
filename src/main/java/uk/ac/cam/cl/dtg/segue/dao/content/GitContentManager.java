@@ -748,27 +748,6 @@ public class GitContentManager {
     }
 
     /**
-     * Returns the basic filter configuration.
-     *
-     * @return either null or a map setup with filter/exclusion instructions, based on environment properties.
-     */
-    private Map<String, AbstractFilterInstruction> getBaseFilters() {
-        if (!this.hideRegressionTestContent && !this.showOnlyPublishedContent) {
-            return null;
-        }
-
-        HashMap<String, AbstractFilterInstruction> filters = new HashMap<>();
-
-        if (this.hideRegressionTestContent) {
-            filters.put("tags", new SimpleExclusionInstruction(REGRESSION_TEST_TAG));
-        }
-        if (this.showOnlyPublishedContent) {
-            filters.put("published", new SimpleFilterInstruction("true"));
-        }
-        return ImmutableMap.copyOf(filters);
-    }
-
-    /**
      * A method which adds information to the contentSummaryDTO, summary, from values evaluated from the content.
      * @param content the original content object which was used to create the summary.
      *                Its instance should not get altered from calling this method.
