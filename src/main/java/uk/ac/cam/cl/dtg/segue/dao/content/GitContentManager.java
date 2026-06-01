@@ -755,13 +755,4 @@ public class GitContentManager {
         List<String> questionPartIds = questionParts.stream().map(QuestionDTO::getId).collect(Collectors.toList());
         summary.setQuestionPartIds(questionPartIds);
     }
-
-    /**
-     * An abstract representation of a search clause that can be interpreted as desired by different search providers.
-     *
-     * @deprecated in favour of {@code BooleanInstruction}, as an attempt to unify approaches to searching.
-     */
-    @Deprecated
-    public record BooleanSearchClause(String field, BooleanOperator operator, List<String> values) {
-    }
 }
