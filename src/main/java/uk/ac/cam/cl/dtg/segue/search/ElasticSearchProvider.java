@@ -218,76 +218,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    @Deprecated
-    public ResultsWrapper<String> fuzzySearch(final String indexBase, final String indexType, final String searchString,
-                                              final Integer startIndex, final Integer limit,
-                                              @Nullable final Map<String, List<String>> fieldsThatMustMatch,
-                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
-                                              final String... fields) throws SegueSearchException {
-        if (null == indexBase || null == indexType || null == searchString || null == fields) {
-            log.warn("A required field is missing. Unable to execute search.");
-            return null;
-        }
-
-        BoolQuery.Builder masterQuery;
-        if (null != fieldsThatMustMatch) {
-            masterQuery = new BoolQuery.Builder().must(this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch))._toQuery());
-        } else {
-            masterQuery = new BoolQuery.Builder();
-        }
-
-        BoolQuery.Builder query = new BoolQuery.Builder();
-        Set<String> boostFields = ImmutableSet.of("id", "title", "tags");
-
-        List<String> searchTerms = Lists.newArrayList();
-        searchTerms.addAll(Arrays.asList(searchString.split(" ")));
-        if (searchTerms.size() > 1) {
-            searchTerms.add(searchString);
-        }
-
-        for (String f : fields) {
-            float boost = boostFields.contains(f) ? 2f : 1f;
-
-            for (String searchTerm : searchTerms) {
-                Query initialFuzzySearch = MatchQuery.of(m -> m
-                        .field(f)
-                        .query(searchTerm)
-                        .fuzziness("AUTO")
-                        .prefixLength(0)
-                        .boost(boost)
-                )._toQuery();
-                query.should(initialFuzzySearch);
-
-                Query regexSearch = WildcardQuery.of(r -> r
-                        .field(f)
-                        .value("*" + searchTerm + "*")
-                        .boost(boost)
-                )._toQuery();
-                query.should(regexSearch);
-            }
-        }
-
-        // this query is just a bit smarter than the regex search above.
-        Query multiMatchPrefixQuery = MultiMatchQuery.of(mm -> mm
-                .query(searchString)
-                .fields(Arrays.asList(fields))
-                .type(TextQueryType.PhrasePrefix)
-                .prefixLength(2)
-                .boost(2.0f)
-        )._toQuery();
-        query.should(multiMatchPrefixQuery);
-
-        masterQuery.must(query.build()._toQuery());
-
-        if (filterInstructions != null) {
-            masterQuery.filter(generateFilterQuery(filterInstructions));
-        }
-
-        Query finalQuery = masterQuery.build()._toQuery();
-        return this.executeBasicQuery(indexBase, indexType, finalQuery, startIndex, limit);
-    }
-
-    @Override
     public ResultsWrapper<String> termSearch(final String indexBase, final String indexType,
                                              final String searchTerm, final String field, final int startIndex, final int limit,
                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
@@ -723,34 +653,6 @@ public class ElasticSearchProvider implements ISearchProvider {
             throw new SegueSearchException("Error while trying to search", e);
         }
     }
-
-
-    /**
-     * Utility function to support conversion between simple field maps and bool maps.
-     *
-     * @param fieldsThatMustMatch
-     *            - the map that should be converted into a suitable map for querying.
-     * @return Map where each field is using the OR boolean operator.
-     *
-     * @deprecated as {@code AbstractInstruction}-based instructions should be preferred over
-     * {@code fieldsToMatch}-style instructions.
-     */
-    @Deprecated
-    private List<GitContentManager.BooleanSearchClause> convertToBoolMap(final Map<String, List<String>> fieldsThatMustMatch) {
-        if (null == fieldsThatMustMatch) {
-            return null;
-        }
-
-        List<GitContentManager.BooleanSearchClause> result = Lists.newArrayList();
-
-        for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch.entrySet()) {
-            result.add(new GitContentManager.BooleanSearchClause(
-                    pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
-        }
-
-        return result;
-    }
-
 
     /**
      * Based on the relatively abstract {@code matchInstruction}, generates a {@code Query} which is usable by
