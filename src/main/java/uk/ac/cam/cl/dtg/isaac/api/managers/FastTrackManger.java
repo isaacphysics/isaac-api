@@ -113,12 +113,18 @@ public class FastTrackManger {
         List<String> stringLevelFilters = levelFilters.stream().map(FASTTRACK_LEVEL::name).toList();
         BooleanInstruction searchInstruction = new BooleanInstruction();
 
+        BooleanInstruction pageTypeInstruction = new BooleanInstruction();
         for (String type : QUESTION_PAGE_TYPES) {
-            searchInstruction.should(new MatchInstruction(TYPE_FIELDNAME, type));
+            pageTypeInstruction.should(new MatchInstruction(TYPE_FIELDNAME, type));
         }
+        searchInstruction.must(pageTypeInstruction);
+
+        BooleanInstruction levelInstruction = new BooleanInstruction();
         for (String levelFilter : stringLevelFilters) {
-            searchInstruction.should(new MatchInstruction(TAGS_FIELDNAME, levelFilter));
+            levelInstruction.should(new MatchInstruction(TAGS_FIELDNAME, levelFilter));
         }
+        searchInstruction.must(levelInstruction);
+
         searchInstruction.must(new MatchInstruction(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, conceptTitle));
         searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, boardTag));
 
