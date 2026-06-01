@@ -532,62 +532,6 @@ public class GitContentManager {
         return new ResultsWrapper<>(contentSubclassMapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
     }
 
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit
-    ) throws ContentManagerException {
-        return this.findByFieldNames(fieldsToMatch, startIndex, limit, null);
-    }
-
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions
-    ) throws ContentManagerException {
-        return this.findByFieldNames(fieldsToMatch, startIndex, limit, sortInstructions, null);
-    }
-
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, Constants.SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
-    ) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults;
-
-        final Map<String, Constants.SortOrder> newSortInstructions;
-        if (null == sortInstructions || sortInstructions.isEmpty()) {
-            newSortInstructions = Maps.newHashMap();
-            newSortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    Constants.SortOrder.ASC);
-        } else {
-            newSortInstructions = sortInstructions;
-        }
-
-        // add base filters to filter instructions
-        Map<String, AbstractFilterInstruction> newFilterInstructions = filterInstructions;
-        if (this.getBaseFilters() != null) {
-            if (null == newFilterInstructions) {
-                newFilterInstructions = Maps.newHashMap();
-            }
-            newFilterInstructions.putAll(this.getBaseFilters());
-        }
-
-        ResultsWrapper<String> searchHits = searchProvider.matchSearch(contentIndex,
-                CONTENT_INDEX_TYPE.CONTENT.toString(), fieldsToMatch, startIndex, limit,
-                newSortInstructions, newFilterInstructions);
-
-        // setup object mapper to use pre-configured deserializer module.
-        // Required to deal with type polymorphism
-        List<Content> result = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
-
-        List<ContentDTO> contentDTOResults = contentSubclassMapper.getDTOByDOList(result);
-
-        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
-
-        return finalResults;
-    }
-
     public final ByteArrayOutputStream getFileBytes(final String filename) throws IOException {
         return database.getFileByCommitSHA(getCurrentContentSHA(), filename);
     }
