@@ -47,6 +47,7 @@ import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SearchInField;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
@@ -692,19 +693,23 @@ public class GitContentManager {
             return contentDTO;
         }
 
-        // build query the db to get full content information
-        List<BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-
         List<String> relatedContentIds = Lists.newArrayList();
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
             relatedContentIds.add(summary.getId());
         }
 
-        fieldsToMap.add(new BooleanSearchClause(
-                Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                Constants.BooleanOperator.OR, relatedContentIds));
+        // build query the db to get full content information
+        BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder()
+                .buildBaseInstructions(new BooleanInstruction());
 
-        ResultsWrapper<ContentDTO> results = this.findByFieldNames(fieldsToMap, 0, relatedContentIds.size());
+        BooleanInstruction idsInstruction = new BooleanInstruction();
+        for (String relatedContentId : relatedContentIds) {
+            idsInstruction.should(new MatchInstruction(
+                    Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, relatedContentId));
+        }
+        searchInstruction.must(idsInstruction);
+
+        ResultsWrapper<ContentDTO> results = this.nestedMatchSearch(searchInstruction, 0, relatedContentIds.size(), null, null);
 
         List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
