@@ -52,7 +52,6 @@ import uk.ac.cam.cl.dtg.segue.search.SearchInField;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 
@@ -253,12 +252,13 @@ public class GitContentManager {
         try {
             ResultsWrapper<Content> result = contentDOcache.get(k, () -> {
 
-                ResultsWrapper<String> rawResults = searchProvider.termSearch(
-                        contentIndex,
-                        CONTENT_INDEX_TYPE.CONTENT.toString(),
-                        id,
-                        Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
-                        getBaseFilters());
+                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder()
+                        .buildBaseInstructions(new BooleanInstruction());
+                searchInstruction.must(new MatchInstruction(
+                        Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
+
+                ResultsWrapper<String> rawResults = searchProvider.nestedMatchSearch(contentIndex,
+                        CONTENT_INDEX_TYPE.CONTENT.toString(), 0, 1, searchInstruction, null, null);
                 List<Content> searchResults = contentSubclassMapper
                         .mapFromStringListToContentList(rawResults.getResults());
 
@@ -301,24 +301,17 @@ public class GitContentManager {
         try {
             return contentDTOcache.get(k, () -> {
 
-                Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
-                finalFilter.putAll(new ImmutableMap.Builder<String, AbstractFilterInstruction>()
-                        .put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                                new TermsFilterInstruction(ids))
-                        .build());
+                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder()
+                        .buildBaseInstructions(new BooleanInstruction());
 
-                if (getBaseFilters() != null) {
-                    finalFilter.putAll(getBaseFilters());
+                BooleanInstruction idsInstruction = new BooleanInstruction(1);
+                for (String id : ids) {
+                    idsInstruction.should(new MatchInstruction(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
                 }
+                searchInstruction.must(idsInstruction);
 
-                ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
-                        contentIndex,
-                        CONTENT_INDEX_TYPE.CONTENT.toString(),
-                        null,
-                        null,
-                        startIndex,
-                        limit,
-                        finalFilter
+                ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
+                        CONTENT_INDEX_TYPE.CONTENT.toString(), startIndex, limit, searchInstruction, null, null
                 );
 
                 List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());

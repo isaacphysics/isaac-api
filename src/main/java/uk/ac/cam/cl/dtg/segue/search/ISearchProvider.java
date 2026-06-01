@@ -84,33 +84,6 @@ public interface ISearchProvider {
     ) throws SegueSearchException;
 
     /**
-     * Executes a terms search using an array of terms on a single field.
-     *
-     * Useful for tag searches - Current setting is that results will only be returned if they match all search terms.
-     *
-     * note: null searches are allowed providing a filter is specified.
-     *
-     * @param indexBase
-     *            - the base string for the name of the index
-     * @param indexType
-     *            - the name of the type of document being searched for
-     * @param searchterms
-     *            - e.g. tags can be null
-     * @param field
-     *            - to match against - cannot be null if searchterm is not null.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
-     * @param filterInstructions - instructions for filtering the results
-     * @return results
-     */
-    ResultsWrapper<String> termSearch(
-            final String indexBase, final String indexType, final String searchterms, final String field,
-            final int startIndex, final int limit, final Map<String, AbstractFilterInstruction> filterInstructions
-    ) throws SegueSearchException;
-
-    /**
      * RandomisedPaginatedMatchSearch The same as paginatedMatchSearch but the results are returned in a random order.
      *
      * @param indexBase

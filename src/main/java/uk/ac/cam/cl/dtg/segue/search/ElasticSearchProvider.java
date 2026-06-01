@@ -217,34 +217,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
     }
 
-    @Override
-    public ResultsWrapper<String> termSearch(final String indexBase, final String indexType,
-                                             final String searchTerm, final String field, final int startIndex, final int limit,
-                                             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
-            throws SegueSearchException {
-        if (null == indexBase || null == indexType || (null == searchTerm && null != field)) {
-            log.error("A required field or field combination is missing. Unable to execute search.");
-            return null;
-        }
-
-        Query query = BoolQuery.of(bq -> {
-            if (searchTerm != null) {
-                Query termsQuery = TermsQuery.of(t -> t.field(field).terms(ts -> ts.value(List.of(FieldValue.of(searchTerm)))))._toQuery();
-                bq.must(termsQuery);
-            }
-            if (filterInstructions != null) {
-                bq.filter(generateFilterQuery(filterInstructions));
-            }
-            return bq;
-        })._toQuery();
-
-        if (null == searchTerm && null == filterInstructions) {
-            throw new SegueSearchException("This method requires either searchTerm or filter instructions.");
-        }
-
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
-    }
-
     /**
      * This method will create a threadsafe client that can be used to talk to an Elastic Search cluster.
      * @param address
