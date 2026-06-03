@@ -101,8 +101,7 @@ public class EventNotificationEmailManager {
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime threeDaysAhead = now.plusDays(3);
 
-        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
-                .buildBaseInstructions(new BooleanInstruction());
+        BooleanInstruction searchInstruction = new BooleanInstruction();
         searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, EVENT_TYPE));
         searchInstruction.must(new RangeInstruction<Long>(DATE_FIELDNAME)
                 .greaterThanOrEqual(new Date().getTime())
@@ -142,8 +141,7 @@ public class EventNotificationEmailManager {
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime sixtyDaysAgo = now.plusDays(-60);
 
-        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
-                .buildBaseInstructions(new BooleanInstruction());
+        BooleanInstruction searchInstruction = new BooleanInstruction();
         searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, EVENT_TYPE));
         searchInstruction.must(new RangeInstruction<Long>(DATE_FIELDNAME)
                 .greaterThanOrEqual(Date.from(sixtyDaysAgo.toInstant()).getTime())

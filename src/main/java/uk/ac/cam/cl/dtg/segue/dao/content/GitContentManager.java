@@ -294,8 +294,7 @@ public class GitContentManager {
         try {
             return contentDTOcache.get(k, () -> {
 
-                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder()
-                        .buildBaseInstructions(new BooleanInstruction());
+                BooleanInstruction searchInstruction = new BooleanInstruction();
 
                 BooleanInstruction idsInstruction = new BooleanInstruction(1);
                 for (String id : ids) {
@@ -629,13 +628,11 @@ public class GitContentManager {
         }
 
         // build query the db to get full content information
-        BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder()
-                .buildBaseInstructions(new BooleanInstruction());
+        BooleanInstruction searchInstruction = new BooleanInstruction();
 
         BooleanInstruction idsInstruction = new BooleanInstruction();
         for (String relatedContentId : relatedContentIds) {
-            idsInstruction.should(new MatchInstruction(
-                    Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, relatedContentId));
+            idsInstruction.should(new MatchInstruction(Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, relatedContentId));
         }
         searchInstruction.must(idsInstruction);
 

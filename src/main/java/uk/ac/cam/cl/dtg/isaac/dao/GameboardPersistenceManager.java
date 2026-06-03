@@ -435,8 +435,7 @@ public class GameboardPersistenceManager {
         List<String> questionIds = gameboardDO.getContents().stream().map(GameboardContentDescriptor::getId).toList();
 
         // build query the db to get full question information
-        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
-                .buildBaseInstructions(new BooleanInstruction());
+        BooleanInstruction searchInstruction = new BooleanInstruction();
 
         BooleanInstruction idsInstruction = new BooleanInstruction();
         for (String questionId : questionIds) {

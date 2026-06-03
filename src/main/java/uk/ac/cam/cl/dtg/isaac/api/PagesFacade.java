@@ -209,8 +209,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
-                    .buildBaseInstructions(new BooleanInstruction());
+            BooleanInstruction searchInstruction = new BooleanInstruction();
             searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, CONCEPT_TYPE));
 
             if (idsList != null && !idsList.isEmpty()) {
@@ -1177,8 +1176,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
-                    .buildBaseInstructions(new BooleanInstruction());
+            BooleanInstruction searchInstruction = new BooleanInstruction();
             searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, POD_FRAGMENT_TYPE));
             searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, subject));
 
