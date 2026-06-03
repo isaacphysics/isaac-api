@@ -626,8 +626,7 @@ public class GameManager {
      *             - if we cannot access the content requested.
      */
     public List<IsaacWildcardDTO> getWildcards() throws NoWildcardException, ContentManagerException {
-        BooleanInstruction searchInstruction = new BooleanInstruction();
-        searchInstruction.should(new MatchInstruction(TYPE_FIELDNAME, WILDCARD_TYPE));
+        MatchInstruction searchInstruction = new MatchInstruction(TYPE_FIELDNAME, WILDCARD_TYPE);
 
         Map<String, SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);

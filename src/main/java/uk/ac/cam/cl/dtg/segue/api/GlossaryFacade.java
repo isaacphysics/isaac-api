@@ -135,8 +135,7 @@ public class GlossaryFacade extends AbstractSegueFacade {
         // Get from server cache, else load and cache:
         try {
             ResultsWrapper<ContentDTO> c = termCache.get(cacheKey, () -> {
-                BooleanInstruction searchInstruction = new BooleanInstruction();;
-                searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, "glossaryTerm"));
+                MatchInstruction searchInstruction = new MatchInstruction(TYPE_FIELDNAME, "glossaryTerm");
                 return this.contentManager.nestedMatchSearch(searchInstruction, startIndexOfResults, resultsLimit, null, null);
             });
 

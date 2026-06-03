@@ -248,10 +248,7 @@ public class GitContentManager {
         try {
             ResultsWrapper<Content> result = contentDOcache.get(k, () -> {
 
-                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder()
-                        .buildBaseInstructions(new BooleanInstruction());
-                searchInstruction.must(new MatchInstruction(
-                        Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
+                MatchInstruction searchInstruction = new MatchInstruction(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, id);
 
                 ResultsWrapper<String> rawResults = searchProvider.nestedMatchSearch(contentIndex,
                         CONTENT_INDEX_TYPE.CONTENT.toString(), 0, 1, searchInstruction, null, null);
@@ -741,6 +738,26 @@ public class GitContentManager {
         List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
         List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
         return new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());
+    }
+
+    /**
+     * Search for content that matches a given instruction and map the hits to DTOs.
+     *
+     * @param instruction      - the {@link MatchInstruction} to search with.
+     * @param startIndex       - the initial index for the first result.
+     * @param limit            - the maximum number of results to return.
+     * @param randomSeed       - the random seed to use for the search.
+     * @param sortInstructions - map of sorting functions to use in ElasticSearch query.
+     * @return a ResultsWrapper containing the matching content as DTOs and the total number of results.
+     * @throws ContentManagerException
+     */
+    public ResultsWrapper<ContentDTO> nestedMatchSearch(final MatchInstruction instruction, final Integer startIndex,
+                                                        final Integer limit, final Long randomSeed,
+                                                        final Map<String, Constants. SortOrder> sortInstructions)
+            throws ContentManagerException {
+        BooleanInstruction booleanInstruction = new BooleanInstruction();
+        booleanInstruction.must(instruction);
+        return nestedMatchSearch(booleanInstruction, startIndex, limit, randomSeed, sortInstructions);
     }
 
     /**

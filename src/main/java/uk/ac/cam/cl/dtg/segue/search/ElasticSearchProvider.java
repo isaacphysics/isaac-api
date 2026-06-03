@@ -146,6 +146,18 @@ public class ElasticSearchProvider implements ISearchProvider {
         return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
     }
 
+    @Override
+    public ResultsWrapper<String> nestedMatchSearch(final String indexBase, final String indexType,
+                                                    final Integer startIndex, final Integer limit,
+                                                    @NotNull final MatchInstruction matchInstruction,
+                                                    @Nullable final Long randomSeed,
+                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder
+    ) throws SegueSearchException {
+        BooleanInstruction booleanInstruction = new BooleanInstruction();
+        booleanInstruction.must(matchInstruction);
+        return nestedMatchSearch(indexBase, indexType, startIndex, limit, booleanInstruction, randomSeed, sortOrder);
+    }
+
     /**
      * This method will create a threadsafe client that can be used to talk to an Elastic Search cluster.
      * @param address

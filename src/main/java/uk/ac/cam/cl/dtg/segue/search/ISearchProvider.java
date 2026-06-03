@@ -54,6 +54,12 @@ public interface ISearchProvider {
             @Nullable final Map<String, Constants.SortOrder> sortOrder
     ) throws SegueSearchException;
 
+    ResultsWrapper<String> nestedMatchSearch(
+            final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
+            @NotNull final MatchInstruction matchInstruction, @Nullable Long randomSeed,
+            @Nullable final Map<String, Constants.SortOrder> sortOrder
+    ) throws SegueSearchException;
+
     /*
      * TODO: We need to change the return type of these two methods to avoid having ES specific things
      */

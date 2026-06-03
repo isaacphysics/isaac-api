@@ -75,8 +75,7 @@ public class NotificationPicker {
     public List<ContentDTO> getAvailableNotificationsForUser(final RegisteredUserDTO user)
             throws ContentManagerException, SegueDatabaseException {
         // get users notification record
-        BooleanInstruction searchInstruction = new BooleanInstruction();
-        searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, "notification"));
+        MatchInstruction searchInstruction = new MatchInstruction(TYPE_FIELDNAME, "notification");
 
         ResultsWrapper<ContentDTO> allContentNotifications = this.contentManager
                 .nestedMatchSearch(searchInstruction, 0, -1, null, null);
