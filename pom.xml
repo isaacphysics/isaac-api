@@ -757,7 +757,6 @@
                 <artifactId>jakarta.servlet-api</artifactId>
                 <scope>provided</scope>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 
