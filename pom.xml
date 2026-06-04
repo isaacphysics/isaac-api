@@ -34,7 +34,6 @@
         <swagger-core.version>2.2.50</swagger-core.version>
         <jgit.version>6.10.1.202505221210-r</jgit.version>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <httpclient5.version>5.6.1</httpclient5.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
     </properties>
@@ -759,11 +758,6 @@
                 <scope>provided</scope>
             </dependency>
 
-            <dependency>
-                <groupId>org.apache.httpcomponents.client5</groupId>
-                <artifactId>httpclient5</artifactId>
-                <version>${httpclient5.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
