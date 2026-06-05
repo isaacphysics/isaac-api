@@ -296,7 +296,7 @@ public class GitContentManager {
 
                 BooleanInstruction searchInstruction = new BooleanInstruction();
 
-                BooleanInstruction idsInstruction = new BooleanInstruction(1);
+                BooleanInstruction idsInstruction = new BooleanInstruction();
                 for (String id : ids) {
                     idsInstruction.should(new MatchInstruction(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
                 }
