@@ -1,0 +1,51 @@
+package uk.ac.cam.cl.dtg.isaac.api;
+
+import org.junit.jupiter.api.Test;
+import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
+
+import jakarta.ws.rs.core.Response;
+import java.net.UnknownHostException;
+
+@SuppressWarnings("checkstyle:MissingJavadocType")
+public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
+    @Test
+    public void notLoggedIn_Returns401() throws Exception {
+        var response = testServer().client().post("/skills/unknown_app/answer", "{}");
+        response.assertError("You must be logged in to access this resource.", Response.Status.UNAUTHORIZED);
+    }
+
+    @Test
+    public void loggedIn_elasticsearchUnavailable_Returns503() throws Exception {
+        var client = testServer(brokenContentManager()).client();
+        client.loginAs(integrationTestUsers.TEST_STUDENT);
+        var response = client.post("/skills/unknown_app/answer", "{}");
+        response.assertError("Error locating the version requested", Response.Status.NOT_FOUND);
+    }
+
+    @Test
+    public void loggedIn_unknownApp_Returns404() throws Exception {
+        var client = testServer().client();
+        client.loginAs(integrationTestUsers.TEST_STUDENT);
+        var response = client.post("/skills/unknown_app/answer", "{}");
+        response.assertError("No app found for given id: unknown_app", Response.Status.NOT_FOUND);
+    }
+
+    private GitContentManager brokenContentManager() throws UnknownHostException {
+        var brokenClient = ElasticSearchProvider.getClient("localhost", 1, "elastic", "elastic");
+        var brokenProvider = new ElasticSearchProvider(brokenClient);
+        return new GitContentManager(null, brokenProvider, mainMapper, contentMapper, properties);
+    }
+
+    private TestServer testServer() throws Exception {
+        return testServer(contentManager);
+    }
+
+    private TestServer testServer(final GitContentManager cm) throws Exception {
+        return startServer(
+            new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
+            new SkillsFacade(properties, userAccountManager, logManager, cm)
+        );
+    }
+}
