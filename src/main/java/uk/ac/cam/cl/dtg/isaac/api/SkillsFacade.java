@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
@@ -59,7 +60,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
                                    @PathParam("appId") final String appId) {
         try {
             userManager.getCurrentRegisteredUser(request);
-            if (null == this.contentManager.getContentDOById(appId)) {
+            if (!(this.contentManager.getContentDOById(appId) instanceof AnvilApp)) {
                 var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
                 log.warn(error.getErrorMessage());
                 return error.toResponse();

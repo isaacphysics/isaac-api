@@ -2,6 +2,8 @@ package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
+
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 
@@ -30,6 +32,14 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         client.loginAs(integrationTestUsers.TEST_STUDENT);
         var response = client.post("/skills/unknown_app/answer", "{}");
         response.assertError("No app found for given id: unknown_app", Response.Status.NOT_FOUND);
+    }
+
+    @Test
+    public void loggedIn_idMatchesNonApp_Returns404() throws Exception {
+        var client = testServer().client();
+        client.loginAs(integrationTestUsers.TEST_STUDENT);
+        var response = client.post("/skills/" + REGRESSION_TEST_PAGE_ID + "/answer", "{}");
+        response.assertError("No app found for given id: " + REGRESSION_TEST_PAGE_ID, Response.Status.NOT_FOUND);
     }
 
     private GitContentManager brokenContentManager() throws UnknownHostException {
