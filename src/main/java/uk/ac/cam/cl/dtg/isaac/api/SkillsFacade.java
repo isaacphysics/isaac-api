@@ -4,6 +4,8 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidMarkingResponseException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
@@ -33,16 +35,19 @@ public class SkillsFacade extends AbstractIsaacFacade {
 
     private final UserAccountManager userManager;
     private final GitContentManager contentManager;
+    private final SkillsManager skillsManager;
 
     /**
      * Constructor.
      */
     @Inject
     public SkillsFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
-                                final ILogManager logManager, final GitContentManager contentManager) {
+                        final ILogManager logManager, final GitContentManager contentManager,
+                        final SkillsManager skillsManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
+        this.skillsManager = skillsManager;
     }
 
     /**
@@ -57,9 +62,11 @@ public class SkillsFacade extends AbstractIsaacFacade {
     @Path("/{appId}/answer")
     @Consumes(MediaType.APPLICATION_JSON)
     public Response answerQuestion(@Context final HttpServletRequest request,
-                                   @PathParam("appId") final String appId) {
+                                   @PathParam("appId") final String appId,
+                                   final String body) {
         try {
             userManager.getCurrentRegisteredUser(request);
+            skillsManager.parseResponse(body);
             if (!(this.contentManager.getContentDOById(appId) instanceof AnvilApp)) {
                 var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
                 log.warn(error.getErrorMessage());
@@ -68,6 +75,8 @@ public class SkillsFacade extends AbstractIsaacFacade {
             return Response.ok().build();
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (final InvalidMarkingResponseException e) {
+            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
         } catch (final ContentManagerException e) {
             var error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested", e);
             log.error(error.getErrorMessage(), e);
