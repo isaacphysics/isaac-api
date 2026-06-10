@@ -23,8 +23,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 
 /**
- * Skills Facade
- * This facade supports interaction related to the Isaac Skill Practice apps.
+ * Skills Facade, supports interaction related to the Isaac Skill Practice apps.
  */
 @Path("/skills")
 @Tag(name = "SkillsFacade", description = "/skills")
@@ -52,7 +51,6 @@ public class SkillsFacade extends AbstractIsaacFacade {
      *            - the servlet request so we can find out if it is a known user.
      * @param appId
      *            - the app that the attempt belongs to
-     * @return Response containing a QuestionValidationResponse object or containing a SegueErrorResponse .
      */
     @POST
     @Path("/{appId}/answer")
