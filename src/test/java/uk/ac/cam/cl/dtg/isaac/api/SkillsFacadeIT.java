@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 
@@ -40,6 +41,14 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         client.loginAs(integrationTestUsers.TEST_STUDENT);
         var response = client.post("/skills/" + REGRESSION_TEST_PAGE_ID + "/answer", "{}");
         response.assertError("No app found for given id: " + REGRESSION_TEST_PAGE_ID, Response.Status.NOT_FOUND);
+    }
+
+    @Test
+    public void happy_happy() throws Exception {
+        var app = elasticHelper.persistJSON(new JSONObject().put("type", "anvilApp"));
+        var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+        var response = client.post("/skills/" + app.getString("id") + "/answer", "{}");
+        response.readEntity(String.class);
     }
 
     private GitContentManager brokenContentManager() throws UnknownHostException {
