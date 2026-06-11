@@ -227,9 +227,12 @@ public class PagesFacade extends AbstractIsaacFacade {
                 }
                 searchInstruction.must(tagsInstruction);
             }
+            
+            Map<String, SortOrder> sortInstructions = Maps.newHashMap();
+            sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, SortOrder.ASC);
 
             ResultsWrapper<ContentDTO> c = this.contentManager.nestedMatchSearch(
-                    searchInstruction, startIndex, newLimit, null, null);
+                    searchInstruction, startIndex, newLimit, null, sortInstructions);
 
             ResultsWrapper<ContentSummaryDTO> summarizedContent = new ResultsWrapper<>(
                     this.extractContentSummaryFromList(c.getResults()),
