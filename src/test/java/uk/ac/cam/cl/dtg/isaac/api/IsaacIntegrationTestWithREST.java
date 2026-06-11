@@ -40,6 +40,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * interacting with the server. As the server runs in-process, mocking and debugging still work.
  */
 public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
+    static final ElasticSearchTestHelper elasticHelper =
+        new ElasticSearchTestHelper(elasticSearchProvider, contentManager, contentMapper);
+
     private final Set<Executable> cleanups = new HashSet<>();
 
     @SuppressWarnings({"checkstyle:EmptyCatchBlock", "checkstyle:MissingJavadocMethod"})
