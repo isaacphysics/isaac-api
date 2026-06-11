@@ -17,11 +17,9 @@ package uk.ac.cam.cl.dtg.segue.search;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
-import co.elastic.clients.elasticsearch._types.FieldValue;
 import co.elastic.clients.elasticsearch._types.SortOptions;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.ChildScoreMode;
-import co.elastic.clients.elasticsearch._types.query_dsl.ConstantScoreQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.ExistsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionBoostMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreQuery;
@@ -31,8 +29,6 @@ import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.RandomScoreFunction;
 import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.RegexpQuery;
-import co.elastic.clients.elasticsearch._types.query_dsl.TermsQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -47,12 +43,9 @@ import co.elastic.clients.transport.ElasticsearchTransport;
 import co.elastic.clients.transport.rest5_client.Rest5ClientTransport;
 import co.elastic.clients.transport.rest5_client.low_level.Rest5Client;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.api.client.util.Lists;
-import com.google.api.client.util.Maps;
 import com.google.common.base.CaseFormat;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpHost;
@@ -62,7 +55,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 
 import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotNull;
@@ -75,11 +67,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -126,66 +115,6 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    public ResultsWrapper<String> matchSearch(final String indexBase, final String indexType,
-                                              final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex,
-                                              final int limit, final Map<String, Constants.SortOrder> sortInstructions,
-                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions) throws SegueSearchException {
-        Query query = generateBoolMatchQuery(fieldsToMatch)._toQuery();
-
-        if (filterInstructions != null) {
-            Query finalQuery = query;
-            query = BoolQuery.of(bq -> bq
-                .must(finalQuery)
-                .filter(generateFilterQuery(filterInstructions))
-            )._toQuery();
-        }
-
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortInstructions);
-    }
-
-    @Override
-    public final ResultsWrapper<String> randomisedMatchSearch(final String indexBase, final String indexType,
-                                                              final List<GitContentManager.BooleanSearchClause> fieldsToMatch, final int startIndex, final int limit,
-                                                              final Long randomSeed, final Map<String, AbstractFilterInstruction> filterInstructions)
-            throws SegueSearchException {
-        // build up the query from the fieldsToMatch map
-        Query query = ConstantScoreQuery.of(cs -> cs
-            .filter(generateBoolMatchQuery(fieldsToMatch)._toQuery())
-        )._toQuery();
-
-        RandomScoreFunction randomScoreFunction;
-
-        if (null != randomSeed) {
-            randomScoreFunction = RandomScoreFunction.of(r -> r
-                .seed(String.valueOf(randomSeed))
-                .field("_seq_no")
-            );
-        } else {
-            randomScoreFunction = RandomScoreFunction.of(r -> r);
-        }
-
-        Query constantScoreQuery = query;
-        query = FunctionScoreQuery.of(fsq -> fsq
-            .query(constantScoreQuery)
-            .functions(fn -> fn
-                .randomScore(randomScoreFunction)
-            )
-        )._toQuery();
-
-        if (filterInstructions != null) {
-            Query functionScoreQuery = query;
-            query = BoolQuery.of(bq -> bq
-                .must(functionScoreQuery)
-                .filter(generateFilterQuery(filterInstructions))
-            )._toQuery();
-        }
-
-        log.debug("Randomised Query, to be sent to elasticsearch is : {}", query);
-
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
-    }
-
-    @Override
     public ResultsWrapper<String> nestedMatchSearch(final String indexBase, final String indexType,
                                                     final Integer startIndex, final Integer limit,
                                                     @NotNull final BooleanInstruction matchInstruction,
@@ -218,101 +147,15 @@ public class ElasticSearchProvider implements ISearchProvider {
     }
 
     @Override
-    @Deprecated
-    public ResultsWrapper<String> fuzzySearch(final String indexBase, final String indexType, final String searchString,
-                                              final Integer startIndex, final Integer limit,
-                                              @Nullable final Map<String, List<String>> fieldsThatMustMatch,
-                                              @Nullable final Map<String, AbstractFilterInstruction> filterInstructions,
-                                              final String... fields) throws SegueSearchException {
-        if (null == indexBase || null == indexType || null == searchString || null == fields) {
-            log.warn("A required field is missing. Unable to execute search.");
-            return null;
-        }
-
-        BoolQuery.Builder masterQuery;
-        if (null != fieldsThatMustMatch) {
-            masterQuery = new BoolQuery.Builder().must(this.generateBoolMatchQuery(this.convertToBoolMap(fieldsThatMustMatch))._toQuery());
-        } else {
-            masterQuery = new BoolQuery.Builder();
-        }
-
-        BoolQuery.Builder query = new BoolQuery.Builder();
-        Set<String> boostFields = ImmutableSet.of("id", "title", "tags");
-
-        List<String> searchTerms = Lists.newArrayList();
-        searchTerms.addAll(Arrays.asList(searchString.split(" ")));
-        if (searchTerms.size() > 1) {
-            searchTerms.add(searchString);
-        }
-
-        for (String f : fields) {
-            float boost = boostFields.contains(f) ? 2f : 1f;
-
-            for (String searchTerm : searchTerms) {
-                Query initialFuzzySearch = MatchQuery.of(m -> m
-                        .field(f)
-                        .query(searchTerm)
-                        .fuzziness("AUTO")
-                        .prefixLength(0)
-                        .boost(boost)
-                )._toQuery();
-                query.should(initialFuzzySearch);
-
-                Query regexSearch = WildcardQuery.of(r -> r
-                        .field(f)
-                        .value("*" + searchTerm + "*")
-                        .boost(boost)
-                )._toQuery();
-                query.should(regexSearch);
-            }
-        }
-
-        // this query is just a bit smarter than the regex search above.
-        Query multiMatchPrefixQuery = MultiMatchQuery.of(mm -> mm
-                .query(searchString)
-                .fields(Arrays.asList(fields))
-                .type(TextQueryType.PhrasePrefix)
-                .prefixLength(2)
-                .boost(2.0f)
-        )._toQuery();
-        query.should(multiMatchPrefixQuery);
-
-        masterQuery.must(query.build()._toQuery());
-
-        if (filterInstructions != null) {
-            masterQuery.filter(generateFilterQuery(filterInstructions));
-        }
-
-        Query finalQuery = masterQuery.build()._toQuery();
-        return this.executeBasicQuery(indexBase, indexType, finalQuery, startIndex, limit);
-    }
-
-    @Override
-    public ResultsWrapper<String> termSearch(final String indexBase, final String indexType,
-                                             final String searchTerm, final String field, final int startIndex, final int limit,
-                                             @Nullable final Map<String, AbstractFilterInstruction> filterInstructions)
-            throws SegueSearchException {
-        if (null == indexBase || null == indexType || (null == searchTerm && null != field)) {
-            log.error("A required field or field combination is missing. Unable to execute search.");
-            return null;
-        }
-
-        Query query = BoolQuery.of(bq -> {
-            if (searchTerm != null) {
-                Query termsQuery = TermsQuery.of(t -> t.field(field).terms(ts -> ts.value(List.of(FieldValue.of(searchTerm)))))._toQuery();
-                bq.must(termsQuery);
-            }
-            if (filterInstructions != null) {
-                bq.filter(generateFilterQuery(filterInstructions));
-            }
-            return bq;
-        })._toQuery();
-
-        if (null == searchTerm && null == filterInstructions) {
-            throw new SegueSearchException("This method requires either searchTerm or filter instructions.");
-        }
-
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
+    public ResultsWrapper<String> nestedMatchSearch(final String indexBase, final String indexType,
+                                                    final Integer startIndex, final Integer limit,
+                                                    @NotNull final MatchInstruction matchInstruction,
+                                                    @Nullable final Long randomSeed,
+                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder
+    ) throws SegueSearchException {
+        BooleanInstruction booleanInstruction = new BooleanInstruction();
+        booleanInstruction.must(matchInstruction);
+        return nestedMatchSearch(indexBase, indexType, startIndex, limit, booleanInstruction, randomSeed, sortOrder);
     }
 
     /**
@@ -371,82 +214,6 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
     }
 
-    @Override
-    public ResultsWrapper<String> findByExactMatch(final String indexBase, final String indexType,
-                                                   final String fieldname, final String needle, final int startIndex,
-                                                   final int limit,
-                                                   final Map<String, AbstractFilterInstruction> filterInstructions)
-            throws SegueSearchException {
-        ResultsWrapper<String> resultList;
-
-        Query query = MatchQuery.of(m -> m
-                .field(fieldname)
-                .query(needle)
-        )._toQuery();
-
-        if (filterInstructions != null) {
-            Query matchQuery = query;
-            query = BoolQuery.of(bq -> bq
-                    .must(matchQuery)
-                    .filter(generateFilterQuery(filterInstructions))
-            )._toQuery();
-        }
-
-        resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
-
-        return resultList;
-    }
-
-    @Override
-    public ResultsWrapper<String> findByPrefix(final String indexBase, final String indexType, final String fieldname,
-                                               final String prefix, final int startIndex, final int limit,
-                                               final Map<String, AbstractFilterInstruction> filterInstructions)
-            throws SegueSearchException {
-        ResultsWrapper<String> resultList;
-
-        Query query = WildcardQuery.of(w -> w
-                .field(fieldname)
-                .value(prefix + "*")
-        )._toQuery();
-
-        if (filterInstructions != null) {
-            Query prefixQuery = query;
-            query = BoolQuery.of(bq -> bq
-                    .must(prefixQuery)
-                    .filter(generateFilterQuery(filterInstructions))
-            )._toQuery();
-        }
-
-        resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
-
-        return resultList;
-    }
-
-    @Override
-    public ResultsWrapper<String> findByRegEx(final String indexBase, final String indexType, final String fieldname,
-                                              final String regex, final int startIndex, final int limit,
-                                              final Map<String, AbstractFilterInstruction> filterInstructions)
-            throws SegueSearchException {
-        ResultsWrapper<String> resultList;
-
-        Query query = RegexpQuery.of(r -> r
-                .field(fieldname)
-                .value(regex)
-        )._toQuery();
-
-        if (filterInstructions != null) {
-            Query regExpQuery = query;
-            query = BoolQuery.of(bq -> bq
-                    .must(regExpQuery)
-                    .filter(generateFilterQuery(filterInstructions))
-            )._toQuery();
-        }
-
-        resultList = this.executeBasicQuery(indexBase, indexType, query, startIndex, limit);
-
-        return resultList;
-    }
-
     /**
      * Utility method to convert sort instructions from external classes into something Elastic search can use.
      *
@@ -473,161 +240,6 @@ public class ElasticSearchProvider implements ISearchProvider {
                 .order(clientOrder)
                 .missing("_last"))));
         }
-    }
-
-    /**
-     * Helper method to create elastic search understandable filter instructions.
-     *
-     * @param filterInstructions
-     *            - in the form "fieldName --> instruction key --> instruction value"
-     * @return filter query
-     */
-    public Query generateFilterQuery(final Map<String, AbstractFilterInstruction> filterInstructions) {
-        BoolQuery.Builder filter = new BoolQuery.Builder();
-        for (Entry<String, AbstractFilterInstruction> fieldToFilterInstruction : filterInstructions.entrySet()) {
-            // date filter logic
-            if (fieldToFilterInstruction.getValue() instanceof DateRangeFilterInstruction dateRangeInstruction) {
-                // Note: assumption that dates are stored in long format.
-                filter.must(RangeQuery.of(r ->
-                    r.date(d -> {
-                        d.field(fieldToFilterInstruction.getKey());
-                        if (dateRangeInstruction.getFromDate() != null) {
-                            d.gte(String.valueOf(dateRangeInstruction.getFromDate().getTime()));
-                        }
-                        if (dateRangeInstruction.getToDate() != null) {
-                            d.lte(String.valueOf(dateRangeInstruction.getToDate().getTime()));
-                        }
-                        return d;
-                    })
-                )._toQuery());
-            }
-
-            if (fieldToFilterInstruction.getValue() instanceof SimpleFilterInstruction sfi) {
-
-                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
-                        Collections.singletonList(sfi.getMustMatchValue())));
-
-                filter.must(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
-            }
-
-            if (fieldToFilterInstruction.getValue() instanceof TermsFilterInstruction sfi) {
-                filter.must(
-                    TermsQuery.of(t -> t
-                        .field(fieldToFilterInstruction.getKey())
-                        .terms(ts -> ts
-                            .value(
-                                sfi.getMatchValues().stream()
-                                    .map(FieldValue::of)
-                                    .collect(Collectors.toList())
-                            )
-                        )
-                    )._toQuery()
-                );
-            }
-
-            if (fieldToFilterInstruction.getValue() instanceof SimpleExclusionInstruction sfi) {
-
-                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Lists.newArrayList();
-                fieldsToMatch.add(new GitContentManager.BooleanSearchClause(
-                        fieldToFilterInstruction.getKey(), Constants.BooleanOperator.AND,
-                        Collections.singletonList(sfi.getMustNotMatchValue())));
-
-                filter.mustNot(this.generateBoolMatchQuery(fieldsToMatch)._toQuery());
-            }
-        }
-
-        return filter.build()._toQuery();
-    }
-
-    /**
-     * Utility method to generate a BoolMatchQuery based on the parameters provided.
-     *
-     * @param fieldsToMatch
-     *            - the fields that the bool query should match.
-     * @return a bool query configured to match the fields to match.
-     * @deprecated as {@code AbstractInstruction}-based instructions should be preferred over
-     * {@code BooleanSearchClause}, which are instead processed by {@code processMatchInstructions()}.
-     */
-    @Deprecated
-    private BoolQuery generateBoolMatchQuery(final List<GitContentManager.BooleanSearchClause> fieldsToMatch) {
-        BoolQuery.Builder masterQuery = new BoolQuery.Builder();
-        Map<String, BoolQuery.Builder> nestedQueriesByPath = Maps.newHashMap();
-
-        for (GitContentManager.BooleanSearchClause searchClause : fieldsToMatch) {
-            // Each search clause is its own boolean query that gets added to the master query as a must match clause
-            BoolQuery.Builder query = new BoolQuery.Builder();
-
-            // Add the clause to the query value by value
-            for (String value : searchClause.values()) {
-                Query matchQuery = MatchQuery.of(m -> m
-                        .field(searchClause.field())
-                        .query(value)
-                )._toQuery();
-
-                if (Constants.BooleanOperator.OR.equals(searchClause.operator())) {
-                    query.should(matchQuery);
-                } else if (Constants.BooleanOperator.AND.equals(searchClause.operator())) {
-                    query.must(matchQuery);
-                } else if (Constants.BooleanOperator.NOT.equals(searchClause.operator())) {
-                    query.mustNot(matchQuery);
-                } else {
-                    log.warn("Null argument received in paginated match search... "
-                            + "This is not usually expected. Ignoring it and continuing anyway.");
-                }
-            }
-
-            // The way we're using this query, if we have a "should" the document needs to match at least one of the options.
-            if (Constants.BooleanOperator.OR.equals(searchClause.operator())) {
-                query.minimumShouldMatch("1");
-            }
-
-            if (!Constants.NESTED_QUERY_FIELDS.contains(searchClause.field())) {
-                masterQuery.must(query.build()._toQuery());
-            } else {
-                // Nested fields need to use a nested query which specifies the path of the nested field.
-                String nestedPath = searchClause.field().split("\\.")[0];
-                nestedQueriesByPath.putIfAbsent(nestedPath, new BoolQuery.Builder());
-                nestedQueriesByPath.get(nestedPath).must(query.build()._toQuery());
-            }
-        }
-
-        // Nested queries are grouped so that queries on the same nested path are not queried independently.
-        for (Entry<String, BoolQuery.Builder> entry : nestedQueriesByPath.entrySet()) {
-            Query nestedQuery = NestedQuery.of(nq -> nq
-                    .path(entry.getKey())
-                    .query(entry.getValue().build()._toQuery())
-                    .scoreMode(ChildScoreMode.Sum)
-            )._toQuery();
-            masterQuery.must(nestedQuery);
-        }
-
-        return masterQuery.build();
-    }
-
-    /**
-     * Provides default search execution using the fields specified.
-     *
-     * This method does not provide any way of controlling sort order or limiting information returned. It is most
-     * useful for doing simple searches with fewer results e.g. by id.
-     *
-     * @param indexBase
-     *            - search index base string to execute the query against.
-     * @param indexType
-     *            - index type to execute the query against.
-     * @param query
-     *            - the query to run.
-     * @param startIndex
-     *            - start index for results
-     * @param limit
-     *            - the maximum number of results to return -1 will attempt to return all results.
-     * @return list of the search results
-     */
-    private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
-                                                     final Query query, final int startIndex, final int limit)
-            throws SegueSearchException {
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, null);
     }
 
     /**
@@ -723,34 +335,6 @@ public class ElasticSearchProvider implements ISearchProvider {
             throw new SegueSearchException("Error while trying to search", e);
         }
     }
-
-
-    /**
-     * Utility function to support conversion between simple field maps and bool maps.
-     *
-     * @param fieldsThatMustMatch
-     *            - the map that should be converted into a suitable map for querying.
-     * @return Map where each field is using the OR boolean operator.
-     *
-     * @deprecated as {@code AbstractInstruction}-based instructions should be preferred over
-     * {@code fieldsToMatch}-style instructions.
-     */
-    @Deprecated
-    private List<GitContentManager.BooleanSearchClause> convertToBoolMap(final Map<String, List<String>> fieldsThatMustMatch) {
-        if (null == fieldsThatMustMatch) {
-            return null;
-        }
-
-        List<GitContentManager.BooleanSearchClause> result = Lists.newArrayList();
-
-        for (Map.Entry<String, List<String>> pair : fieldsThatMustMatch.entrySet()) {
-            result.add(new GitContentManager.BooleanSearchClause(
-                    pair.getKey(), Constants.BooleanOperator.OR, pair.getValue()));
-        }
-
-        return result;
-    }
-
 
     /**
      * Based on the relatively abstract {@code matchInstruction}, generates a {@code Query} which is usable by

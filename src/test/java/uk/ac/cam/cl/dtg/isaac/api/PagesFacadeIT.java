@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,7 +40,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
 
     @BeforeEach
     public void setUp() {
-        this.pagesFacade = new PagesFacade(new ContentService(contentManager), properties, logManager,
+        this.pagesFacade = new PagesFacade(properties, logManager,
                 mainMapper, contentManager, userAccountManager, new URIManager(properties), questionManager,
                 gameManager, userAttemptManager, bookmarksManager);
     }
