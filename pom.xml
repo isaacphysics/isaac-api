@@ -15,9 +15,9 @@
         <resteasy.version>6.2.14.Final</resteasy.version>
         <guice.version>7.0.0</guice.version>
         <oauth-client.version>1.39.0</oauth-client.version>
-        <jackson.version>2.21.4</jackson.version>
-        <jackson-databind.version>2.21.3</jackson-databind.version>  <!-- separate in case updated separately -->
-        <jackson-annotations.version>2.21</jackson-annotations.version>  <!-- now not release with patch versions -->
+        <jackson.version>2.22.0</jackson.version>
+        <jackson-databind.version>2.22.0</jackson-databind.version>  <!-- separate in case updated separately -->
+        <jackson-annotations.version>2.22</jackson-annotations.version>  <!-- now not release with patch versions -->
         <mockito.version>5.23.0</mockito.version>
         <junit-5.version>6.1.0</junit-5.version>
         <swagger-ui-version>4.13.2</swagger-ui-version>
