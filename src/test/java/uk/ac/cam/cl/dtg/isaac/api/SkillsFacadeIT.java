@@ -4,7 +4,6 @@ import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -41,24 +40,21 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     class AppIdCheck {
         @Test
         public void elasticsearchUnavailable_Returns404() throws Exception {
-            var client = testServer(brokenContentManager()).client();
-            client.loginAs(integrationTestUsers.TEST_STUDENT);
+            var client = testServer(brokenContentManager()).client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post("/skills/unknown_app/answer", VALID_BODY);
             response.assertError("Error locating the version requested", Response.Status.NOT_FOUND);
         }
 
         @Test
         public void unknownApp_Returns404() throws Exception {
-            var client = testServer().client();
-            client.loginAs(integrationTestUsers.TEST_STUDENT);
+            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post("/skills/unknown_app/answer", VALID_BODY);
             response.assertError("No app found for given id: unknown_app", Response.Status.NOT_FOUND);
         }
 
         @Test
         public void idMatchesNonApp_Returns404() throws Exception {
-            var client = testServer().client();
-            client.loginAs(integrationTestUsers.TEST_STUDENT);
+            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post("/skills/" + REGRESSION_TEST_PAGE_ID + "/answer", VALID_BODY);
             response.assertError("No app found for given id: " + REGRESSION_TEST_PAGE_ID, Response.Status.NOT_FOUND);
         }
@@ -91,9 +87,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class HmacVerification {
-        Stream<Arguments> invalidBodies() {
+        static Stream<Arguments> invalidBodies() {
             return Stream.of(
                 Arguments.of("missing hmac", new JSONObject().put("payload", VALID_PAYLOAD),
                     "Invalid JSON object submitted"),
@@ -120,9 +115,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     @Nested
-    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class PayloadContentCheck {
-        Stream<Arguments> invalidPayloads() {
+        static Stream<Arguments> invalidPayloads() {
             return Stream.of(
                 Arguments.of("missing user_id", validPayload(p -> p.remove("user_id")), "Invalid payload"),
                 Arguments.of("non-numeric user_id", validPayload(p -> p.put("user_id", "ab")), "Invalid payload"),
