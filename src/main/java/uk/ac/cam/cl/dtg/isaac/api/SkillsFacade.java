@@ -7,7 +7,9 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidMarkingResponseException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
+import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
+import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
@@ -65,17 +67,21 @@ public class SkillsFacade extends AbstractIsaacFacade {
                                    @PathParam("appId") final String appId,
                                    final String body) {
         try {
-            var currentUser = userManager.getCurrentRegisteredUser(request);
-            var markingResponse = skillsManager.parseResponse(body);
-            if (!skillsManager.isHmacValid(markingResponse)) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature").toResponse();
-            }
-            skillsManager.validatePayload(markingResponse.getPayload(), currentUser.getId());
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             if (!(this.contentManager.getContentDOById(appId) instanceof AnvilApp)) {
                 var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
                 log.warn(error.getErrorMessage());
                 return error.toResponse();
             }
+
+            AnvilMarkingResponseDTO markingResponse = skillsManager.parseResponse(body);
+            if (!skillsManager.isHmacValid(markingResponse)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature").toResponse();
+            }
+
+            var payloadDTO = skillsManager.parsePayload(markingResponse.getPayload(), currentUser.getId());
+            skillsManager.recordAttempt(payloadDTO);
+
             return Response.ok().build();
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();

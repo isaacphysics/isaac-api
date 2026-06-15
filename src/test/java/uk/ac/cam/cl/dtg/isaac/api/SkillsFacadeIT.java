@@ -8,17 +8,22 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptManager;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 
@@ -148,6 +153,22 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
         var response = client.post(validUrl(), VALID_BODY);
         response.readEntity(String.class);
+
+        try (var conn = postgresSqlDb.getDatabaseConnection();
+             var pst = conn.prepareStatement("SELECT COUNT(*) FROM public.skills_question_attempts");
+             var rs = pst.executeQuery()) {
+            rs.next();
+            assertEquals(1, rs.getInt(1));
+        }
+
+        try (var conn = postgresSqlDb.getDatabaseConnection();
+             var pst = conn.prepareStatement("SELECT user_id, timestamp FROM public.skills_question_attempts");
+             var rs = pst.executeQuery()) {
+            rs.next();
+            assertEquals(TEST_STUDENT_ID, rs.getInt("user_id"));
+            assertThat(rs.getTimestamp("timestamp").toInstant())
+                .isCloseTo(new JSONObject(VALID_PAYLOAD).getString("timestamp"), within(1, ChronoUnit.MILLIS));
+        }
     }
 
     private GitContentManager brokenContentManager() throws Exception {
@@ -186,9 +207,10 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     private TestServer testServer(final GitContentManager cm) throws Exception {
+        var sm = new SkillsManager(properties, new PgSkillsAttemptManager(postgresSqlDb));
         return startServer(
             new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
-            new SkillsFacade(properties, userAccountManager, logManager, cm, new SkillsManager(properties))
+            new SkillsFacade(properties, userAccountManager, logManager, cm, sm)
         );
     }
 }

@@ -3,6 +3,7 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
+import uk.ac.cam.cl.dtg.isaac.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
@@ -20,15 +21,18 @@ public class SkillsManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String hmacSecret;
+    private final ISkillsAttemptManager skillsAttemptManager;
 
     /**
      * Constructor.
      *
-     * @param properties - application configuration
+     * @param properties          - application configuration
+     * @param skillsAttemptManager - persistence manager for skills attempts
      */
     @Inject
-    public SkillsManager(final AbstractConfigLoader properties) {
+    public SkillsManager(final AbstractConfigLoader properties, final ISkillsAttemptManager skillsAttemptManager) {
         this.hmacSecret = properties.getProperty(SKILLS_HMAC_SECRET);
+        this.skillsAttemptManager = skillsAttemptManager;
     }
 
     /**
@@ -65,7 +69,9 @@ public class SkillsManager {
      * @throws InvalidMarkingResponseException if the payload is malformed, the user ID does not match,
      *                                         or the timestamp is outside the allowed window
      */
-    public void validatePayload(final String payloadStr, final long userId) throws InvalidMarkingResponseException {
+    public AnvilPayloadDTO parsePayload(
+        final String payloadStr, final long userId
+    ) throws InvalidMarkingResponseException {
         try {
             AnvilPayloadDTO dto = objectMapper.readValue(payloadStr, AnvilPayloadDTO.class);
             if (dto.getUserId() != userId) {
@@ -74,8 +80,18 @@ public class SkillsManager {
             if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - 300_000L))) {
                 throw new InvalidMarkingResponseException("Payload timestamp is outside the allowed window");
             }
+            return dto;
         } catch (final JsonProcessingException e) {
             throw new InvalidMarkingResponseException("Invalid payload");
         }
+    }
+
+    /**
+     * Records a validated skills attempt.
+     *
+     * @param attempt - the validated payload DTO
+     */
+    public void recordAttempt(final AnvilPayloadDTO attempt) {
+        skillsAttemptManager.registerSkillsAttempt(attempt);
     }
 }
