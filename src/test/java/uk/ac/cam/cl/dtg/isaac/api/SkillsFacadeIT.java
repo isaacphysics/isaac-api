@@ -4,6 +4,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
@@ -11,6 +15,8 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -21,10 +27,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     private static final String HMAC_SECRET = "integration-test-anvil-hmac-secret";
     private static final String HMAC_SHA_256 = "HmacSHA256";
-    private static final String VALID_PAYLOAD = new JSONObject()
-            .put("user_id", TEST_STUDENT_ID)
-            .put("timestamp", Instant.now())
-            .toString();
+    private static final String VALID_PAYLOAD = validPayload(p -> {});
     private static final String VALID_HMAC = sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256);
     private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC);
 
@@ -88,97 +91,60 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class HmacVerification {
-        @Test
-        public void missingHmac_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post(validUrl(), new JSONObject().put("payload", VALID_PAYLOAD));
-            response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
+        Stream<Arguments> invalidBodies() {
+            return Stream.of(
+                Arguments.of("missing hmac", new JSONObject().put("payload", VALID_PAYLOAD),
+                    "Invalid JSON object submitted"),
+                Arguments.of("invalid hmac", new JSONObject().put("payload", VALID_PAYLOAD)
+                    .put("hmac", "not-a-valid-signature"), "Invalid HMAC signature"),
+                Arguments.of("wrong secret", new JSONObject().put("payload", VALID_PAYLOAD)
+                    .put("hmac", sign("wrong-secret", VALID_PAYLOAD, HMAC_SHA_256)), "Invalid HMAC signature"),
+                Arguments.of("tampered payload", new JSONObject().put("payload", "tampered_payload")
+                    .put("hmac", VALID_HMAC), "Invalid HMAC signature"),
+                Arguments.of("wrong algorithm", new JSONObject().put("payload", VALID_PAYLOAD)
+                    .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, "HmacMD5")), "Invalid HMAC signature")
+            );
         }
 
-        @Test
-        public void invalidHmac_Returns400() throws Exception {
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("invalidBodies")
+        public void invalidBody_Returns400(
+            final String name, final JSONObject body, final String expectedMessage
+        ) throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var body = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", "not-a-valid-signature");
-            var response = client.post(validUrl(), body);
-            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void wrongSecret_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var body = new JSONObject().put("payload", VALID_PAYLOAD)
-                .put("hmac", sign("wrong-secret", VALID_PAYLOAD, HMAC_SHA_256));
-            var response = client.post(validUrl(), body);
-            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void tamperedPayload_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var body = new JSONObject().put("payload", "tampered_payload").put("hmac", VALID_HMAC);
-            var response = client.post(validUrl(), body);
-            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void wrongAlgo_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var body = new JSONObject().put("payload", VALID_PAYLOAD)
-                .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, "HmacMD5"));
-            var response = client.post(validUrl(), body);
-            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
+            client.post(validUrl(), body).assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
     }
 
     @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
     class PayloadContentCheck {
-        @Test
-        public void missingUserId_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var payload = new JSONObject().put("timestamp", Instant.now());
-            var response = client.post(validUrl(), wrapSigned(payload));
-            response.assertError("Invalid payload", Response.Status.BAD_REQUEST);
+        Stream<Arguments> invalidPayloads() {
+            return Stream.of(
+                Arguments.of("missing user_id", validPayload(p -> p.remove("user_id")), "Invalid payload"),
+                Arguments.of("non-numeric user_id", validPayload(p -> p.put("user_id", "ab")), "Invalid payload"),
+                Arguments.of("missing timestamp", validPayload(p -> p.remove("timestamp")), "Invalid payload"),
+                Arguments.of("invalid timestamp", validPayload(p -> p.put("timestamp", "not-a-date")),
+                    "Invalid payload"),
+                Arguments.of("wrong user_id", validPayload(p -> p.put("user_id", TEST_STUDENT_ID + 1)),
+                    "Payload user_id does not match session"),
+                Arguments.of("expired timestamp", validPayload(p -> p.put("timestamp", "2022-01-01T13:00:00Z")),
+                    "Payload timestamp is outside the allowed window")
+            );
         }
 
-        @Test
-        public void nonNumericUserId_Returns400() throws Exception {
+        @ParameterizedTest(name = "{0}")
+        @MethodSource("invalidPayloads")
+        public void invalidPayload_Returns400(
+            final String name, final JSONObject payload, final String expectedMessage
+        ) throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var payload = new JSONObject().put("user_id", "not-a-number").put("timestamp", Instant.now());
-            var response = client.post(validUrl(), wrapSigned(payload));
-            response.assertError("Invalid payload", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void missingTimestamp_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var payload = new JSONObject().put("user_id", TEST_STUDENT_ID);
-            var response = client.post(validUrl(), wrapSigned(payload));
-            response.assertError("Invalid payload", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void invalidTimestamp_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var payload = new JSONObject().put("user_id", TEST_STUDENT_ID).put("timestamp", "not-a-date");
-            var response = client.post(validUrl(), wrapSigned(payload));
-            response.assertError("Invalid payload", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void wrongUserId_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var payload = new JSONObject().put("user_id", TEST_STUDENT_ID + 1).put("timestamp", Instant.now());
-            var response = client.post(validUrl(), wrapSigned(payload));
-            response.assertError("Payload user_id does not match session", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void expiredTimestamp_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var payload = new JSONObject().put("user_id", TEST_STUDENT_ID).put("timestamp", "2022-01-01T13:00:00Z");
-            var response = client.post(validUrl(), wrapSigned(payload));
-            response.assertError("Payload timestamp is outside the allowed window", Response.Status.BAD_REQUEST);
+            var body = new JSONObject()
+                .put("payload", payload.toString())
+                .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256));
+            client.post(validUrl(), body).assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -200,9 +166,12 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         return "/skills/" + app.getString("id") + "/answer";
     }
 
-    private JSONObject wrapSigned(final JSONObject payload) {
-        String data = payload.toString();
-        return new JSONObject().put("payload", data).put("hmac", sign(HMAC_SECRET, data, HMAC_SHA_256));
+    private static String validPayload(final Consumer<JSONObject> ops) {
+        var defaultValidPayload = new JSONObject()
+                .put("user_id", TEST_STUDENT_ID)
+                .put("timestamp", Instant.now());
+        ops.accept(defaultValidPayload);
+        return defaultValidPayload.toString();
     }
 
     private static String sign(final String key, final String payload, final String algo) {
