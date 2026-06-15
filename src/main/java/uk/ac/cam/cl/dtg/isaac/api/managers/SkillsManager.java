@@ -74,7 +74,7 @@ public class SkillsManager {
             if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - 300_000L))) {
                 throw new InvalidMarkingResponseException("Payload timestamp is outside the allowed window");
             }
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             throw new InvalidMarkingResponseException("Invalid payload");
         }
     }

@@ -10,10 +10,9 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-
-import java.time.Instant;
 
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
@@ -201,7 +200,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         return "/skills/" + app.getString("id") + "/answer";
     }
 
-    private JSONObject wrapSigned(JSONObject payload) {
+    private JSONObject wrapSigned(final JSONObject payload) {
         String data = payload.toString();
         return new JSONObject().put("payload", data).put("hmac", sign(HMAC_SECRET, data, HMAC_SHA_256));
     }
