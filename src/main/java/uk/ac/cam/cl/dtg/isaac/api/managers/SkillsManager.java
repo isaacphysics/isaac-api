@@ -4,8 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
+import java.util.Date;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -52,5 +55,27 @@ public class SkillsManager {
     public boolean isHmacValid(final AnvilMarkingResponseDTO dto) {
         String expected = UserAuthenticationManager.calculateHMAC(hmacSecret, dto.getPayload());
         return expected.equals(dto.getHmac());
+    }
+
+    /**
+     * Validates the content of the signed payload string.
+     *
+     * @param payloadStr - the payload string from the marking response
+     * @param userId     - the ID of the currently authenticated user
+     * @throws InvalidMarkingResponseException if the payload is malformed, the user ID does not match,
+     *                                         or the timestamp is outside the allowed window
+     */
+    public void validatePayload(final String payloadStr, final long userId) throws InvalidMarkingResponseException {
+        try {
+            AnvilPayloadDTO dto = objectMapper.readValue(payloadStr, AnvilPayloadDTO.class);
+            if (dto.getUserId() != userId) {
+                throw new InvalidMarkingResponseException("Payload user_id does not match session");
+            }
+            if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - 300_000L))) {
+                throw new InvalidMarkingResponseException("Payload timestamp is outside the allowed window");
+            }
+        } catch (JsonProcessingException e) {
+            throw new InvalidMarkingResponseException("Invalid payload");
+        }
     }
 }
