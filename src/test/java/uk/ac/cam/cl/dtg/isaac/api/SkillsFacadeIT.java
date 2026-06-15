@@ -113,8 +113,9 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void invalidBody_Returns400(
             final String name, final JSONObject body, final String expectedMessage
         ) throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            client.post(validUrl(), body).assertError(expectedMessage, Response.Status.BAD_REQUEST);
+            testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+                .post(validUrl(), body)
+                .assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -140,11 +141,11 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void invalidPayload_Returns400(
             final String name, final JSONObject payload, final String expectedMessage
         ) throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var body = new JSONObject()
-                .put("payload", payload.toString())
-                .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256));
-            client.post(validUrl(), body).assertError(expectedMessage, Response.Status.BAD_REQUEST);
+            testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+                .post(validUrl(), new JSONObject()
+                    .put("payload", payload.toString())
+                    .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256))
+                ).assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
     }
 
