@@ -4,6 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
+import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 
 /**
  * Manager for Isaac Skills Practice app interactions.
@@ -11,11 +16,17 @@ import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
 public class SkillsManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final String hmacSecret;
+
     /**
      * Constructor.
+     *
+     * @param properties - application configuration
      */
     @Inject
-    public SkillsManager() { }
+    public SkillsManager(final AbstractConfigLoader properties) {
+        this.hmacSecret = properties.getProperty(SKILLS_HMAC_SECRET);
+    }
 
     /**
      * Parses and validates the raw JSON body from the external marking server.
@@ -30,5 +41,16 @@ public class SkillsManager {
         } catch (final JsonProcessingException e) {
             throw new InvalidMarkingResponseException("Invalid JSON object submitted");
         }
+    }
+
+    /**
+     * Verifies that the HMAC in the DTO matches the expected signature of the payload.
+     *
+     * @param dto - the parsed marking response
+     * @return whether the hmac was valid
+     */
+    public boolean isHmacValid(final AnvilMarkingResponseDTO dto) {
+        String expected = UserAuthenticationManager.calculateHMAC(hmacSecret, dto.getPayload());
+        return expected.equals(dto.getHmac());
     }
 }

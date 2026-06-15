@@ -8,15 +8,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class AnvilMarkingResponseDTO {
     private final String payload;
+    private final String hmac;
 
     /**
      * Constructor.
      *
      * @param payload - the signed payload from the marking server
+     * @param hmac    - the HMAC-SHA256 hex digest authenticating the payload
      */
     @JsonCreator
-    public AnvilMarkingResponseDTO(@JsonProperty(value = "payload", required = true) final String payload) {
+    public AnvilMarkingResponseDTO(
+            @JsonProperty(value = "payload", required = true) final String payload,
+            @JsonProperty(value = "hmac", required = true) final String hmac) {
         this.payload = payload;
+        this.hmac = hmac;
     }
 
     /**
@@ -26,5 +31,14 @@ public class AnvilMarkingResponseDTO {
      */
     public String getPayload() {
         return payload;
+    }
+
+    /**
+     * Gets the HMAC signature.
+     *
+     * @return the HMAC-SHA256 hex digest
+     */
+    public String getHmac() {
+        return hmac;
     }
 }

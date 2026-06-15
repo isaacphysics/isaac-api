@@ -66,7 +66,10 @@ public class SkillsFacade extends AbstractIsaacFacade {
                                    final String body) {
         try {
             userManager.getCurrentRegisteredUser(request);
-            skillsManager.parseResponse(body);
+            var markingResponse = skillsManager.parseResponse(body);
+            if (!skillsManager.isHmacValid(markingResponse)) {
+                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature").toResponse();
+            }
             if (!(this.contentManager.getContentDOById(appId) instanceof AnvilApp)) {
                 var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
                 log.warn(error.getErrorMessage());

@@ -1,5 +1,6 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
+import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,13 +10,18 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 
 import jakarta.ws.rs.core.Response;
-import java.net.UnknownHostException;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
-    private static final String VALID_BODY = new JSONObject().put("payload", "some_signed_payload").toString();
+    private static final String HMAC_SECRET = "integration-test-anvil-hmac-secret";
+    private static final String VALID_PAYLOAD = "some_signed_payload";
+    private static final String HMAC_SHA_256 = "HmacSHA256";
+    private static final String VALID_HMAC = sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256);
+    private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC);
 
     @Test
     public void notLoggedIn_Returns401() throws Exception {
@@ -62,15 +68,61 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         @Test
         public void numericPayload_Returns200() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post(validUrl(), new JSONObject().put("payload", 123).toString());
+            var body = new JSONObject().put("payload", 123).put("hmac", sign(HMAC_SECRET, "123", HMAC_SHA_256));
+            var response = client.post(validUrl(), body);
             response.readEntity(String.class);
         }
 
         @Test
         public void extraAttribute_Returns400() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post(validUrl(), new JSONObject().put("payload", "some_signed_payload").put("extra", "value").toString());
+            var body = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC).put("extra", "value");
+            var response = client.post(validUrl(), body);
             response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
+        }
+    }
+
+    @Nested
+    class HmacVerification {
+        @Test
+        public void missingHmac_Returns400() throws Exception {
+            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var response = client.post(validUrl(), new JSONObject().put("payload", VALID_PAYLOAD));
+            response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
+        }
+
+        @Test
+        public void invalidHmac_Returns400() throws Exception {
+            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var body = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", "not-a-valid-signature");
+            var response = client.post(validUrl(), body);
+            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
+        }
+
+        @Test
+        public void wrongSecret_Returns400() throws Exception {
+            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var body = new JSONObject().put("payload", VALID_PAYLOAD)
+                .put("hmac", sign("wrong-secret", VALID_PAYLOAD, HMAC_SHA_256));
+            var response = client.post(validUrl(), body);
+            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
+        }
+
+        @Test
+        public void tamperedPayload_Returns400() throws Exception {
+            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var body = new JSONObject().put("payload", "tampered_payload").put("hmac", VALID_HMAC);
+            var response = client.post(validUrl(), body);
+            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
+        }
+
+        @Test
+        public void wrongAlgo_Returns400() throws Exception {
+            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var body = new JSONObject().put("payload", VALID_PAYLOAD)
+                .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, "HmacMD5"));
+            var response = client.post(validUrl(), body);
+            response.assertError("Invalid HMAC signature", Response.Status.BAD_REQUEST);
         }
     }
 
@@ -81,7 +133,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         response.readEntity(String.class);
     }
 
-    private GitContentManager brokenContentManager() throws UnknownHostException {
+    private GitContentManager brokenContentManager() throws Exception {
         var brokenClient = ElasticSearchProvider.getClient("localhost", 1, "elastic", "elastic");
         var brokenProvider = new ElasticSearchProvider(brokenClient);
         return new GitContentManager(null, brokenProvider, mainMapper, contentMapper, properties);
@@ -92,6 +144,18 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         return "/skills/" + app.getString("id") + "/answer";
     }
 
+    private static String sign(final String key, final String payload, final String algo) {
+        try {
+            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), algo);
+            Mac mac = Mac.getInstance(algo);
+            mac.init(signingKey);
+
+            return new String(Base64.encodeBase64(mac.doFinal(payload.getBytes())));
+        } catch (final Exception e) {
+            return "NOT_SIGNED";
+        }
+    }
+
     private TestServer testServer() throws Exception {
         return testServer(contentManager);
     }
@@ -99,7 +163,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     private TestServer testServer(final GitContentManager cm) throws Exception {
         return startServer(
             new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
-            new SkillsFacade(properties, userAccountManager, logManager, cm, new SkillsManager())
+            new SkillsFacade(properties, userAccountManager, logManager, cm, new SkillsManager(properties))
         );
     }
 }

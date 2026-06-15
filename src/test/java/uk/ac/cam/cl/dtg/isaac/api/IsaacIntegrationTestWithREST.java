@@ -157,7 +157,8 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
 
         public TestResponse post(final String url, final Object body) {
             Invocation.Builder request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
-            Response response = builder.apply(request).post(Entity.json(body));
+            Object serializable = body instanceof JSONObject j ? j.toString() : body;
+            Response response = builder.apply(request).post(Entity.json(serializable));
             registerCleanup.accept(response::close);
             return new TestResponse(response);
         }
