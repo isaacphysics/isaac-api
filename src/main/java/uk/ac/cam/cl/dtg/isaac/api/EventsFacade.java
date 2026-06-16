@@ -1288,6 +1288,7 @@ public class EventsFacade extends AbstractIsaacFacade {
 
     /**
      * REST end point to provide a summary of events suitable for mapping.
+     * Excludes nofilter events.
      *
      * @param request        - this allows us to check to see if a user is currently logged in.
      * @param startIndex     - the initial index for the first result.
