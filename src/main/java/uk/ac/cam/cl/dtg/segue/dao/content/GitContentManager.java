@@ -247,8 +247,8 @@ public class GitContentManager {
 
         try {
             ResultsWrapper<Content> result = contentDOcache.get(k, () -> {
-
-                MatchInstruction searchInstruction = new MatchInstruction(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, id);
+                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder().includeHiddenContent(true).build();
+                searchInstruction.must(new MatchInstruction(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
 
                 ResultsWrapper<String> rawResults = searchProvider.nestedMatchSearch(contentIndex,
                         CONTENT_INDEX_TYPE.CONTENT.toString(), 0, 1, searchInstruction, null, null);
@@ -294,7 +294,7 @@ public class GitContentManager {
         try {
             return contentDTOcache.get(k, () -> {
 
-                BooleanInstruction searchInstruction = new BooleanInstruction();
+                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder().includeHiddenContent(true).build();
 
                 BooleanInstruction idsInstruction = new BooleanInstruction();
                 for (String id : ids) {
