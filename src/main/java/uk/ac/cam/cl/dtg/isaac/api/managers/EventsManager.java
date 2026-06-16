@@ -77,7 +77,6 @@ public class EventsManager {
             throws ContentManagerException, SegueDatabaseException {
 
         IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
-                .includeHiddenContent(includeHiddenContent)
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         if (tags != null) {
