@@ -113,7 +113,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void invalidBody_Returns400(
             final String name, final JSONObject body, final String expectedMessage
         ) throws Exception {
-            testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+            testServer().client()
+                .loginAs(integrationTestUsers.TEST_STUDENT)
                 .post(validUrl(), body)
                 .assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
@@ -140,11 +141,13 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void invalidPayload_Returns400(
             final String name, final JSONObject payload, final String expectedMessage
         ) throws Exception {
-            testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+            testServer().client()
+                .loginAs(integrationTestUsers.TEST_STUDENT)
                 .post(validUrl(), new JSONObject()
                     .put("payload", payload.toString())
                     .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256))
-                ).assertError(expectedMessage, Response.Status.BAD_REQUEST);
+                )
+                .assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
     }
 
@@ -165,9 +168,10 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
              var pst = conn.prepareStatement("SELECT user_id, timestamp FROM public.skills_question_attempts");
              var rs = pst.executeQuery()) {
             rs.next();
-            assertEquals(TEST_STUDENT_ID, rs.getInt("user_id"));
+            var jsonPayload = new JSONObject(VALID_PAYLOAD);
+            assertEquals(jsonPayload.getInt("user_id"), rs.getInt("user_id"));
             assertThat(rs.getTimestamp("timestamp").toInstant())
-                .isCloseTo(new JSONObject(VALID_PAYLOAD).getString("timestamp"), within(1, ChronoUnit.MILLIS));
+                .isCloseTo(jsonPayload.getString("timestamp"), within(1, ChronoUnit.MILLIS));
         }
     }
 
@@ -192,8 +196,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     private static String sign(final String key, final String payload, final String algo) {
         try {
-            SecretKeySpec signingKey = new SecretKeySpec(key.getBytes(), algo);
-            Mac mac = Mac.getInstance(algo);
+            var signingKey = new SecretKeySpec(key.getBytes(), algo);
+            var mac = Mac.getInstance(algo);
             mac.init(signingKey);
 
             return new String(Base64.encodeBase64(mac.doFinal(payload.getBytes())));
