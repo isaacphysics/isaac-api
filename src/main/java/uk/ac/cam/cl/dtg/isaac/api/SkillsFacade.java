@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidMarkingResponseException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
@@ -68,7 +69,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
                                    final AnvilMarkingResponseDTO markingResponse) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
-            if (!(this.contentManager.getContentDOById(appId) instanceof AnvilApp)) {
+            if (!(hasAnvilApp(this.contentManager.getContentDOById(appId)))) {
                 var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
                 log.warn(error.getErrorMessage());
                 return error.toResponse();
@@ -91,5 +92,11 @@ public class SkillsFacade extends AbstractIsaacFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
+    }
+
+    private boolean hasAnvilApp(final Content content) {
+        return content instanceof AnvilApp
+            || (content != null
+                && content.getChildren().stream().anyMatch(c -> c instanceof Content cc && hasAnvilApp(cc)));
     }
 }

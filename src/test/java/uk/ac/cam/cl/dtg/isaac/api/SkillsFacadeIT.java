@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.apache.commons.codec.binary.Base64;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -255,8 +256,11 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     private static String validUrl() {
         try {
-            var app = elasticHelper.persistJSON(new JSONObject().put("type", "anvilApp"));
-            return "/skills/" + app.getString("id") + "/answer";
+            var page = elasticHelper.persistJSON(new JSONObject()
+                .put("type", "page")
+                .put("children", new JSONArray().put(new JSONObject().put("type", "anvilApp")))
+            );
+            return "/skills/" + page.getString("id") + "/answer";
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
