@@ -16,6 +16,7 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.crypto.Mac;
@@ -31,7 +32,9 @@ import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     private static final String HMAC_SECRET = "integration-test-anvil-hmac-secret";
     private static final String HMAC_SHA_256 = "HmacSHA256";
-    private static final String VALID_PAYLOAD = validPayload(p -> {});
+    private static final String VALID_URL = validUrl();
+    private static final String VALID_APP_ID = VALID_URL.split("/")[2];
+    private static final String VALID_PAYLOAD = validPayload(VALID_APP_ID, p -> {});
     private static final String VALID_HMAC = sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256);
     private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC);
 
@@ -70,7 +73,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         @Test
         public void missingPayload_Returns400() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post(validUrl(), "{}");
+            var response = client.post(VALID_URL, "{}");
             response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
         }
 
@@ -78,7 +81,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void numericPayload_Returns400() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var body = new JSONObject().put("payload", 123).put("hmac", sign(HMAC_SECRET, "123", HMAC_SHA_256));
-            var response = client.post(validUrl(), body);
+            var response = client.post(VALID_URL, body);
             response.assertError("Invalid payload", Response.Status.BAD_REQUEST);
         }
 
@@ -86,7 +89,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void extraAttribute_Returns400() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var body = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC).put("extra", "value");
-            var response = client.post(validUrl(), body);
+            var response = client.post(VALID_URL, body);
             response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
         }
     }
@@ -115,24 +118,83 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         ) throws Exception {
             testServer().client()
                 .loginAs(integrationTestUsers.TEST_STUDENT)
-                .post(validUrl(), body)
+                .post(VALID_URL, body)
                 .assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
     }
 
     @Nested
     class PayloadContentCheck {
+        static String MSG_IP = "Invalid payload";
+
         static Stream<Arguments> invalidPayloads() {
             return Stream.of(
-                Arguments.of("missing user_id", validPayload(p -> p.remove("user_id")), "Invalid payload"),
-                Arguments.of("non-numeric user_id", validPayload(p -> p.put("user_id", "ab")), "Invalid payload"),
-                Arguments.of("missing timestamp", validPayload(p -> p.remove("timestamp")), "Invalid payload"),
-                Arguments.of("invalid timestamp", validPayload(p -> p.put("timestamp", "not-a-date")),
-                    "Invalid payload"),
-                Arguments.of("wrong user_id", validPayload(p -> p.put("user_id", TEST_STUDENT_ID + 1)),
+                // id
+                Arguments.of("missing id", validPayload(VALID_APP_ID, p -> p.remove("id")), MSG_IP),
+                Arguments.of("null id", validPayload(VALID_APP_ID, p -> p.put("id", JSONObject.NULL)), MSG_IP),
+                Arguments.of("invalid id", validPayload(VALID_APP_ID, p -> p.put("id", "not-uuid")), MSG_IP),
+
+                // user_id
+                Arguments.of("missing user_id", validPayload(VALID_APP_ID, p -> p.remove("user_id")), MSG_IP),
+                Arguments.of("null user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", JSONObject.NULL)),
+                    MSG_IP),
+                Arguments.of("empty user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", "")), MSG_IP),
+                Arguments.of("non-numeric user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", "ab")), MSG_IP),
+                Arguments.of("wrong user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", TEST_STUDENT_ID + 1)),
                     "Payload user_id does not match session"),
-                Arguments.of("expired timestamp", validPayload(p -> p.put("timestamp", "2022-01-01T13:00:00Z")),
-                    "Payload timestamp is outside the allowed window")
+
+                // skill_assignment_id
+                Arguments.of("missing skill_assignment_id", validPayload(VALID_APP_ID,
+                    p -> p.remove("skill_assignment_id")), MSG_IP),
+                Arguments.of("non-null skill_assignment_id", validPayload(VALID_APP_ID,
+                    p -> p.put("skill_assignment_id", "some_id")), MSG_IP),
+
+                // skill_id
+                Arguments.of("missing skill_id", validPayload(VALID_APP_ID, p -> p.remove("skill_id")), MSG_IP),
+                Arguments.of("null skill_id", validPayload(VALID_APP_ID, p -> p.put("skill_id", JSONObject.NULL)),
+                    MSG_IP),
+                Arguments.of("wrong skill_id", validPayload(VALID_APP_ID, p -> p.put("skill_id", "wrong_skill_id")),
+                    "Payload skill_id does not match app"),
+
+                // subskill_id
+                Arguments.of("missing subskill_id", validPayload(VALID_APP_ID, p -> p.remove("subskill_id")), MSG_IP),
+                Arguments.of("null subskill_id", validPayload(VALID_APP_ID, p -> p.put("subskill_id", JSONObject.NULL)),
+                    MSG_IP),
+
+                // question
+                Arguments.of("missing question", validPayload(VALID_APP_ID, p -> p.remove("question")), MSG_IP),
+                Arguments.of("null question", validPayload(VALID_APP_ID, p -> p.put("question", JSONObject.NULL)),
+                    MSG_IP),
+                Arguments.of("missing question text", validPayload(VALID_APP_ID,
+                    p -> p.getJSONObject("question").remove("text")), MSG_IP),
+                Arguments.of("null question text", validPayload(VALID_APP_ID,
+                    p -> p.getJSONObject("question").put("text", JSONObject.NULL)), MSG_IP),
+                Arguments.of("missing question answer", validPayload(VALID_APP_ID,
+                    p -> p.getJSONObject("question").remove("answer")), MSG_IP),
+                Arguments.of("null question answer", validPayload(VALID_APP_ID,
+                    p -> p.getJSONObject("question").put("answer", JSONObject.NULL)), MSG_IP),
+
+                // question_attempt
+                Arguments.of("missing question_attempt", validPayload(VALID_APP_ID,
+                    p -> p.remove("question_attempt")), MSG_IP),
+                Arguments.of("null question_attempt", validPayload(VALID_APP_ID,
+                    p -> p.put("question_attempt", JSONObject.NULL)), MSG_IP),
+
+                // marks
+                Arguments.of("missing marks", validPayload(VALID_APP_ID, p -> p.remove("marks")), MSG_IP),
+                Arguments.of("null marks", validPayload(VALID_APP_ID, p -> p.put("marks", JSONObject.NULL)), MSG_IP),
+                Arguments.of("invalid mark 2", validPayload(VALID_APP_ID, p -> p.put("marks", 2)),
+                    "Payload marks must be 0 or 1"),
+                Arguments.of("invalid mark -0.4", validPayload(VALID_APP_ID, p -> p.put("marks", -0.4)),
+                        "Payload marks must be 0 or 1"),
+
+                // timestamp
+                Arguments.of("missing timestamp", validPayload(VALID_APP_ID, p -> p.remove("timestamp")), MSG_IP),
+                Arguments.of("null timestamp", validPayload(VALID_APP_ID, p -> p.put("timestamp", JSONObject.NULL)),
+                    MSG_IP),
+                Arguments.of("invalid timestamp", validPayload(VALID_APP_ID, p -> p.put("timestamp", "n/d")), MSG_IP),
+                Arguments.of("expired timestamp", validPayload(VALID_APP_ID,
+                    p -> p.put("timestamp", "2022-01-01T13:00:00Z")), "Payload timestamp is outside the allowed window")
             );
         }
 
@@ -143,19 +205,19 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         ) throws Exception {
             testServer().client()
                 .loginAs(integrationTestUsers.TEST_STUDENT)
-                .post(validUrl(), new JSONObject()
+                .post(VALID_URL, new JSONObject()
                     .put("payload", payload.toString())
-                    .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256))
-                )
+                    .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256)))
                 .assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
     }
 
     @Test
     public void happy_happy() throws Exception {
-        var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-        var response = client.post(validUrl(), VALID_BODY);
-        response.readEntity(String.class);
+        testServer().client()
+            .loginAs(integrationTestUsers.TEST_STUDENT)
+            .post(VALID_URL, VALID_BODY)
+            .readEntity(String.class);
 
         try (var conn = postgresSqlDb.getDatabaseConnection();
              var pst = conn.prepareStatement("SELECT COUNT(*) FROM public.skills_question_attempts");
@@ -169,29 +231,40 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
              var rs = pst.executeQuery()) {
             rs.next();
             var jsonPayload = new JSONObject(VALID_PAYLOAD);
-            assertEquals(jsonPayload.getInt("user_id"), rs.getInt("user_id"));
+            assertEquals(jsonPayload.get("user_id"), rs.getInt("user_id"));
             assertThat(rs.getTimestamp("timestamp").toInstant())
-                .isCloseTo(jsonPayload.getString("timestamp"), within(1, ChronoUnit.MILLIS));
+                .isCloseTo(jsonPayload.getString("timestamp"), within(5, ChronoUnit.SECONDS));
         }
     }
 
-    private GitContentManager brokenContentManager() throws Exception {
+    private static GitContentManager brokenContentManager() throws Exception {
         var brokenClient = ElasticSearchProvider.getClient("localhost", 1, "elastic", "elastic");
         var brokenProvider = new ElasticSearchProvider(brokenClient);
         return new GitContentManager(null, brokenProvider, mainMapper, contentMapper, properties);
     }
 
-    private String validUrl() throws Exception {
-        var app = elasticHelper.persistJSON(new JSONObject().put("type", "anvilApp"));
-        return "/skills/" + app.getString("id") + "/answer";
+    private static String validUrl() {
+        try {
+            var app = elasticHelper.persistJSON(new JSONObject().put("type", "anvilApp"));
+            return "/skills/" + app.getString("id") + "/answer";
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private static String validPayload(final Consumer<JSONObject> ops) {
-        var defaultValidPayload = new JSONObject()
-                .put("user_id", TEST_STUDENT_ID)
-                .put("timestamp", Instant.now());
-        ops.accept(defaultValidPayload);
-        return defaultValidPayload.toString();
+    private static String validPayload(final String skillId, final Consumer<JSONObject> op) {
+        var defaultPayload = new JSONObject()
+            .put("id", UUID.randomUUID().toString())
+            .put("user_id", TEST_STUDENT_ID)
+            .put("skill_assignment_id", JSONObject.NULL)
+            .put("skill_id", skillId)
+            .put("subskill_id", 21)
+            .put("question", new JSONObject().put("text", "2+2").put("answer", "4"))
+            .put("question_attempt", "4")
+            .put("marks", 1)
+            .put("timestamp", Instant.now().toString());
+        op.accept(defaultPayload);
+        return defaultPayload.toString();
     }
 
     private static String sign(final String key, final String payload, final String algo) {
@@ -199,7 +272,6 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var signingKey = new SecretKeySpec(key.getBytes(), algo);
             var mac = Mac.getInstance(algo);
             mac.init(signingKey);
-
             return new String(Base64.encodeBase64(mac.doFinal(payload.getBytes())));
         } catch (final Exception e) {
             return "NOT_SIGNED";

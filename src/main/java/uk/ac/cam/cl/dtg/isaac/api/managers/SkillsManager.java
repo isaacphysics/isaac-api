@@ -42,7 +42,7 @@ public class SkillsManager {
      * @return the deserialised marking response
      * @throws InvalidMarkingResponseException if the body is missing or malformed
      */
-    public AnvilMarkingResponseDTO parseResponse(final String body) throws InvalidMarkingResponseException {
+    public AnvilMarkingResponseDTO parseRequest(final String body) throws InvalidMarkingResponseException {
         try {
             return objectMapper.readValue(body, AnvilMarkingResponseDTO.class);
         } catch (final JsonProcessingException e) {
@@ -66,19 +66,28 @@ public class SkillsManager {
      *
      * @param payloadStr - the payload string from the marking response
      * @param userId     - the ID of the currently authenticated user
-     * @throws InvalidMarkingResponseException if the payload is malformed, the user ID does not match,
-     *                                         or the timestamp is outside the allowed window
+     * @param appId      - the app ID from the URL, which must match the payload's skill_id
+     * @throws InvalidMarkingResponseException if the payload is malformed or any validation fails
      */
     public AnvilPayloadDTO parsePayload(
-        final String payloadStr, final long userId
+        final String payloadStr, final long userId, final String appId
     ) throws InvalidMarkingResponseException {
         try {
             AnvilPayloadDTO dto = objectMapper.readValue(payloadStr, AnvilPayloadDTO.class);
+            if (dto.getSkillAssignmentId() != null) {
+                throw new InvalidMarkingResponseException("Invalid payload");
+            }
             if (dto.getUserId() != userId) {
                 throw new InvalidMarkingResponseException("Payload user_id does not match session");
             }
             if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - 300_000L))) {
                 throw new InvalidMarkingResponseException("Payload timestamp is outside the allowed window");
+            }
+            if (!dto.getSkillId().equals(appId)) {
+                throw new InvalidMarkingResponseException("Payload skill_id does not match app");
+            }
+            if (!(dto.getMarks() instanceof Integer n) || (n != 0 && n != 1)) {
+                throw new InvalidMarkingResponseException("Payload marks must be 0 or 1");
             }
             return dto;
         } catch (final JsonProcessingException e) {

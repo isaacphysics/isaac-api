@@ -74,12 +74,12 @@ public class SkillsFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            AnvilMarkingResponseDTO markingResponse = skillsManager.parseResponse(body);
+            AnvilMarkingResponseDTO markingResponse = skillsManager.parseRequest(body);
             if (!skillsManager.isHmacValid(markingResponse)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature").toResponse();
             }
 
-            var payloadDTO = skillsManager.parsePayload(markingResponse.getPayload(), currentUser.getId());
+            var payloadDTO = skillsManager.parsePayload(markingResponse.getPayload(), currentUser.getId(), appId);
             skillsManager.recordAttempt(payloadDTO);
 
             return Response.ok().build();
