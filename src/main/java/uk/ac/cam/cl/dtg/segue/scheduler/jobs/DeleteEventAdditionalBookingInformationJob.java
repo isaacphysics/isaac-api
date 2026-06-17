@@ -57,7 +57,12 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
 
         BooleanInstruction instruction = new BooleanInstruction();
         instruction.must(new MatchInstruction(TYPE_FIELDNAME, EVENT_TYPE));
-        instruction.must(new RangeInstruction<Long>(ENDDATE_FIELDNAME).lessThanOrEqual(new Date().getTime()));
+
+        // Start with all events with end dates in the past OR dates in the past, in case end date isn't set
+        BooleanInstruction pastEventsInstruction = new BooleanInstruction();
+        pastEventsInstruction.should(new RangeInstruction<Long>(ENDDATE_FIELDNAME).lessThanOrEqual(new Date().getTime()));
+        pastEventsInstruction.should(new RangeInstruction<Long>(DATE_FIELDNAME).lessThanOrEqual(new Date().getTime()));
+        instruction.must(pastEventsInstruction);
 
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime thirtyDaysAgo = now.plusDays(-30);
