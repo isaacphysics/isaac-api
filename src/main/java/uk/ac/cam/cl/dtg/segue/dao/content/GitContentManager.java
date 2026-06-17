@@ -346,14 +346,14 @@ public class GitContentManager {
                 .includeContentTypes(contentTypes)
 
                 // High priority matches on untokenised search string
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME + "." +
-                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME + "."
+                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                         .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "." +
-                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "."
+                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                         .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "." +
-                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "."
+                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                         .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
 
                 // Fuzzy search term matches
@@ -461,14 +461,14 @@ public class GitContentManager {
         if (searchString != null && !searchString.isBlank()) {
             // High priority matches on untokenised search string
             searchInstructionBuilder
-                    .searchFor(new SearchInField(Constants.ID_FIELDNAME + "." +
-                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                    .searchFor(new SearchInField(Constants.ID_FIELDNAME + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                             .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                    .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "." +
-                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                    .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                             .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                    .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "." +
-                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                    .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                             .priority(Priority.HIGH).strategy(Strategy.SIMPLE));
         }
 
@@ -712,7 +712,7 @@ public class GitContentManager {
      */
     public IsaacSearchInstructionBuilder getBaseSearchInstructionBuilder() {
         return new IsaacSearchInstructionBuilder(
-                searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, true);
+                searchProvider, false, false, false);
     }
 
     /**
