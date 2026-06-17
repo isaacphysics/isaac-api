@@ -236,17 +236,11 @@ public class IsaacSearchInstructionBuilder {
     public BooleanInstruction build() {
         BooleanInstruction masterInstruction = this.buildBaseInstructions(new BooleanInstruction());
 
-        masterInstruction.setMinimumShouldMatch(1);
-
         List<String> contentTypes = Optional.ofNullable(this.includedContentTypes)
                 .orElse(Collections.emptySet())
                 .stream()
                 .filter(SEARCHABLE_DOC_TYPES::contains)
                 .collect(Collectors.toList());
-
-        if (contentTypes.isEmpty()) {
-            contentTypes = Lists.newArrayList(SITE_WIDE_SEARCH_VALID_DOC_TYPES);
-        }
 
         for (String contentType : contentTypes) {
             BooleanInstruction contentInstruction = new BooleanInstruction();
