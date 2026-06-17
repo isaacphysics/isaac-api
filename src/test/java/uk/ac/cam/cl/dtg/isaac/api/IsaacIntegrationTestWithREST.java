@@ -131,6 +131,15 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
             public Set<Object> getSingletons() {
                 return TestApp.facades;
             }
+
+            @Override
+            public Set<Class<?>> getClasses() {
+                return Set.of(
+                    uk.ac.cam.cl.dtg.isaac.configuration.RestEasyJacksonConfiguration.class,
+                    uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers.JacksonExceptionMapper.class,
+                    uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.UnhandledExceptionMapper.class
+                );
+            }
         }
     }
 

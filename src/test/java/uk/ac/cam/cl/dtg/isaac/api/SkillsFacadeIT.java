@@ -40,7 +40,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Test
     public void notLoggedIn_Returns401() throws Exception {
-        var response = testServer().client().post("/skills/unknown_app/answer", "{}");
+        var response = testServer().client().post("/skills/unknown_app/answer", VALID_BODY);
         response.assertError("You must be logged in to access this resource.", Response.Status.UNAUTHORIZED);
     }
 
@@ -74,7 +74,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void missingPayload_Returns400() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post(VALID_URL, "{}");
-            response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
+            response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
         }
 
         @Test
@@ -90,7 +90,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var body = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC).put("extra", "value");
             var response = client.post(VALID_URL, body);
-            response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
+            response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
         }
 
         @Test
@@ -107,7 +107,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         static Stream<Arguments> invalidBodies() {
             return Stream.of(
                 Arguments.of("missing hmac", new JSONObject().put("payload", VALID_PAYLOAD),
-                    "Invalid JSON object submitted"),
+                    "Invalid JSON provided!"),
                 Arguments.of("invalid hmac", new JSONObject().put("payload", VALID_PAYLOAD)
                     .put("hmac", "not-a-valid-signature"), "Invalid HMAC signature"),
                 Arguments.of("wrong secret", new JSONObject().put("payload", VALID_PAYLOAD)

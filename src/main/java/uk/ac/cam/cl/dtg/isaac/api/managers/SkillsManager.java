@@ -36,21 +36,6 @@ public class SkillsManager {
     }
 
     /**
-     * Parses and validates the raw JSON body from the external marking server.
-     *
-     * @param body - the raw JSON request body
-     * @return the deserialised marking response
-     * @throws InvalidMarkingResponseException if the body is missing or malformed
-     */
-    public AnvilMarkingResponseDTO parseRequest(final String body) throws InvalidMarkingResponseException {
-        try {
-            return objectMapper.readValue(body, AnvilMarkingResponseDTO.class);
-        } catch (final JsonProcessingException e) {
-            throw new InvalidMarkingResponseException("Invalid JSON object submitted");
-        }
-    }
-
-    /**
      * Verifies that the HMAC in the DTO matches the expected signature of the payload.
      *
      * @param dto - the parsed marking response

@@ -65,7 +65,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
     @Consumes(MediaType.APPLICATION_JSON)
     public Response answerQuestion(@Context final HttpServletRequest request,
                                    @PathParam("appId") final String appId,
-                                   final String body) {
+                                   final AnvilMarkingResponseDTO markingResponse) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
             if (!(this.contentManager.getContentDOById(appId) instanceof AnvilApp)) {
@@ -74,7 +74,6 @@ public class SkillsFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            AnvilMarkingResponseDTO markingResponse = skillsManager.parseRequest(body);
             if (!skillsManager.isHmacValid(markingResponse)) {
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature").toResponse();
             }
