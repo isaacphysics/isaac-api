@@ -64,12 +64,22 @@ public class AnvilPayloadDTO {
         this.timestamp = timestamp;
     }
 
+    public UUID getId() { return id; }
+
     public Long getUserId() { return userId; }
+
     public String getSkillAssignmentId() { return skillAssignmentId; }
+
     public String getSkillId() { return skillId; }
+
     public String getSubskillId() { return subskillId; }
+
+    public Question getQuestion() { return question; }
+
     public String getQuestionAttempt() { return questionAttempt; }
+
     public Number getMarks() { return marks; }
+
     public Date getTimestamp() { return timestamp; }
 
     public record Question(

@@ -26,6 +26,7 @@ import javax.crypto.spec.SecretKeySpec;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 
@@ -238,13 +239,21 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         try (var conn = postgresSqlDb.getDatabaseConnection();
-             var pst = conn.prepareStatement("SELECT user_id, timestamp FROM public.skills_question_attempts");
+             var pst = conn.prepareStatement("SELECT * FROM public.skills_question_attempts");
              var rs = pst.executeQuery()) {
             rs.next();
-            var jsonPayload = new JSONObject(VALID_PAYLOAD);
-            assertEquals(jsonPayload.get("user_id"), rs.getInt("user_id"));
+            var p = new JSONObject(VALID_PAYLOAD);
+            assertEquals(p.getString("id"), rs.getString("id"));
+            assertEquals(p.getInt("user_id"), rs.getInt("user_id"));
+            assertNull(rs.getString("skill_assignment_id"));
+            assertEquals(p.getString("skill_id"), rs.getString("skill_id"));
+            assertEquals(p.get("subskill_id").toString(), rs.getString("subskill_id"));
+            assertEquals(p.getJSONObject("question").getString("text"), rs.getString("question_text"));
+            assertEquals(p.getJSONObject("question").getString("answer"), rs.getString("question_answer"));
+            assertEquals(p.getString("question_attempt"), rs.getString("question_attempt"));
+            assertEquals(p.getInt("marks"), rs.getInt("marks"));
             assertThat(rs.getTimestamp("timestamp").toInstant())
-                .isCloseTo(jsonPayload.getString("timestamp"), within(5, ChronoUnit.SECONDS));
+                .isCloseTo(p.getString("timestamp"), within(5, ChronoUnit.SECONDS));
         }
     }
 
