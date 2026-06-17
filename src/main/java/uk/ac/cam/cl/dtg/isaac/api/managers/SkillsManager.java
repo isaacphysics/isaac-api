@@ -73,6 +73,10 @@ public class SkillsManager {
         final String payloadStr, final long userId, final String appId
     ) throws InvalidMarkingResponseException {
         try {
+            if (payloadStr.length() > 10 * 1024) {
+                throw new InvalidMarkingResponseException("Payload too large");
+            }
+
             AnvilPayloadDTO dto = objectMapper.readValue(payloadStr, AnvilPayloadDTO.class);
             if (dto.getUserId() != userId) {
                 throw new InvalidMarkingResponseException("Payload user_id does not match session");

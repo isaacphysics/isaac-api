@@ -92,6 +92,14 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var response = client.post(VALID_URL, body);
             response.assertError("Invalid JSON object submitted", Response.Status.BAD_REQUEST);
         }
+
+        @Test
+        public void oversizedPayload_Returns400() throws Exception {
+            var large = validPayload(p -> p.put("question_attempt", "x".repeat(10 * 1024 + 1)));
+            var body = new JSONObject().put("payload", large).put("hmac", sign(HMAC_SECRET, large, HMAC_SHA_256));
+            var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT).post(VALID_URL, body);
+            response.assertError("Payload too large", Response.Status.BAD_REQUEST);
+        }
     }
 
     @Nested
