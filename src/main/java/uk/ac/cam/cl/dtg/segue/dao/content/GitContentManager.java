@@ -627,16 +627,7 @@ public class GitContentManager {
             relatedContentIds.add(summary.getId());
         }
 
-        // build query the db to get full content information
-        BooleanInstruction searchInstruction = new BooleanInstruction();
-
-        BooleanInstruction idsInstruction = new BooleanInstruction();
-        for (String relatedContentId : relatedContentIds) {
-            idsInstruction.should(new MatchInstruction(Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, relatedContentId));
-        }
-        searchInstruction.must(idsInstruction);
-
-        ResultsWrapper<ContentDTO> results = this.nestedMatchSearch(searchInstruction, 0, relatedContentIds.size(), null, null);
+        ResultsWrapper<ContentDTO> results = getUnsafeCachedContentDTOsMatchingIds(relatedContentIds, 0, relatedContentIds.size());
 
         List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
