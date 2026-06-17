@@ -4,16 +4,18 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import org.apache.commons.lang3.Validate;
 
 import java.util.Date;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 /**
  * DTO representing the signed payload content from the external Anvil marking server.
  */
 public class AnvilPayloadDTO {
     private final UUID id;
-    private final long userId;
+    private final Long userId;
     private final String skillAssignmentId;
     private final String skillId;
     private final String subskillId;
@@ -38,7 +40,7 @@ public class AnvilPayloadDTO {
     @JsonCreator
     public AnvilPayloadDTO(
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "id", required = true) final UUID id,
-            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "user_id", required = true) final long userId,
+            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "user_id", required = true) final Long userId,
             @JsonProperty(value = "skill_assignment_id", required = true) final String skillAssignmentId,
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "skill_id", required = true) final String skillId,
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "subskill_id", required = true) final String subskillId,
@@ -46,6 +48,11 @@ public class AnvilPayloadDTO {
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "question_attempt", required = true) final String questionAttempt,
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "marks", required = true) final Number marks,
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "timestamp", required = true) final Date timestamp) {
+        Validate.isTrue(userId != 0);
+        Validate.isTrue(skillAssignmentId == null);
+        Validate.isTrue((marks instanceof Integer n) && (n == 0 || n == 1));
+        Stream.of(skillId, subskillId, question.answer, question.text).forEach(Validate::notEmpty);
+
         this.id = id;
         this.userId = userId;
         this.skillAssignmentId = skillAssignmentId;
@@ -57,7 +64,7 @@ public class AnvilPayloadDTO {
         this.timestamp = timestamp;
     }
 
-    public long getUserId() { return userId; }
+    public Long getUserId() { return userId; }
     public String getSkillAssignmentId() { return skillAssignmentId; }
     public String getSkillId() { return skillId; }
     public String getSubskillId() { return subskillId; }

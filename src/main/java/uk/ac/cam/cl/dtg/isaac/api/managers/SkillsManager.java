@@ -74,9 +74,6 @@ public class SkillsManager {
     ) throws InvalidMarkingResponseException {
         try {
             AnvilPayloadDTO dto = objectMapper.readValue(payloadStr, AnvilPayloadDTO.class);
-            if (dto.getSkillAssignmentId() != null) {
-                throw new InvalidMarkingResponseException("Invalid payload");
-            }
             if (dto.getUserId() != userId) {
                 throw new InvalidMarkingResponseException("Payload user_id does not match session");
             }
@@ -85,9 +82,6 @@ public class SkillsManager {
             }
             if (!dto.getSkillId().equals(appId)) {
                 throw new InvalidMarkingResponseException("Payload skill_id does not match app");
-            }
-            if (!(dto.getMarks() instanceof Integer n) || (n != 0 && n != 1)) {
-                throw new InvalidMarkingResponseException("Payload marks must be 0 or 1");
             }
             return dto;
         } catch (final JsonProcessingException e) {

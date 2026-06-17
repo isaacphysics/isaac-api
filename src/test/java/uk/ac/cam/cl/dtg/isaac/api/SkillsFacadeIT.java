@@ -34,7 +34,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     private static final String HMAC_SHA_256 = "HmacSHA256";
     private static final String VALID_URL = validUrl();
     private static final String VALID_APP_ID = VALID_URL.split("/")[2];
-    private static final String VALID_PAYLOAD = validPayload(VALID_APP_ID, p -> {});
+    private static final String VALID_PAYLOAD = validPayload(p -> {});
     private static final String VALID_HMAC = sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256);
     private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC);
 
@@ -128,74 +128,70 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         static String MSG_IP = "Invalid payload";
 
         static Stream<Arguments> invalidPayloads() {
-            return Stream.of(
-                // id
-                Arguments.of("missing id", validPayload(VALID_APP_ID, p -> p.remove("id")), MSG_IP),
-                Arguments.of("null id", validPayload(VALID_APP_ID, p -> p.put("id", JSONObject.NULL)), MSG_IP),
-                Arguments.of("invalid id", validPayload(VALID_APP_ID, p -> p.put("id", "not-uuid")), MSG_IP),
+            var s = Stream.<Arguments>builder();
 
-                // user_id
-                Arguments.of("missing user_id", validPayload(VALID_APP_ID, p -> p.remove("user_id")), MSG_IP),
-                Arguments.of("null user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", JSONObject.NULL)),
-                    MSG_IP),
-                Arguments.of("empty user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", "")), MSG_IP),
-                Arguments.of("non-numeric user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", "ab")), MSG_IP),
-                Arguments.of("wrong user_id", validPayload(VALID_APP_ID, p -> p.put("user_id", TEST_STUDENT_ID + 1)),
-                    "Payload user_id does not match session"),
+            // id
+            addNonEmptyCasesFor("id", s);
+            s.add(Arguments.of("invalid id", validPayload(p -> p.put("id", "not-uuid")), MSG_IP));
 
-                // skill_assignment_id
-                Arguments.of("missing skill_assignment_id", validPayload(VALID_APP_ID,
-                    p -> p.remove("skill_assignment_id")), MSG_IP),
-                Arguments.of("non-null skill_assignment_id", validPayload(VALID_APP_ID,
-                    p -> p.put("skill_assignment_id", "some_id")), MSG_IP),
+            // user_id
+            addNonEmptyCasesFor("user_id", s);
+            s.add(Arguments.of("non-numeric user_id", validPayload(p -> p.put("user_id", "ab")), MSG_IP));
+            s.add(Arguments.of("wrong user_id", validPayload(p -> p.put("user_id", TEST_STUDENT_ID + 1)),
+                "Payload user_id does not match session"));
 
-                // skill_id
-                Arguments.of("missing skill_id", validPayload(VALID_APP_ID, p -> p.remove("skill_id")), MSG_IP),
-                Arguments.of("null skill_id", validPayload(VALID_APP_ID, p -> p.put("skill_id", JSONObject.NULL)),
-                    MSG_IP),
-                Arguments.of("wrong skill_id", validPayload(VALID_APP_ID, p -> p.put("skill_id", "wrong_skill_id")),
-                    "Payload skill_id does not match app"),
+            // skill_assignment_id
+            s.add(Arguments.of("missing skill_assignment_id", validPayload(p -> p.remove("skill_assignment_id")),
+                MSG_IP));
+            s.add(Arguments.of("non-null skill_assignment_id",
+                validPayload(p -> p.put("skill_assignment_id", "some_id")), MSG_IP));
 
-                // subskill_id
-                Arguments.of("missing subskill_id", validPayload(VALID_APP_ID, p -> p.remove("subskill_id")), MSG_IP),
-                Arguments.of("null subskill_id", validPayload(VALID_APP_ID, p -> p.put("subskill_id", JSONObject.NULL)),
-                    MSG_IP),
+            // skill_id
+            addNonEmptyCasesFor("skill_id", s);
+            s.add(Arguments.of("wrong skill_id", validPayload(p -> p.put("skill_id", "wrong_skill_id")),
+                "Payload skill_id does not match app"));
 
-                // question
-                Arguments.of("missing question", validPayload(VALID_APP_ID, p -> p.remove("question")), MSG_IP),
-                Arguments.of("null question", validPayload(VALID_APP_ID, p -> p.put("question", JSONObject.NULL)),
-                    MSG_IP),
-                Arguments.of("missing question text", validPayload(VALID_APP_ID,
-                    p -> p.getJSONObject("question").remove("text")), MSG_IP),
-                Arguments.of("null question text", validPayload(VALID_APP_ID,
-                    p -> p.getJSONObject("question").put("text", JSONObject.NULL)), MSG_IP),
-                Arguments.of("missing question answer", validPayload(VALID_APP_ID,
-                    p -> p.getJSONObject("question").remove("answer")), MSG_IP),
-                Arguments.of("null question answer", validPayload(VALID_APP_ID,
-                    p -> p.getJSONObject("question").put("answer", JSONObject.NULL)), MSG_IP),
+            // subskill_id
+            addNonEmptyCasesFor("subskill_id", s);
 
-                // question_attempt
-                Arguments.of("missing question_attempt", validPayload(VALID_APP_ID,
-                    p -> p.remove("question_attempt")), MSG_IP),
-                Arguments.of("null question_attempt", validPayload(VALID_APP_ID,
-                    p -> p.put("question_attempt", JSONObject.NULL)), MSG_IP),
+            // question
+            addNonEmptyCasesFor("question", s);
+            s.add(Arguments.of("missing question text", validPayload(p -> p.getJSONObject("question").remove("text")),
+                MSG_IP));
+            s.add(Arguments.of("null question text",
+                validPayload(p -> p.getJSONObject("question").put("text", JSONObject.NULL)), MSG_IP));
+            s.add(Arguments.of("empty question text",
+                validPayload(p -> p.getJSONObject("question").put("text", "")), MSG_IP));
+            s.add(Arguments.of("missing question text",
+                validPayload(p -> p.getJSONObject("question").remove("answer")), MSG_IP));
+            s.add(Arguments.of("null question answer",
+                validPayload(p -> p.getJSONObject("question").put("answer", JSONObject.NULL)), MSG_IP));
+            s.add(Arguments.of("empty question answer",
+                validPayload(p -> p.getJSONObject("question").put("answer", "")), MSG_IP));
+            s.add(Arguments.of("extra value on question",
+                validPayload(p -> p.getJSONObject("question").put("extra", "value")), MSG_IP));
 
-                // marks
-                Arguments.of("missing marks", validPayload(VALID_APP_ID, p -> p.remove("marks")), MSG_IP),
-                Arguments.of("null marks", validPayload(VALID_APP_ID, p -> p.put("marks", JSONObject.NULL)), MSG_IP),
-                Arguments.of("invalid mark 2", validPayload(VALID_APP_ID, p -> p.put("marks", 2)),
-                    "Payload marks must be 0 or 1"),
-                Arguments.of("invalid mark -0.4", validPayload(VALID_APP_ID, p -> p.put("marks", -0.4)),
-                        "Payload marks must be 0 or 1"),
+            // question_attempt
+            s.add(Arguments.of("missing question_attempt", validPayload(
+                    p -> p.remove("question_attempt")), MSG_IP));
+            s.add(Arguments.of("null question_attempt", validPayload(
+                    p -> p.put("question_attempt", JSONObject.NULL)), MSG_IP));
 
-                // timestamp
-                Arguments.of("missing timestamp", validPayload(VALID_APP_ID, p -> p.remove("timestamp")), MSG_IP),
-                Arguments.of("null timestamp", validPayload(VALID_APP_ID, p -> p.put("timestamp", JSONObject.NULL)),
-                    MSG_IP),
-                Arguments.of("invalid timestamp", validPayload(VALID_APP_ID, p -> p.put("timestamp", "n/d")), MSG_IP),
-                Arguments.of("expired timestamp", validPayload(VALID_APP_ID,
-                    p -> p.put("timestamp", "2022-01-01T13:00:00Z")), "Payload timestamp is outside the allowed window")
-            );
+            // marks
+            addNonEmptyCasesFor("marks", s);
+            s.add(Arguments.of("invalid mark 2", validPayload(p -> p.put("marks", 2)), MSG_IP));
+            s.add(Arguments.of("invalid mark -0.4", validPayload(p -> p.put("marks", -0.4)), MSG_IP));
+
+            // timestamp
+            addNonEmptyCasesFor("timestamp", s);
+            s.add(Arguments.of("invalid timestamp", validPayload(p -> p.put("timestamp", "n/d")), MSG_IP));
+            s.add(Arguments.of("expired timestamp", validPayload(p -> p.put("timestamp", "2022-01-01T13:00:00Z")),
+                "Payload timestamp is outside the allowed window"));
+
+            // other cases
+            s.add(Arguments.of("extra value", validPayload(p -> p.put("extra", "value")), MSG_IP));
+
+            return s.build();
         }
 
         @ParameterizedTest(name = "{0}")
@@ -209,6 +205,12 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
                     .put("payload", payload.toString())
                     .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256)))
                 .assertError(expectedMessage, Response.Status.BAD_REQUEST);
+        }
+
+        private static void addNonEmptyCasesFor(final String fieldName, final Stream.Builder<Arguments> s) {
+            s.add(Arguments.of("missing " + fieldName, validPayload(p -> p.remove(fieldName)), MSG_IP));
+            s.add(Arguments.of("null " + fieldName, validPayload(p -> p.put(fieldName, JSONObject.NULL)), MSG_IP));
+            s.add(Arguments.of("empty " + fieldName, validPayload(p -> p.put(fieldName, "")), MSG_IP));
         }
     }
 
@@ -252,12 +254,12 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
     }
 
-    private static String validPayload(final String skillId, final Consumer<JSONObject> op) {
+    private static String validPayload(final Consumer<JSONObject> op) {
         var defaultPayload = new JSONObject()
             .put("id", UUID.randomUUID().toString())
             .put("user_id", TEST_STUDENT_ID)
             .put("skill_assignment_id", JSONObject.NULL)
-            .put("skill_id", skillId)
+            .put("skill_id", SkillsFacadeIT.VALID_APP_ID)
             .put("subskill_id", 21)
             .put("question", new JSONObject().put("text", "2+2").put("answer", "4"))
             .put("question_attempt", "4")
