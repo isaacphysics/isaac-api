@@ -29,8 +29,8 @@ public class PgSkillsAttemptManager implements ISkillsAttemptManager {
             pst.setString(3, attempt.getSkillAssignmentId());
             pst.setString(4, attempt.getSkillId());
             pst.setString(5, attempt.getSubskillId());
-            pst.setString(6, attempt.getQuestion());
-            pst.setString(7, attempt.getQuestionAttempt());
+            pst.setString(6, attempt.getQuestion().toString());
+            pst.setString(7, attempt.getQuestionAttempt().toString());
             pst.setInt(8, (Integer) attempt.getMarks());
             pst.setTimestamp(9, new Timestamp(attempt.getTimestamp().getTime()));
             pst.executeUpdate();

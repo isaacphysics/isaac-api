@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
@@ -65,6 +66,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
     @POST
     @Path("/{appId}/answer")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response answerQuestion(@Context final HttpServletRequest request,
                                    @PathParam("appId") final String appId,
                                    final AnvilMarkingResponseDTO markingResponse) {
@@ -83,7 +85,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
             var payloadDTO = skillsManager.parsePayload(markingResponse.getPayload(), currentUser.getId(), appId);
             skillsManager.recordAttempt(payloadDTO);
 
-            return Response.ok().build();
+            return Response.ok(payloadDTO).build();
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (final InvalidMarkingResponseException e) {

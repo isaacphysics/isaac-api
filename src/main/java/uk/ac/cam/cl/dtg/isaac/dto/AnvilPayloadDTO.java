@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import org.apache.commons.lang3.Validate;
 
 import java.util.Date;
@@ -14,6 +16,7 @@ import java.util.stream.Stream;
 /**
  * DTO representing the signed payload content from the external Anvil marking server.
  */
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class AnvilPayloadDTO {
     private final UUID id;
     private final Long userId;
@@ -88,12 +91,12 @@ public class AnvilPayloadDTO {
         return subskillId;
     }
 
-    public String getQuestion() {
-        return question.toString();
+    public JsonNode getQuestion() {
+        return question;
     }
 
-    public String getQuestionAttempt() {
-        return questionAttempt.toString();
+    public JsonNode getQuestionAttempt() {
+        return questionAttempt;
     }
 
     public Number getMarks() {

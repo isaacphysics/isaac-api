@@ -26,6 +26,7 @@ import javax.crypto.spec.SecretKeySpec;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
@@ -221,11 +222,13 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Test
     public void happy_happy() throws Exception {
-        testServer().client()
+        var expected = new JSONObject(VALID_PAYLOAD);
+        var actualReq = testServer().client()
             .loginAs(integrationTestUsers.TEST_STUDENT)
             .post(VALID_URL, VALID_BODY)
-            .readEntity(String.class);
+            .readEntityAsJson();
 
+        // assert there is exactly 1 row in the database
         try (var conn = postgresSqlDb.getDatabaseConnection();
              var pst = conn.prepareStatement("SELECT COUNT(*) FROM public.skills_question_attempts");
              var rs = pst.executeQuery()) {
@@ -233,26 +236,37 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             assertEquals(1, rs.getInt(1));
         }
 
+        // assert everything has been recorded to the database
         try (var conn = postgresSqlDb.getDatabaseConnection();
              var pst = conn.prepareStatement("""
                  SELECT id, user_id, skill_assignment_id, skill_id, subskill_id, question->>'text' AS question_text,
                         question->>'answer' AS question_answer, question_attempt->>'result' AS result, marks, timestamp
                  FROM public.skills_question_attempts""");
-             var rs = pst.executeQuery()) {
-            rs.next();
-            var p = new JSONObject(VALID_PAYLOAD);
-            assertEquals(p.getString("id"), rs.getString("id"));
-            assertEquals(p.getInt("user_id"), rs.getInt("user_id"));
-            assertNull(rs.getString("skill_assignment_id"));
-            assertEquals(p.getString("skill_id"), rs.getString("skill_id"));
-            assertEquals(p.get("subskill_id").toString(), rs.getString("subskill_id"));
-            assertEquals(p.getJSONObject("question").getString("text"), rs.getString("question_text"));
-            assertEquals(p.getJSONObject("question").getString("answer"), rs.getString("question_answer"));
-            assertEquals(p.getJSONObject("question_attempt").getString("result"), rs.getString("result"));
-            assertEquals(p.getInt("marks"), rs.getInt("marks"));
-            assertThat(rs.getTimestamp("timestamp").toInstant())
-                .isCloseTo(p.getString("timestamp"), within(5, ChronoUnit.SECONDS));
+             var actualDb = pst.executeQuery()) {
+            actualDb.next();
+            assertEquals(expected.getString("id"), actualDb.getString("id"));
+            assertEquals(expected.getInt("user_id"), actualDb.getInt("user_id"));
+            assertNull(actualDb.getString("skill_assignment_id"));
+            assertEquals(expected.getString("skill_id"), actualDb.getString("skill_id"));
+            assertEquals(expected.get("subskill_id").toString(), actualDb.getString("subskill_id"));
+            assertEquals(expected.getJSONObject("question").getString("text"), actualDb.getString("question_text"));
+            assertEquals(expected.getJSONObject("question").getString("answer"), actualDb.getString("question_answer"));
+            assertEquals(expected.getJSONObject("question_attempt").getString("result"), actualDb.getString("result"));
+            assertEquals(expected.getInt("marks"), actualDb.getInt("marks"));
+            assertThat(actualDb.getTimestamp("timestamp").toInstant())
+                .isCloseTo(expected.getString("timestamp"), within(5, ChronoUnit.SECONDS));
         }
+
+        // assert the request echoes back the payload
+        assertEquals(expected.getString("id"), actualReq.getString("id"));
+        assertEquals(expected.getInt("user_id"), actualReq.getInt("user_id"));
+        assertEquals(expected.getString("skill_id"), actualReq.getString("skill_id"));
+        assertEquals(expected.get("subskill_id").toString(), actualReq.getString("subskill_id"));
+        assertEquals(expected.getJSONObject("question").toString(), actualReq.getJSONObject("question").toString());
+        assertEquals(expected.getJSONObject("question_attempt").toString(),
+            actualReq.getJSONObject("question_attempt").toString());
+        assertEquals(expected.getInt("marks"), actualReq.getInt("marks"));
+        assertFalse(actualReq.has("skill_assignment_id"));
     }
 
     private static GitContentManager brokenContentManager() throws Exception {
