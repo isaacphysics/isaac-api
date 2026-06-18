@@ -3,9 +3,9 @@ package uk.ac.cam.cl.dtg.isaac.api.managers;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.isaac.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
@@ -13,7 +13,6 @@ import java.sql.SQLException;
 import java.util.Date;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
-
 
 /**
  * Manager for Isaac Skills Practice app interactions.

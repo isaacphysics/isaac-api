@@ -1,13 +1,14 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.inject.Inject;
-import uk.ac.cam.cl.dtg.isaac.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
+/** PostgreSQL-backed persistence for Anvil skills question attempts. */
 public class PgSkillsAttemptManager implements ISkillsAttemptManager {
     private final PostgresSqlDb database;
 

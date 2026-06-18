@@ -172,7 +172,9 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         }
 
         public TestClient loginAs(final RegisteredUser user) {
-            Invocation.Builder request = client.target(baseUrl + "/auth/SEGUE/authenticate").request(MediaType.APPLICATION_JSON);
+            Invocation.Builder request = client
+                .target(baseUrl + "/auth/SEGUE/authenticate")
+                .request(MediaType.APPLICATION_JSON);
             LocalAuthDTO body = new LocalAuthDTO();
             body.setEmail(user.getEmail());
             body.setPassword("test1234");

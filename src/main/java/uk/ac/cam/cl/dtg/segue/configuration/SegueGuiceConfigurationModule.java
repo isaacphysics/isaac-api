@@ -38,7 +38,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.ISkillsAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
