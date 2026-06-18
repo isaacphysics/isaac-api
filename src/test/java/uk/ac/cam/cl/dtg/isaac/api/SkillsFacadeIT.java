@@ -166,26 +166,12 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
             // question
             addNonEmptyCasesFor("question", s);
-            s.add(Arguments.of("missing question text", validPayload(p -> p.getJSONObject("question").remove("text")),
-                MSG_IP));
-            s.add(Arguments.of("null question text",
-                validPayload(p -> p.getJSONObject("question").put("text", JSONObject.NULL)), MSG_IP));
-            s.add(Arguments.of("empty question text",
-                validPayload(p -> p.getJSONObject("question").put("text", "")), MSG_IP));
-            s.add(Arguments.of("missing question text",
-                validPayload(p -> p.getJSONObject("question").remove("answer")), MSG_IP));
-            s.add(Arguments.of("null question answer",
-                validPayload(p -> p.getJSONObject("question").put("answer", JSONObject.NULL)), MSG_IP));
-            s.add(Arguments.of("empty question answer",
-                validPayload(p -> p.getJSONObject("question").put("answer", "")), MSG_IP));
-            s.add(Arguments.of("extra value on question",
-                validPayload(p -> p.getJSONObject("question").put("extra", "value")), MSG_IP));
+            s.add(Arguments.of("invalid question JSON, str", validPayload(p -> p.put("question", "ab")), MSG_IP));
+            s.add(Arguments.of("invalid question JSON, number", validPayload(p -> p.put("question", 1)), MSG_IP));
 
             // question_attempt
-            s.add(Arguments.of("missing question_attempt", validPayload(
-                    p -> p.remove("question_attempt")), MSG_IP));
-            s.add(Arguments.of("null question_attempt", validPayload(
-                    p -> p.put("question_attempt", JSONObject.NULL)), MSG_IP));
+            addNonEmptyCasesFor("question_attempt", s);
+            s.add(Arguments.of("invalid attempts JSON", validPayload(p -> p.put("question_attempt", "a")), MSG_IP));
 
             // marks
             addNonEmptyCasesFor("marks", s);
@@ -239,7 +225,10 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         try (var conn = postgresSqlDb.getDatabaseConnection();
-             var pst = conn.prepareStatement("SELECT * FROM public.skills_question_attempts");
+             var pst = conn.prepareStatement("""
+                 SELECT id, user_id, skill_assignment_id, skill_id, subskill_id, question->>'text' AS question_text,
+                        question->>'answer' AS question_answer, question_attempt->>'result' AS result, marks, timestamp
+                 FROM public.skills_question_attempts""");
              var rs = pst.executeQuery()) {
             rs.next();
             var p = new JSONObject(VALID_PAYLOAD);
@@ -250,7 +239,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             assertEquals(p.get("subskill_id").toString(), rs.getString("subskill_id"));
             assertEquals(p.getJSONObject("question").getString("text"), rs.getString("question_text"));
             assertEquals(p.getJSONObject("question").getString("answer"), rs.getString("question_answer"));
-            assertEquals(p.getString("question_attempt"), rs.getString("question_attempt"));
+            assertEquals(p.getJSONObject("question_attempt").getString("result"), rs.getString("result"));
             assertEquals(p.getInt("marks"), rs.getInt("marks"));
             assertThat(rs.getTimestamp("timestamp").toInstant())
                 .isCloseTo(p.getString("timestamp"), within(5, ChronoUnit.SECONDS));
@@ -283,7 +272,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             .put("skill_id", SkillsFacadeIT.VALID_APP_ID)
             .put("subskill_id", 21)
             .put("question", new JSONObject().put("text", "2+2").put("answer", "4"))
-            .put("question_attempt", "4")
+            .put("question_attempt", new JSONObject().put("result", "4"))
             .put("marks", 1)
             .put("timestamp", Instant.now().toString());
         op.accept(defaultPayload);

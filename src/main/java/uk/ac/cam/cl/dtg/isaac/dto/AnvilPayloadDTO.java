@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.Nulls;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.lang3.Validate;
 
 import java.util.Date;
@@ -19,8 +20,8 @@ public class AnvilPayloadDTO {
     private final String skillAssignmentId;
     private final String skillId;
     private final String subskillId;
-    private final Question question;
-    private final String questionAttempt;
+    private final JsonNode question;
+    private final JsonNode questionAttempt;
     private final Number marks;
     private final Date timestamp;
 
@@ -43,19 +44,22 @@ public class AnvilPayloadDTO {
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "user_id", required = true) final Long userId,
             @JsonProperty(value = "skill_assignment_id", required = true) final String skillAssignmentId,
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "skill_id", required = true) final String skillId,
-            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "subskill_id", required = true) final String subskillId,
-            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "question", required = true) final Question question,
-            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "question_attempt", required = true) final String questionAttempt,
+            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "subskill_id", required = true)
+            final String subskillId,
+            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "question", required = true) final JsonNode question,
+            @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "question_attempt", required = true)
+            final JsonNode questionAttempt,
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "marks", required = true) final Number marks,
             @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "timestamp", required = true) final Date timestamp) {
         Validate.isTrue(userId != 0);
         Validate.isTrue(skillAssignmentId == null);
         Validate.isTrue((marks instanceof Integer n) && (n == 0 || n == 1));
-        Stream.of(skillId, subskillId, question.answer, question.text).forEach(Validate::notEmpty);
+        Stream.of(question, questionAttempt).forEach(f -> Validate.isTrue(f.isObject()));
+        Stream.of(skillId, subskillId).forEach(Validate::notEmpty);
 
         this.id = id;
         this.userId = userId;
-        this.skillAssignmentId = skillAssignmentId;
+        this.skillAssignmentId = null;
         this.skillId = skillId;
         this.subskillId = subskillId;
         this.question = question;
@@ -64,26 +68,39 @@ public class AnvilPayloadDTO {
         this.timestamp = timestamp;
     }
 
-    public UUID getId() { return id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public Long getUserId() { return userId; }
+    public Long getUserId() {
+        return userId;
+    }
 
-    public String getSkillAssignmentId() { return skillAssignmentId; }
+    public String getSkillAssignmentId() {
+        return skillAssignmentId;
+    }
 
-    public String getSkillId() { return skillId; }
+    public String getSkillId() {
+        return skillId;
+    }
 
-    public String getSubskillId() { return subskillId; }
+    public String getSubskillId() {
+        return subskillId;
+    }
 
-    public Question getQuestion() { return question; }
+    public String getQuestion() {
+        return question.toString();
+    }
 
-    public String getQuestionAttempt() { return questionAttempt; }
+    public String getQuestionAttempt() {
+        return questionAttempt.toString();
+    }
 
-    public Number getMarks() { return marks; }
+    public Number getMarks() {
+        return marks;
+    }
 
-    public Date getTimestamp() { return timestamp; }
-
-    public record Question(
-        @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "text", required = true) String text,
-        @JsonSetter(nulls = Nulls.FAIL) @JsonProperty(value = "answer", required = true) String answer
-    ) {}
+    public Date getTimestamp() {
+        return timestamp;
+    }
 }
