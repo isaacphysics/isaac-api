@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.BookmarksManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.UserAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.dos.BookmarkDO;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacTopicSummaryPage;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
@@ -319,8 +320,6 @@ public class PagesFacade extends AbstractIsaacFacade {
     /**
      * REST end point to provide a list of questions.
      *
-     * @param ids
-     *            - the ids of the concepts to request.
      * @param searchString
      *            - an optional search string to allow finding of questions by title.
      * @param tags
@@ -334,6 +333,8 @@ public class PagesFacade extends AbstractIsaacFacade {
      *            - a string value to be converted into an integer which represents the start index of the results
      * @param paramLimit
      *            - a string value to be converted into an integer that represents the number of results to return.
+     * @param searchBookmarks
+     *            - whether the user's bookmarks should be used as the source of questions.
      * @return A response object which contains a list of questions or an empty list.
      */
     @GET
@@ -342,7 +343,7 @@ public class PagesFacade extends AbstractIsaacFacade {
     @GZIP
     @Operation(summary = "List all question page objects matching the provided criteria.")
     public final Response getQuestionList(@Context final HttpServletRequest httpServletRequest,
-            @QueryParam("ids") final String ids, @QueryParam("searchString") final String searchString,
+            @QueryParam("searchString") final String searchString,
             @QueryParam("tags") final String tags, @QueryParam("levels") final String level,
             @QueryParam("subjects") final String subjects, @QueryParam("fields") final String fields,
             @QueryParam("topics") final String topics,
@@ -353,7 +354,8 @@ public class PagesFacade extends AbstractIsaacFacade {
             @DefaultValue("false") @QueryParam("fasttrack") final Boolean fasttrack,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("startIndex") final Integer paramStartIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer paramLimit,
-            @QueryParam("randomSeed") final Long randomSeed, @QueryParam("querySource") final String querySource) {
+            @QueryParam("randomSeed") final Long randomSeed, @QueryParam("querySource") final String querySource,
+            @DefaultValue("false") @QueryParam("bookmarks") final Boolean searchBookmarks) {
         Map<String, Set<String>> fieldsToMatch = Maps.newHashMap();
         Set<CompletionState> filterByStatuses;
         AbstractSegueUserDTO user;
@@ -390,10 +392,18 @@ public class PagesFacade extends AbstractIsaacFacade {
             startIndex = paramStartIndex;
         }
 
-        if (ids != null && !ids.isEmpty()) {
-            Set<String> idsList = Set.of(ids.split(","));
-            fieldsToMatch.put(ID_FIELDNAME, idsList);
-            limit = idsList.size();
+        List<BookmarkDO> bookmarks = null;
+        if (searchBookmarks) {
+            if (user instanceof RegisteredUserDTO registeredUser) {
+                bookmarks = bookmarksManager.getBookmarksForUser(registeredUser.getId(), "isaacQuestionPage");
+                Set<String> bookmarkIds = bookmarks.stream()
+                        .map(BookmarkDO::contentId)
+                        .collect(Collectors.toSet());
+                fieldsToMatch.put(ID_FIELDNAME, bookmarkIds);
+                limit = bookmarkIds.size();
+            } else {
+                return SegueErrorResponse.getBadRequestResponse("Anonymous users cannot search bookmarks.");
+            }
         }
 
         if (null == querySource || !QUESTION_SEARCH_LOG_SOURCE_IGNORES.contains(querySource)) {
@@ -410,19 +420,18 @@ public class PagesFacade extends AbstractIsaacFacade {
             logEntry.put(TAGS_FIELDNAME, csvParamToLogValue(tags));
             logEntry.put(QUESTION_STATUSES_FIELDNAME, csvParamToLogValue(statuses));
             logEntry.put("levels", csvParamToLogValue(level));
-            logEntry.put("questionIds", csvParamToLogValue(ids));
             logEntry.put(START_INDEX_FIELDNAME, String.valueOf(startIndex));
             logEntry.put(LIMIT_FIELDNAME, String.valueOf(limit));
             logEntry.put(SEARCH_STRING_FIELDNAME, !Objects.equals(searchString, "") ? searchString : null);
             logEntry.put("fasttrack", Objects.equals(fasttrack, true) ? String.valueOf(fasttrack) : null);
             logEntry.put("randomSeed", null != randomSeed ? String.valueOf(randomSeed) : null);
             logEntry.put("querySource", querySource);
+            logEntry.put("searchBookmarks", searchBookmarks);
 
             this.getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.QUESTION_FINDER_SEARCH, logEntry);
         }
 
         Map<String, String> fieldNameToValues = new HashMap<>();
-        fieldNameToValues.put(ID_FIELDNAME, ids);
         fieldNameToValues.put(TAGS_FIELDNAME, tags);
         fieldNameToValues.put(SUBJECTS_FIELDNAME, subjects);
         fieldNameToValues.put(FIELDS_FIELDNAME, fields);
@@ -515,7 +524,11 @@ public class PagesFacade extends AbstractIsaacFacade {
                 }
 
                 if (user instanceof RegisteredUserDTO registeredUser) {
-                    summarizedResults = bookmarksManager.augmentContentSummaryListWithBookmarkInformation(registeredUser.getId(), summarizedResults);
+                    if (bookmarks == null) {
+                        summarizedResults = bookmarksManager.augmentContentSummaryListWithBookmarkInformation(registeredUser.getId(), summarizedResults);
+                    } else {
+                        summarizedResults = bookmarksManager.augmentContentSummaryListWithBookmarkInformation(bookmarks, summarizedResults);
+                    }
                 }
 
                 if (limit < 0 || combinedResults.size() + summarizedResults.size() <= limit) {
