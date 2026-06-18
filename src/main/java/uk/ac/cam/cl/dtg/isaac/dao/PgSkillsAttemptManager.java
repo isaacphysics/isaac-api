@@ -24,7 +24,7 @@ public class PgSkillsAttemptManager implements ISkillsAttemptManager {
                      id, user_id, skill_assignment_id, skill_id, subskill_id, question, question_attempt, marks,
                      timestamp
                  ) VALUES (?, ?, ?, ?, ?, (?::jsonb), (?::jsonb), ?, ?)""")) {
-            pst.setString(1, attempt.getId().toString());
+            pst.setObject(1, attempt.getId());
             pst.setLong(2, attempt.getUserId());
             pst.setString(3, attempt.getSkillAssignmentId());
             pst.setString(4, attempt.getSkillId());
