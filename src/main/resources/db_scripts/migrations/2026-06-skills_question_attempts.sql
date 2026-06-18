@@ -1,5 +1,5 @@
 CREATE TABLE public.skills_question_attempts (
-    id TEXT NOT NULL,
+    id TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
     skill_assignment_id TEXT,
     skill_id TEXT NOT NULL,

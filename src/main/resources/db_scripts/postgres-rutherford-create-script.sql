@@ -603,7 +603,7 @@ ALTER TABLE public.user_bookmarks OWNER TO rutherford;
 -- Name: skill_question_attempts; Type: TABLE; Schema: public; Owner: rutherford
 --
 CREATE TABLE public.skills_question_attempts (
-     id TEXT NOT NULL,
+     id TEXT PRIMARY KEY,
      user_id INTEGER NOT NULL,
      skill_assignment_id TEXT,
      skill_id TEXT NOT NULL,

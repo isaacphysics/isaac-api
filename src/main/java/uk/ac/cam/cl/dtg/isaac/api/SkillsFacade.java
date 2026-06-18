@@ -19,6 +19,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
+import java.sql.SQLException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -87,6 +88,11 @@ public class SkillsFacade extends AbstractIsaacFacade {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (final InvalidMarkingResponseException e) {
             return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (final SQLException e) {
+            if ("23505".equals(e.getSQLState())) {
+                return new SegueErrorResponse(Status.CONFLICT, "Duplicate attempt ID").toResponse();
+            }
+            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong").toResponse();
         } catch (final ContentManagerException e) {
             var error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested", e);
             log.error(error.getErrorMessage(), e);

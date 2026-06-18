@@ -17,7 +17,7 @@ public class PgSkillsAttemptManager implements ISkillsAttemptManager {
     }
 
     @Override
-    public void registerSkillsAttempt(final AnvilPayloadDTO attempt) {
+    public void registerSkillsAttempt(final AnvilPayloadDTO attempt) throws SQLException {
         try (var conn = database.getDatabaseConnection();
              var pst = conn.prepareStatement("""
                  INSERT INTO skills_question_attempts (
@@ -34,8 +34,6 @@ public class PgSkillsAttemptManager implements ISkillsAttemptManager {
             pst.setInt(8, (Integer) attempt.getMarks());
             pst.setTimestamp(9, new Timestamp(attempt.getTimestamp().getTime()));
             pst.executeUpdate();
-        } catch (final SQLException e) {
-            throw new RuntimeException("Failed to record skills attempt", e);
         }
     }
 }

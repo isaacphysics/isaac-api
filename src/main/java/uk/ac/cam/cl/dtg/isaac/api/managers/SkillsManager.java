@@ -9,6 +9,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import java.sql.SQLException;
 import java.util.Date;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -83,7 +84,7 @@ public class SkillsManager {
      *
      * @param attempt - the validated payload DTO
      */
-    public void recordAttempt(final AnvilPayloadDTO attempt) {
+    public void recordAttempt(final AnvilPayloadDTO attempt) throws SQLException {
         skillsAttemptManager.registerSkillsAttempt(attempt);
     }
 }

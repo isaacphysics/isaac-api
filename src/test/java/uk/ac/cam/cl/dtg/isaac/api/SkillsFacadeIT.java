@@ -36,7 +36,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     private static final String HMAC_SHA_256 = "HmacSHA256";
     private static final String VALID_URL = validUrl();
     private static final String VALID_APP_ID = VALID_URL.split("/")[2];
-    private static final String VALID_PAYLOAD = validPayload(p -> {});
+    private static final String VALID_PAYLOAD = validPayload(null);
     private static final String VALID_HMAC = sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256);
     private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC);
 
@@ -211,6 +211,15 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     @Test
+    public void duplicateAttemptId_Returns409() throws Exception {
+        var testP = validPayload(null);
+        var testBody = new JSONObject().put("payload", testP).put("hmac", sign(HMAC_SECRET, testP, HMAC_SHA_256));
+        var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+        client.post(VALID_URL, testBody).readEntity(String.class);
+        client.post(VALID_URL, testBody).assertError("Duplicate attempt ID", Response.Status.CONFLICT);
+    }
+
+    @Test
     public void happy_happy() throws Exception {
         testServer().client()
             .loginAs(integrationTestUsers.TEST_STUDENT)
@@ -275,7 +284,9 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             .put("question_attempt", new JSONObject().put("result", "4"))
             .put("marks", 1)
             .put("timestamp", Instant.now().toString());
-        op.accept(defaultPayload);
+        if (op != null) {
+            op.accept(defaultPayload);
+        }
         return defaultPayload.toString();
     }
 
