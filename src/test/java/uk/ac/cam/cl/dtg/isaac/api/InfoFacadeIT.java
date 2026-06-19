@@ -23,7 +23,7 @@ public class InfoFacadeIT extends IsaacIntegrationTest {
     @BeforeEach
     public void setUp() throws RuntimeException, IOException {
         SegueJobService segueJobService = createNiceMock(SegueJobService.class); // new SegueJobService(new ArrayList<>(), postgresSqlDb);
-        infoFacade = new InfoFacade(properties, segueJobService, elasticSearchClient, logManager);
+        infoFacade = new InfoFacade(properties, segueJobService, elasticSearchClient, contentManager, logManager);
     }
 
     @Test

@@ -19,18 +19,21 @@ package uk.ac.cam.cl.dtg.isaac.api;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import uk.ac.cam.cl.dtg.isaac.api.managers.URIManager;
+import uk.ac.cam.cl.dtg.isaac.dos.BookmarkDO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentSummaryDTO;
 
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Response;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 
@@ -57,7 +60,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null);
+                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null, false);
 
         // Assert
         // check status code is OK
@@ -83,7 +86,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                ITConstants.SEARCH_TEST_CONCEPT_ID, "", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null);
+                ITConstants.SEARCH_TEST_CONCEPT_ID,  "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null, false);
 
         // Assert
         // check status code is OK
@@ -109,7 +112,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                ITConstants.REGRESSION_TEST_PAGE_ID, "", "", "", "", "", "", "", "", "", "", "", "", true, 0, MAX_SEARCH_RESULT_LIMIT, null, null);
+                ITConstants.REGRESSION_TEST_PAGE_ID,  "", "", "", "", "", "", "", "", "", "", "", true, 0, MAX_SEARCH_RESULT_LIMIT, null, null, false);
 
         // Assert
         // check status code is OK
@@ -124,30 +127,32 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
-    public void getQuestionList_searchSpecificIDsAsStudent_returnsOnlyQuestionsWithIDs() throws Exception {
+    public void getQuestionList_searchBookmarksAsStudent_returnsOnlyBookmarks() throws Exception {
         // Arrange
         // log in as Student, create request
         LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
                 ITConstants.TEST_STUDENT_PASSWORD);
         HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
         replay(searchRequest);
+        // add bookmark that should be included in search results
+        BookmarkDO bookmark = new BookmarkDO(ITConstants.TEST_STUDENT_ID, ITConstants.REGRESSION_TEST_PAGE_ID, QUESTION_TYPE, new Date());
+        bookmarksManager.addBookmarkForUser(bookmark);
 
         // Act
         // make request
-        Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                String.format("%s,%s", ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), "",
-                "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null);
+        Response searchResponse = pagesFacade.getQuestionList(searchRequest, "", "", "", "", "", "", "", "", "", "",
+                "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null, true);
 
         // Assert
         // check status code is OK
         assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
 
-        // check the search returned the expected content summary
+        // check the search returned only the bookmarked content
         @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
                 (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
 
         Set<String> questionIDs = responseBody.getResults().stream().map(ContentSummaryDTO::getId).collect(Collectors.toSet());
-        assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID, ITConstants.ASSIGNMENT_TEST_PAGE_ID), questionIDs);
+        assertEquals(Set.of(ITConstants.REGRESSION_TEST_PAGE_ID), questionIDs);
     }
 
     @Test
@@ -162,7 +167,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                "", "Regression Test Page", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null);
+                "Regression Test Page", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, null, null, false);
 
         // Assert
         // check status code is OK
@@ -197,7 +202,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                "", "Regression Test Page", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null);
+                "Regression Test Page", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null, false);
 
         // Assert
         // check status code is OK
@@ -228,7 +233,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                "", "Canary", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null);
+                "Canary", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null, false);
 
         // Assert
         // check status code is OK
@@ -258,7 +263,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                "", "Convival", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null);
+                "Convival", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null, false);
 
         // Assert
         // check status code is OK
@@ -284,7 +289,7 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
         // Act
         // make request
         Response searchResponse = pagesFacade.getQuestionList(searchRequest,
-                "", "Convival", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null);
+                "Convival", "", "", "", "", "", "", "", "", "", "", "", false, 0, 1, null, null, false);
 
         // Assert
         // check status code is OK

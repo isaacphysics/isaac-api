@@ -17,18 +17,7 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.*;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
@@ -71,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -962,7 +952,9 @@ public class ContentIndexer {
                     int sizeInKiloBytes = fileData.size() / 1024;
                     this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
                             f.getSrc(), sizeInKiloBytes), indexProblemCache);
-                } else if (f.getSrc().endsWith(".svg")) {
+                }
+
+                if (f.getSrc().endsWith(".svg") && null != fileData) {
                     // Check file contents for svg with either no defined width or a %-based width
                     String fileContents = fileData.toString();
                     Pattern pattern = Pattern.compile("(<svg[^>]*width\\s*=\\s*\"\\d+%\"[^>]*>|<svg(?![^>]*width)[^>]*>)\\n?");
@@ -973,6 +965,15 @@ public class ContentIndexer {
                                 indexProblemCache
                         );
                     }
+                }
+
+                Pattern badCharacters = Pattern.compile("[^a-zA-Z0-9-_.~/ ]");
+                Matcher badCharactersMatcher = badCharacters.matcher(f.getSrc());
+                if (badCharactersMatcher.find()) {
+                    this.registerContentProblem(content, String.format("Filename '%s' contains illegal character '%s'.",
+                                    f.getSrc(), badCharactersMatcher.group()),
+                            indexProblemCache
+                    );
                 }
             }
 
@@ -992,7 +993,7 @@ public class ContentIndexer {
         }
 
         if (content instanceof ChoiceQuestion question
-                && !(content.getType().equals("isaacQuestion"))) {
+                && !(content.getType().equals("isaacQuestion") || content.getType().equals("isaacLLMFreeTextQuestion"))) {
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,
@@ -1200,6 +1201,14 @@ public class ContentIndexer {
                         }
                     }
                 }
+            }
+        }
+
+        if (content instanceof IsaacLLMFreeTextQuestion q) {
+            if (null == q.getMarkScheme() || q.getMarkScheme().isEmpty()) {
+                this.registerContentProblem(content,
+                        String.format("LLM Free Text Question: %s has no mark scheme set. This question cannot be marked.", q.getId()),
+                    indexProblemCache);
             }
         }
     }
