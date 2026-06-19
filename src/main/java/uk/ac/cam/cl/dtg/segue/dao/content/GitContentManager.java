@@ -703,7 +703,7 @@ public class GitContentManager {
      */
     public IsaacSearchInstructionBuilder getBaseSearchInstructionBuilder() {
         return new IsaacSearchInstructionBuilder(
-                searchProvider, false, false, false);
+                searchProvider, this.showOnlyPublishedContent, this.hideRegressionTestContent, true);
     }
 
     /**
