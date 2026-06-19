@@ -4,16 +4,18 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidMarkingResponseException;
+import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidAnvilMarkingRequestException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingResponseDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingRequestDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
@@ -28,11 +30,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import java.sql.SQLException;
 
-/**
- * Skills Facade, supports interaction related to the Isaac Skill Practice apps.
- */
+/** Skills Facade, supports interaction related to the Isaac Skill Practice apps. */
 @Path("/skills")
 @Tag(name = "SkillsFacade", description = "/skills")
 public class SkillsFacade extends AbstractIsaacFacade {
@@ -69,32 +68,42 @@ public class SkillsFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     public Response answerQuestion(@Context final HttpServletRequest request,
                                    @PathParam("appId") final String appId,
-                                   final AnvilMarkingResponseDTO markingResponse) {
+                                   final AnvilMarkingRequestDTO markingRequest) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+
             if (!(hasAnvilApp(this.contentManager.getContentDOById(appId)))) {
                 var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
                 log.warn(error.getErrorMessage());
                 return error.toResponse();
             }
 
-            if (!skillsManager.isHmacValid(markingResponse)) {
-                return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature").toResponse();
+            if (!skillsManager.isHmacValid(markingRequest)) {
+                var error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature");
+                log.warn(error.getErrorMessage());
+                return error.toResponse();
             }
 
-            var payloadDTO = skillsManager.parsePayload(markingResponse.getPayload(), currentUser.getId(), appId);
+            AnvilPayloadDTO payloadDTO = skillsManager.parsePayload(
+                markingRequest.getPayload(), currentUser.getId(), appId);
             skillsManager.recordAttempt(payloadDTO);
 
             return Response.ok(payloadDTO).build();
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (final InvalidMarkingResponseException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage()).toResponse();
-        } catch (final SQLException e) {
-            if ("23505".equals(e.getSQLState())) {
-                return new SegueErrorResponse(Status.CONFLICT, "Duplicate attempt ID").toResponse();
+        } catch (final InvalidAnvilMarkingRequestException e) {
+            var error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
+            log.warn(error.getErrorMessage() + ", " + e.getDetailedProblem());
+            return error.toResponse();
+        } catch (final SegueDatabaseException e) {
+            if ("Duplicate attempt ID".equals(e.getMessage())) {
+                var error = new SegueErrorResponse(Status.CONFLICT, "Duplicate attempt ID");
+                log.warn(error.getErrorMessage());
+                return error.toResponse();
             }
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong").toResponse();
+            var error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong");
+            log.error(error.getErrorMessage());
+            return error.toResponse();
         } catch (final ContentManagerException e) {
             var error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested", e);
             log.error(error.getErrorMessage(), e);

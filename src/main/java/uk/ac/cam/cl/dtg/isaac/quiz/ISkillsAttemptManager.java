@@ -1,10 +1,9 @@
 package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
-
-import java.sql.SQLException;
+import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 
 /** Persistence interface for recording Anvil skills question attempts. */
 public interface ISkillsAttemptManager {
-    void registerSkillsAttempt(final AnvilPayloadDTO attempt) throws SQLException;
+    void registerSkillsAttempt(final AnvilPayloadDTO attempt) throws SegueDatabaseException;
 }

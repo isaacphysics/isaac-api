@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * DTO representing the response received from the external Anvil marking server.
+ * DTO representing the request received from the external Anvil marking server.
  */
-public class AnvilMarkingResponseDTO {
+public class AnvilMarkingRequestDTO {
     private final String payload;
     private final String hmac;
 
@@ -17,7 +17,7 @@ public class AnvilMarkingResponseDTO {
      * @param hmac    - the HMAC-SHA256 hex digest authenticating the payload
      */
     @JsonCreator
-    public AnvilMarkingResponseDTO(
+    public AnvilMarkingRequestDTO(
             @JsonProperty(value = "payload", required = true) final String payload,
             @JsonProperty(value = "hmac", required = true) final String hmac) {
         this.payload = payload;
