@@ -124,7 +124,9 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(EmailFacade.class));
             this.singletons.add(injector.getInstance(QuizFacade.class));
             this.singletons.add(injector.getInstance(BookmarksFacade.class));
-            this.singletons.add(injector.getInstance(SkillsFacade.class));
+            if (injector.getInstance(AbstractConfigLoader.class).getProperty(SKILLS_HMAC_SECRET) != null) {
+                this.singletons.add(injector.getInstance(SkillsFacade.class));
+            }
 
             // initialise filters
             this.singletons.add(injector.getInstance(PerformanceMonitor.class));
