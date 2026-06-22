@@ -977,8 +977,9 @@ public class ContentIndexer {
                 }
             }
 
-            // check that there is some alt text.
-            if (f.getAltText() == null || f.getAltText().isEmpty()) {
+            // Check that there is some alt text. Decorative images should have empty alt text.
+            boolean isDecorative = null != f.getDecorative() && f.getDecorative();
+            if (f.getAltText() == null || (f.getAltText().isEmpty() && !isDecorative)) {
                 if (!(f instanceof Video) && !f.getId().equals("eventThumbnail")) {
                     // Videos probably don't need alt text unless there is a good reason. It's not important that event
                     // thumbnails have alt text, so we don't record errors for those either.
