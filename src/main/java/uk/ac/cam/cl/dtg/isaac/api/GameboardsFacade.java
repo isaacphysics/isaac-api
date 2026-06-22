@@ -145,6 +145,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             GameboardDTO gameboard;
+            boolean isLinked = false;
 
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
 
@@ -161,11 +162,15 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             } else {
                 List<String> gameboardPageIds = unAugmentedGameboard.getContents().stream().map(GameboardItem::getId).collect(Collectors.toList());
                 userQuestionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts((RegisteredUserDTO) randomUser, gameboardPageIds);
+                isLinked = gameManager.isBoardLinkedToUser((RegisteredUserDTO) randomUser, unAugmentedGameboard.getId());
             }
 
             // Calculate the ETag
             EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
-                    + userQuestionAttempts.toString().hashCode() + "");
+                    + userQuestionAttempts.toString().hashCode()
+                    + Boolean.hashCode(isLinked)
+                    + ""
+            );
 
             Response cachedResponse = generateCachedResponse(request, etag, NEVER_CACHE_WITHOUT_ETAG_CHECK);
             if (cachedResponse != null) {
@@ -173,6 +178,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
 
             // attempt to augment the gameboard with user information.
+            // FIXME isBoardLinkedToUser gets called a second time here
             gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
 
             // We decided not to log this on the backend as the front end uses this lots.

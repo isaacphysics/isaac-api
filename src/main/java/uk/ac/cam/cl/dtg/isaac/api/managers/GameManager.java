@@ -871,7 +871,7 @@ public class GameManager {
      * @throws SegueDatabaseException
      *             if there is a database error
      */
-    private boolean isBoardLinkedToUser(final RegisteredUserDTO user, final String gameboardId)
+    public boolean isBoardLinkedToUser(final RegisteredUserDTO user, final String gameboardId)
             throws SegueDatabaseException {
         Set<String> linkedIds = this.gameboardPersistenceManager
                 .getGameboardIdsLinkedToUser(user.getId(), Collections.singleton(gameboardId));
