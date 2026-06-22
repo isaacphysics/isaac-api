@@ -128,7 +128,9 @@ public class EventsManager {
                                                                  final String filter, final RegisteredUserDTO currentUser)
             throws ContentManagerException, SegueDatabaseException {
 
+        // This is only used for a staff-only endpoint, so always include nofilter content
         IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
+                .includeHiddenContent(true)
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();

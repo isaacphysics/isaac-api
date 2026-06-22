@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.api.client.util.Sets;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -41,17 +40,14 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SeguePageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.SidebarDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Priority;
 import uk.ac.cam.cl.dtg.segue.search.IsaacSearchInstructionBuilder.Strategy;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SearchInField;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
-import uk.ac.cam.cl.dtg.segue.search.SimpleExclusionInstruction;
-import uk.ac.cam.cl.dtg.segue.search.SimpleFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.TermsFilterInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 
@@ -251,13 +247,11 @@ public class GitContentManager {
 
         try {
             ResultsWrapper<Content> result = contentDOcache.get(k, () -> {
+                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder().includeHiddenContent(true).build();
+                searchInstruction.must(new MatchInstruction(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
 
-                ResultsWrapper<String> rawResults = searchProvider.termSearch(
-                        contentIndex,
-                        CONTENT_INDEX_TYPE.CONTENT.toString(),
-                        id,
-                        Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, 0, 1,
-                        getBaseFilters());
+                ResultsWrapper<String> rawResults = searchProvider.nestedMatchSearch(contentIndex,
+                        CONTENT_INDEX_TYPE.CONTENT.toString(), 0, 1, searchInstruction, null, null);
                 List<Content> searchResults = contentSubclassMapper
                         .mapFromStringListToContentList(rawResults.getResults());
 
@@ -300,24 +294,16 @@ public class GitContentManager {
         try {
             return contentDTOcache.get(k, () -> {
 
-                Map<String, AbstractFilterInstruction> finalFilter = Maps.newHashMap();
-                finalFilter.putAll(new ImmutableMap.Builder<String, AbstractFilterInstruction>()
-                        .put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                                new TermsFilterInstruction(ids))
-                        .build());
+                BooleanInstruction searchInstruction = this.getBaseSearchInstructionBuilder().includeHiddenContent(true).build();
 
-                if (getBaseFilters() != null) {
-                    finalFilter.putAll(getBaseFilters());
+                BooleanInstruction idsInstruction = new BooleanInstruction();
+                for (String id : ids) {
+                    idsInstruction.should(new MatchInstruction(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
                 }
+                searchInstruction.must(idsInstruction);
 
-                ResultsWrapper<String> searchHits = this.searchProvider.termSearch(
-                        contentIndex,
-                        CONTENT_INDEX_TYPE.CONTENT.toString(),
-                        null,
-                        null,
-                        startIndex,
-                        limit,
-                        finalFilter
+                ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
+                        CONTENT_INDEX_TYPE.CONTENT.toString(), startIndex, limit, searchInstruction, null, null
                 );
 
                 List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
@@ -360,14 +346,14 @@ public class GitContentManager {
                 .includeContentTypes(contentTypes)
 
                 // High priority matches on untokenised search string
-                .searchFor(new SearchInField(Constants.ID_FIELDNAME + "." +
-                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                .searchFor(new SearchInField(Constants.ID_FIELDNAME + "."
+                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                         .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "." +
-                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "."
+                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                         .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "." +
-                        Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "."
+                        + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                         .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
 
                 // Fuzzy search term matches
@@ -475,14 +461,14 @@ public class GitContentManager {
         if (searchString != null && !searchString.isBlank()) {
             // High priority matches on untokenised search string
             searchInstructionBuilder
-                    .searchFor(new SearchInField(Constants.ID_FIELDNAME + "." +
-                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                    .searchFor(new SearchInField(Constants.ID_FIELDNAME + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                             .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                    .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "." +
-                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                    .searchFor(new SearchInField(Constants.TITLE_FIELDNAME + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                             .priority(Priority.HIGH).strategy(Strategy.SIMPLE))
-                    .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "." +
-                            Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
+                    .searchFor(new SearchInField(Constants.SUBTITLE_FIELDNAME + "."
+                            + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
                             .priority(Priority.HIGH).strategy(Strategy.SIMPLE));
         }
 
@@ -529,93 +515,6 @@ public class GitContentManager {
         List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
 
         return new ResultsWrapper<>(contentSubclassMapper.getDTOByDOList(searchResults), searchHits.getTotalResults());
-    }
-
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit
-    ) throws ContentManagerException {
-        return this.findByFieldNames(fieldsToMatch, startIndex, limit, null);
-    }
-
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit, @Nullable final Map<String, Constants.SortOrder> sortInstructions
-    ) throws ContentManagerException {
-        return this.findByFieldNames(fieldsToMatch, startIndex, limit, sortInstructions, null);
-    }
-
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNames(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex, final Integer limit,
-            @Nullable final Map<String, Constants.SortOrder> sortInstructions,
-            @Nullable final Map<String, AbstractFilterInstruction> filterInstructions
-    ) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults;
-
-        final Map<String, Constants.SortOrder> newSortInstructions;
-        if (null == sortInstructions || sortInstructions.isEmpty()) {
-            newSortInstructions = Maps.newHashMap();
-            newSortInstructions.put(Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                    Constants.SortOrder.ASC);
-        } else {
-            newSortInstructions = sortInstructions;
-        }
-
-        // add base filters to filter instructions
-        Map<String, AbstractFilterInstruction> newFilterInstructions = filterInstructions;
-        if (this.getBaseFilters() != null) {
-            if (null == newFilterInstructions) {
-                newFilterInstructions = Maps.newHashMap();
-            }
-            newFilterInstructions.putAll(this.getBaseFilters());
-        }
-
-        ResultsWrapper<String> searchHits = searchProvider.matchSearch(contentIndex,
-                CONTENT_INDEX_TYPE.CONTENT.toString(), fieldsToMatch, startIndex, limit,
-                newSortInstructions, newFilterInstructions);
-
-        // setup object mapper to use pre-configured deserializer module.
-        // Required to deal with type polymorphism
-        List<Content> result = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
-
-        List<ContentDTO> contentDTOResults = contentSubclassMapper.getDTOByDOList(result);
-
-        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
-
-        return finalResults;
-    }
-
-    @Deprecated
-    public final ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit
-    ) throws ContentManagerException {
-        return this.findByFieldNamesRandomOrder(fieldsToMatch, startIndex, limit, null);
-    }
-
-    @Deprecated
-    public ResultsWrapper<ContentDTO> findByFieldNamesRandomOrder(
-            final List<BooleanSearchClause> fieldsToMatch, final Integer startIndex,
-            final Integer limit, @Nullable final Long randomSeed
-    ) throws ContentManagerException {
-        ResultsWrapper<ContentDTO> finalResults;
-
-        ResultsWrapper<String> searchHits;
-        searchHits = searchProvider.randomisedMatchSearch(
-                contentIndex, CONTENT_INDEX_TYPE.CONTENT.toString(), fieldsToMatch, startIndex, limit,
-                randomSeed, this.getBaseFilters());
-
-        // setup object mapper to use pre-configured deserializer module.
-        // Required to deal with type polymorphism
-        List<Content> result = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
-
-        List<ContentDTO> contentDTOResults = contentSubclassMapper.getDTOByDOList(result);
-
-        finalResults = new ResultsWrapper<>(contentDTOResults, searchHits.getTotalResults());
-
-        return finalResults;
     }
 
     public final ByteArrayOutputStream getFileBytes(final String filename) throws IOException {
@@ -723,19 +622,12 @@ public class GitContentManager {
             return contentDTO;
         }
 
-        // build query the db to get full content information
-        List<BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-
         List<String> relatedContentIds = Lists.newArrayList();
         for (ContentSummaryDTO summary : contentDTO.getRelatedContent()) {
             relatedContentIds.add(summary.getId());
         }
 
-        fieldsToMap.add(new BooleanSearchClause(
-                Constants.ID_FIELDNAME + '.' + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
-                Constants.BooleanOperator.OR, relatedContentIds));
-
-        ResultsWrapper<ContentDTO> results = this.findByFieldNames(fieldsToMap, 0, relatedContentIds.size());
+        ResultsWrapper<ContentDTO> results = getUnsafeCachedContentDTOsMatchingIds(relatedContentIds, 0, relatedContentIds.size());
 
         List<ContentSummaryDTO> relatedContentDTOs = Lists.newArrayList();
 
@@ -837,24 +729,23 @@ public class GitContentManager {
     }
 
     /**
-     * Returns the basic filter configuration.
+     * Search for content that matches a given instruction and map the hits to DTOs.
      *
-     * @return either null or a map setup with filter/exclusion instructions, based on environment properties.
+     * @param instruction      - the {@link MatchInstruction} to search with.
+     * @param startIndex       - the initial index for the first result.
+     * @param limit            - the maximum number of results to return.
+     * @param randomSeed       - the random seed to use for the search.
+     * @param sortInstructions - map of sorting functions to use in ElasticSearch query.
+     * @return a ResultsWrapper containing the matching content as DTOs and the total number of results.
+     * @throws ContentManagerException
      */
-    private Map<String, AbstractFilterInstruction> getBaseFilters() {
-        if (!this.hideRegressionTestContent && !this.showOnlyPublishedContent) {
-            return null;
-        }
-
-        HashMap<String, AbstractFilterInstruction> filters = new HashMap<>();
-
-        if (this.hideRegressionTestContent) {
-            filters.put("tags", new SimpleExclusionInstruction(REGRESSION_TEST_TAG));
-        }
-        if (this.showOnlyPublishedContent) {
-            filters.put("published", new SimpleFilterInstruction("true"));
-        }
-        return ImmutableMap.copyOf(filters);
+    public ResultsWrapper<ContentDTO> nestedMatchSearch(final MatchInstruction instruction, final Integer startIndex,
+                                                        final Integer limit, final Long randomSeed,
+                                                        final Map<String, Constants. SortOrder> sortInstructions)
+            throws ContentManagerException {
+        BooleanInstruction booleanInstruction = new BooleanInstruction();
+        booleanInstruction.must(instruction);
+        return nestedMatchSearch(booleanInstruction, startIndex, limit, randomSeed, sortInstructions);
     }
 
     /**
@@ -868,14 +759,5 @@ public class GitContentManager {
         List<QuestionDTO> questionParts = GameManager.getAllMarkableQuestionPartsDFSOrder(content);
         List<String> questionPartIds = questionParts.stream().map(QuestionDTO::getId).collect(Collectors.toList());
         summary.setQuestionPartIds(questionPartIds);
-    }
-
-    /**
-     * An abstract representation of a search clause that can be interpreted as desired by different search providers.
-     *
-     * @deprecated in favour of {@code BooleanInstruction}, as an attempt to unify approaches to searching.
-     */
-    @Deprecated
-    public record BooleanSearchClause(String field, BooleanOperator operator, List<String> values) {
     }
 }
