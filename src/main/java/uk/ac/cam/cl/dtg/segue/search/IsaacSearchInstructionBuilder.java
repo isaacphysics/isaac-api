@@ -288,6 +288,10 @@ public class IsaacSearchInstructionBuilder {
             masterInstruction.should(contentInstruction);
         }
 
+        if (!masterInstruction.getShoulds().isEmpty()) {
+            masterInstruction.setMinimumShouldMatch(1);
+        }
+
         // Reset the relevant builder state so subsequent 'build' calls do not accumulate instructions unexpectedly.
         this.searchesInFields = new ArrayList<>();
         this.includedContentTypes = Sets.newHashSet();
