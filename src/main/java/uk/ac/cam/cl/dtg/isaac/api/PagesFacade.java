@@ -174,8 +174,8 @@ public class PagesFacade extends AbstractIsaacFacade {
     @Produces(MediaType.APPLICATION_JSON)
     @GZIP
     @Operation(summary = "List all concept page objects matching the provided criteria.")
-    public final Response getConceptList(@Context final Request request, @QueryParam("ids") final String ids,
-            @QueryParam("tags") final String tags,
+    public final Response getConceptList(@Context final Request request, @Context final HttpServletRequest servletRequest,
+            @QueryParam("ids") final String ids, @QueryParam("tags") final String tags,
             @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
             @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit) {
         StringBuilder etagCodeBuilder = new StringBuilder();
@@ -210,7 +210,19 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder().build();
+            AbstractSegueUserDTO currentUser = userManager.getCurrentUser(servletRequest);
+            boolean showNofilterConcepts = false;
+            if (currentUser instanceof RegisteredUserDTO registeredUser) {
+                try {
+                    showNofilterConcepts = isUserStaff(userManager, registeredUser);
+                } catch (final NoUserLoggedInException e) {
+                    // Not possible inside this if block!
+                }
+            }
+
+            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                                                                .includeHiddenContent(showNofilterConcepts).build();
+
             searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, CONCEPT_TYPE));
 
             if (idsList != null && !idsList.isEmpty()) {
@@ -246,6 +258,11 @@ public class PagesFacade extends AbstractIsaacFacade {
             SegueErrorResponse error = new SegueErrorResponse(Status.NOT_FOUND,
                     "Error locating the content requested", e1);
             log.error(error.getErrorMessage(), e1);
+            return error.toResponse();
+        } catch (final SegueDatabaseException e2) {
+            SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR,
+                    "Database error while looking up user information.", e2);
+            log.error(error.getErrorMessage(), e2);
             return error.toResponse();
         }
     }
