@@ -1192,7 +1192,8 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            BooleanInstruction searchInstruction = new BooleanInstruction();
+            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder().build();
+
             searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, POD_FRAGMENT_TYPE));
             searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, subject));
 
