@@ -81,12 +81,10 @@ public class QuizManager {
     public ResultsWrapper<ContentSummaryDTO> getAvailableQuizzes(final String visibleToRole, @Nullable final Integer startIndex,
                                                                  @Nullable final Integer limit, final boolean showNoFilterQuizzes) throws ContentManagerException {
 
-        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder().build();
-        searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, QUIZ_TYPE));
+        BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                .includeHiddenContent(showNoFilterQuizzes).build();
 
-        if (!showNoFilterQuizzes) {
-            searchInstruction.mustNot(new MatchInstruction(TAGS_FIELDNAME, HIDE_FROM_FILTER_TAG));
-        }
+        searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, QUIZ_TYPE));
 
         if (null != visibleToRole) {
             searchInstruction.mustNot(new MatchInstruction(HIDDEN_FROM_ROLES_FIELDNAME, visibleToRole));
