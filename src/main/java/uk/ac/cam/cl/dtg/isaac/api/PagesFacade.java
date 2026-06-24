@@ -210,7 +210,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            BooleanInstruction searchInstruction = new BooleanInstruction();
+            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder().build();
             searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, CONCEPT_TYPE));
 
             if (idsList != null && !idsList.isEmpty()) {
