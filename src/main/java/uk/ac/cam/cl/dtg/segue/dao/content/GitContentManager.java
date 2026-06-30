@@ -345,6 +345,9 @@ public class GitContentManager {
                 // Restrict content types
                 .includeContentTypes(contentTypes)
 
+                // Exclude deprecated content
+                .excludeDeprecatedContent(true)
+
                 // High priority matches on untokenised search string
                 .searchFor(new SearchInField(Constants.ID_FIELDNAME + "."
                         + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, Collections.singleton(searchString))
@@ -440,6 +443,9 @@ public class GitContentManager {
 
                 // Filter superseded questions if necessary:
                 .excludeSupersededContent(!showSupersededContent)
+
+                // Always exclude deprecated content:
+                .excludeDeprecatedContent(true)
 
                 // Restrict content types
                 .includeContentTypes(contentTypes)

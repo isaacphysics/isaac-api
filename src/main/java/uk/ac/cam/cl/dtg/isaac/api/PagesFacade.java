@@ -210,7 +210,8 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder().build();
+            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                    .excludeDeprecatedContent(true).build();
             searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, CONCEPT_TYPE));
 
             if (idsList != null && !idsList.isEmpty()) {
@@ -1192,7 +1193,8 @@ public class PagesFacade extends AbstractIsaacFacade {
         }
 
         try {
-            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder().build();
+            BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
+                    .excludeDeprecatedContent(true).build();
 
             searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, POD_FRAGMENT_TYPE));
             searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, subject));

@@ -93,6 +93,8 @@ public class EventsManager {
             searchInstructionBuilder.includeHiddenContent(true);
         }
 
+        searchInstructionBuilder.excludeDeprecatedContent(true);
+
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         if (sortOrder != null && sortOrder.equals("title")) {
             sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -131,6 +133,7 @@ public class EventsManager {
         // This is only used for a staff-only endpoint, so always include nofilter content
         IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
                 .includeHiddenContent(true)
+                .excludeDeprecatedContent(true)
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
