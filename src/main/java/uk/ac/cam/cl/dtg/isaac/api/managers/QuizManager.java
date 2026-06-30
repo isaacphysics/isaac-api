@@ -82,7 +82,7 @@ public class QuizManager {
                                                                  @Nullable final Integer limit, final boolean showNoFilterQuizzes) throws ContentManagerException {
 
         BooleanInstruction searchInstruction = this.contentManager.getBaseSearchInstructionBuilder()
-                .includeHiddenContent(showNoFilterQuizzes).build();
+                .excludeDeprecatedContent(true).includeHiddenContent(showNoFilterQuizzes).build();
 
         searchInstruction.must(new MatchInstruction(TYPE_FIELDNAME, QUIZ_TYPE));
 

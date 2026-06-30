@@ -43,6 +43,7 @@ public class IsaacSearchInstructionBuilder {
     private final boolean excludeRegressionTestContent;
     private boolean excludeNofilterContent;
     private boolean excludeSupersededContent;
+    private boolean excludeDeprecatedContent;
     private Constants.EventFilterOption eventFilterOption;
 
     private Set<String> includedContentTypes;
@@ -121,6 +122,7 @@ public class IsaacSearchInstructionBuilder {
         this.excludeNofilterContent = excludeNofilterContent;
         this.eventFilterOption = Constants.EventFilterOption.FUTURE;
         this.excludeSupersededContent = false;
+        this.excludeDeprecatedContent = false;
     }
 
     /**
@@ -131,7 +133,7 @@ public class IsaacSearchInstructionBuilder {
      * @param instruction The existing master instruction to augment with these base instructions.
      * @return The augmented instruction.
      */
-    public BooleanInstruction buildBaseInstructions(final BooleanInstruction instruction) {
+    private BooleanInstruction buildBaseInstructions(final BooleanInstruction instruction) {
         // Exclude unpublished content (based on config)
         if (this.includeOnlyPublishedContent) {
             instruction.must(new MatchInstruction(Constants.PUBLISHED_FIELDNAME, "true"));
@@ -148,7 +150,9 @@ public class IsaacSearchInstructionBuilder {
         }
 
         // Exclude deprecated content
-        instruction.mustNot(new MatchInstruction(Constants.DEPRECATED_FIELDNAME, "true"));
+        if (this.excludeDeprecatedContent) {
+            instruction.mustNot(new MatchInstruction(Constants.DEPRECATED_FIELDNAME, "true"));
+        }
 
         // Exclude superseded content
         if (this.excludeSupersededContent) {
@@ -214,6 +218,17 @@ public class IsaacSearchInstructionBuilder {
 
     public IsaacSearchInstructionBuilder excludeSupersededContent(final boolean excludeSupersededContent) {
         this.excludeSupersededContent = excludeSupersededContent;
+        return this;
+    }
+
+    /**
+     * Sets whether to exclude deprecated content in the results. Defaults to including such content.
+     *
+     * @param excludeDeprecatedContent Whether to include deprecated content in the results.
+     * @return This IsaacSearchInstructionBuilder, to allow chained operations.
+     */
+    public IsaacSearchInstructionBuilder excludeDeprecatedContent(final boolean excludeDeprecatedContent) {
+        this.excludeDeprecatedContent = excludeDeprecatedContent;
         return this;
     }
 
