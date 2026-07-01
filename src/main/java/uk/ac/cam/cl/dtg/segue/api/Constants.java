@@ -192,6 +192,7 @@ public final class Constants {
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
+    public static final String SKILLS_HMAC_SECRET = "SKILLS_HMAC_SECRET";
     public static final int TRUNCATED_TOKEN_LENGTH = 8;
 
     // Search stuff

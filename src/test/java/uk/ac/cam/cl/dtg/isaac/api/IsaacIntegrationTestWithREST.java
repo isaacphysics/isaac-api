@@ -31,7 +31,6 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -40,6 +39,9 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  * interacting with the server. As the server runs in-process, mocking and debugging still work.
  */
 public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
+    static final ElasticSearchTestHelper elasticHelper =
+        new ElasticSearchTestHelper(elasticSearchProvider, contentManager, contentMapper);
+
     private final Set<Executable> cleanups = new HashSet<>();
 
     @SuppressWarnings({"checkstyle:EmptyCatchBlock", "checkstyle:MissingJavadocMethod"})
@@ -128,6 +130,15 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
             public Set<Object> getSingletons() {
                 return TestApp.facades;
             }
+
+            @Override
+            public Set<Class<?>> getClasses() {
+                return Set.of(
+                    uk.ac.cam.cl.dtg.isaac.configuration.RestEasyJacksonConfiguration.class,
+                    uk.ac.cam.cl.dtg.segue.configuration.exceptionMappers.JacksonExceptionMapper.class,
+                    uk.ac.cam.cl.dtg.isaac.configuration.exceptionMappers.UnhandledExceptionMapper.class
+                );
+            }
         }
     }
 
@@ -154,13 +165,16 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
 
         public TestResponse post(final String url, final Object body) {
             Invocation.Builder request = client.target(baseUrl + url).request(MediaType.APPLICATION_JSON);
-            Response response = builder.apply(request).post(Entity.json(body));
+            Object serializable = body instanceof JSONObject j ? j.toString() : body;
+            Response response = builder.apply(request).post(Entity.json(serializable));
             registerCleanup.accept(response::close);
             return new TestResponse(response);
         }
 
         public TestClient loginAs(final RegisteredUser user) {
-            Invocation.Builder request = client.target(baseUrl + "/auth/SEGUE/authenticate").request(MediaType.APPLICATION_JSON);
+            Invocation.Builder request = client
+                .target(baseUrl + "/auth/SEGUE/authenticate")
+                .request(MediaType.APPLICATION_JSON);
             LocalAuthDTO body = new LocalAuthDTO();
             body.setEmail(user.getEmail());
             body.setPassword("test1234");
@@ -178,7 +192,7 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
 
         void assertError(final String message, final Response.Status status) {
             assertEquals(status.getStatusCode(), response.getStatus());
-            assertTrue(this.readEntityAsJsonUnchecked().getString("errorMessage").contains(message));
+            assertThat(this.readEntityAsJsonUnchecked().getString("errorMessage")).contains(message);
         }
 
         void assertError(final String message, final String status) {
