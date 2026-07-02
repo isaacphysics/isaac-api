@@ -1332,12 +1332,12 @@ public class QuizFacade extends AbstractIsaacFacade {
                                 detailedMark.add("Correct");
                                 summaryMark.correct += 1;
                             } else {
-                                row.add("ERROR"); // This should not happen at this level
+                                detailedMark.add("ERROR"); // This should not happen at this level
                             }
                         } else {
                             // The front-end shows this as "Not completed" so I'm leaving this empty
                             // because we already have a "Completed" column
-                            row.add("");
+                            detailedMark.add("");
                         }
                     }
                     row.add(String.format("%d", summaryMark.correct));
