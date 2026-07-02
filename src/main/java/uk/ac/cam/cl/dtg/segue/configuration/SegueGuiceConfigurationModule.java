@@ -23,7 +23,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
@@ -100,6 +99,7 @@ import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v1;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v2;
 import uk.ac.cam.cl.dtg.segue.auth.SeguePBKDF2v3;
 import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv1;
+import uk.ac.cam.cl.dtg.segue.auth.SegueSCryptv2;
 import uk.ac.cam.cl.dtg.segue.auth.SegueTOTPAuthenticator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailCommunicator;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
@@ -163,11 +163,15 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.EnvironmentType.*;
@@ -666,21 +670,18 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Provides
     private static SegueLocalAuthenticator getSegueLocalAuthenticator(final IUserDataManager database, final IPasswordDataManager passwordDataManager,
                                                                       final AbstractConfigLoader properties) {
-        ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv1();
-        ISegueHashingAlgorithm oldAlgorithm1 = new SeguePBKDF2v1();
-        ISegueHashingAlgorithm oldAlgorithm2 = new SeguePBKDF2v2();
-        ISegueHashingAlgorithm oldAlgorithm3 = new SeguePBKDF2v3();
-        ISegueHashingAlgorithm chainedAlgorithm1 = new SegueChainedPBKDFv1SCryptv1();
-        ISegueHashingAlgorithm chainedAlgorithm2 = new SegueChainedPBKDFv2SCryptv1();
-
-        Map<String, ISegueHashingAlgorithm> possibleAlgorithms = ImmutableMap.of(
-                preferredAlgorithm.hashingAlgorithmName(), preferredAlgorithm,
-                oldAlgorithm1.hashingAlgorithmName(), oldAlgorithm1,
-                oldAlgorithm2.hashingAlgorithmName(), oldAlgorithm2,
-                oldAlgorithm3.hashingAlgorithmName(), oldAlgorithm3,
-                chainedAlgorithm1.hashingAlgorithmName(), chainedAlgorithm1,
-                chainedAlgorithm2.hashingAlgorithmName(), chainedAlgorithm2
-        );
+        ISegueHashingAlgorithm preferredAlgorithm = new SegueSCryptv2();
+        Map<String, ISegueHashingAlgorithm> possibleAlgorithms = Collections.unmodifiableMap(Stream.of(
+                preferredAlgorithm,
+                new SegueSCryptv1(),
+                new SeguePBKDF2v1(),
+                new SeguePBKDF2v2(),
+                new SeguePBKDF2v3(),
+                new SegueChainedPBKDFv1SCryptv1(),
+                new SegueChainedPBKDFv2SCryptv1()
+        ).collect(Collectors.toMap(
+                ISegueHashingAlgorithm::hashingAlgorithmName, Function.identity()
+        )));
 
         return new SegueLocalAuthenticator(database, passwordDataManager, properties, possibleAlgorithms, preferredAlgorithm);
     }
