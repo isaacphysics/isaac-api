@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.inject.Inject;
+import org.postgresql.util.PSQLState;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -37,7 +38,7 @@ public class PgSkillsAttemptManager implements ISkillsAttemptManager {
             pst.setTimestamp(9, new Timestamp(attempt.getTimestamp().getTime()));
             pst.executeUpdate();
         } catch (final SQLException e) {
-            if ("23505".equals(e.getSQLState())) {
+            if (PSQLState.UNIQUE_VIOLATION.getState().equals(e.getSQLState())) {
                 throw new SegueDatabaseException("Duplicate attempt ID");
             }
             throw new SegueDatabaseException("Something went wrong saving the attempt.");
