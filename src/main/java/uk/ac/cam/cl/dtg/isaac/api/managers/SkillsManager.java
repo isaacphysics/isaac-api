@@ -10,6 +10,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import java.security.MessageDigest;
 import java.util.Date;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -43,7 +44,7 @@ public class SkillsManager {
      */
     public boolean isHmacValid(final AnvilMarkingRequestDTO dto) {
         String expected = UserAuthenticationManager.calculateHMAC(hmacSecret, dto.getPayload());
-        return expected.equals(dto.getHmac());
+        return MessageDigest.isEqual(expected.getBytes(), dto.getHmac().getBytes());
     }
 
     /**
