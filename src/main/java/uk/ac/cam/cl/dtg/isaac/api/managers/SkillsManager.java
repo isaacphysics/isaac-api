@@ -21,6 +21,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class SkillsManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final int MAX_PAYLOAD_LENGTH = 10 * 1024; // about 10 kilobytes for English payloads, even Unicode
+    public static final long FIVE_MINUTES_IN_MILLIS = 300_000L;
 
     private final String hmacSecret;
     private final ISkillsAttemptManager skillsAttemptManager;
@@ -68,7 +69,7 @@ public class SkillsManager {
             if (dto.getUserId() != userId) {
                 throw new InvalidAnvilMarkingRequestException("Payload user_id does not match session", null);
             }
-            if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - 300_000L))) {
+            if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - FIVE_MINUTES_IN_MILLIS))) {
                 throw new InvalidAnvilMarkingRequestException("Payload timestamp is outside the allowed window", null);
             }
             if (!dto.getSkillId().equals(appId)) {
