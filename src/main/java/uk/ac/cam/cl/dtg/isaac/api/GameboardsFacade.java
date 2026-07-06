@@ -149,8 +149,8 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
 
-            GameboardDTO unAugmentedGameboard = gameManager.getLiteGameboard(gameboardId);
-            if (null == unAugmentedGameboard) {
+            GameboardDTO gameboardWithoutAttemptInfo = gameManager.getLiteGameboard(gameboardId);
+            if (null == gameboardWithoutAttemptInfo) {
                 return new SegueErrorResponse(Status.NOT_FOUND, "No Gameboard found for the id specified.")
                         .toResponse();
             }
@@ -160,15 +160,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             if (randomUser instanceof AnonymousUserDTO) {
                 userQuestionAttempts = this.questionManager.getQuestionAttemptsByUser(randomUser);
             } else {
-                List<String> gameboardPageIds = unAugmentedGameboard.getContents().stream().map(GameboardItem::getId).collect(Collectors.toList());
+                List<String> gameboardPageIds = gameboardWithoutAttemptInfo.getContents().stream().map(GameboardItem::getId).collect(Collectors.toList());
                 userQuestionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts((RegisteredUserDTO) randomUser, gameboardPageIds);
-                isLinked = gameManager.isBoardLinkedToUser((RegisteredUserDTO) randomUser, unAugmentedGameboard.getId());
+                gameManager.augmentGameboardsWithLinkedToUserInformation((RegisteredUserDTO) randomUser, Collections.singletonList(gameboardWithoutAttemptInfo));
             }
 
             // Calculate the ETag
-            EntityTag etag = new EntityTag(unAugmentedGameboard.toString().hashCode()
+            EntityTag etag = new EntityTag(gameboardWithoutAttemptInfo.toString().hashCode()
                     + userQuestionAttempts.toString().hashCode()
-                    + Boolean.hashCode(isLinked)
                     + ""
             );
 
@@ -178,7 +177,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
 
             // attempt to augment the gameboard with user information.
-            // FIXME isBoardLinkedToUser gets called a second time here
             gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
 
             // We decided not to log this on the backend as the front end uses this lots.
