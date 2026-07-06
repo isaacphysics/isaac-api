@@ -70,6 +70,9 @@ public class SkillsFacade extends AbstractIsaacFacade {
     public Response answerQuestion(@Context final HttpServletRequest request,
                                    @PathParam("appId") final String appId,
                                    final AnvilMarkingRequestDTO markingRequest) {
+        if (getProperties().getProperty("SKILLS_HMAC_SECRET") == null) {
+            return new SegueErrorResponse(Status.NOT_IMPLEMENTED, "Endpoint has not been implemented.").toResponse();
+        }
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
