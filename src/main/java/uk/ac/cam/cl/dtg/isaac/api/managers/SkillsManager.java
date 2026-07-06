@@ -86,7 +86,8 @@ public class SkillsManager {
      *
      * @param attempt - the validated payload DTO
      */
-    public void recordAttempt(final AnvilPayloadDTO attempt) throws SegueDatabaseException {
+    public void recordAttempt(final AnvilPayloadDTO attempt)
+            throws DuplicateSkillsAttemptException, SegueDatabaseException {
         skillsAttemptManager.registerSkillsAttempt(attempt);
     }
 }

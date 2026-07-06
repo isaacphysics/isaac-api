@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateSkillsAttemptException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidAnvilMarkingRequestException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
@@ -95,12 +96,11 @@ public class SkillsFacade extends AbstractIsaacFacade {
             var error = new SegueErrorResponse(Status.BAD_REQUEST, e.getMessage());
             log.warn(error.getErrorMessage() + ", " + e.getDetailedProblem());
             return error.toResponse();
+        } catch (final DuplicateSkillsAttemptException e) {
+            var error = new SegueErrorResponse(Status.CONFLICT, "Duplicate attempt ID");
+            log.warn(error.getErrorMessage());
+            return error.toResponse();
         } catch (final SegueDatabaseException e) {
-            if ("Duplicate attempt ID".equals(e.getMessage())) {
-                var error = new SegueErrorResponse(Status.CONFLICT, "Duplicate attempt ID");
-                log.warn(error.getErrorMessage());
-                return error.toResponse();
-            }
             var error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong");
             log.error(error.getErrorMessage());
             return error.toResponse();

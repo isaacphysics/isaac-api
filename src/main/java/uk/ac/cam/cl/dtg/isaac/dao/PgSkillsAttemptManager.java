@@ -2,6 +2,7 @@ package uk.ac.cam.cl.dtg.isaac.dao;
 
 import com.google.inject.Inject;
 import org.postgresql.util.PSQLState;
+import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateSkillsAttemptException;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -20,7 +21,8 @@ public class PgSkillsAttemptManager implements ISkillsAttemptManager {
     }
 
     @Override
-    public void registerSkillsAttempt(final AnvilPayloadDTO attempt) throws SegueDatabaseException {
+    public void registerSkillsAttempt(final AnvilPayloadDTO attempt)
+            throws DuplicateSkillsAttemptException, SegueDatabaseException {
         try (var conn = database.getDatabaseConnection();
              var pst = conn.prepareStatement("""
                  INSERT INTO skills_question_attempts (
@@ -39,7 +41,7 @@ public class PgSkillsAttemptManager implements ISkillsAttemptManager {
             pst.executeUpdate();
         } catch (final SQLException e) {
             if (PSQLState.UNIQUE_VIOLATION.getState().equals(e.getSQLState())) {
-                throw new SegueDatabaseException("Duplicate attempt ID");
+                throw new DuplicateSkillsAttemptException(null);
             }
             throw new SegueDatabaseException("Something went wrong saving the attempt.");
         }
