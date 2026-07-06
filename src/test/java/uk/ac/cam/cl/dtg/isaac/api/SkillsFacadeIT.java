@@ -60,14 +60,14 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void unknownApp_Returns404() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post("/skills/unknown_app/answer", VALID_BODY);
-            response.assertError("No app found for that id.", Response.Status.NOT_FOUND);
+            response.assertError("No skills app found for that id.", Response.Status.NOT_FOUND);
         }
 
         @Test
         public void idMatchesNonApp_Returns404() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post("/skills/" + REGRESSION_TEST_PAGE_ID + "/answer", VALID_BODY);
-            response.assertError("No app found for that id.", Response.Status.NOT_FOUND);
+            response.assertError("No skills app found for that id.", Response.Status.NOT_FOUND);
         }
     }
 
@@ -277,11 +277,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     private static String validUrl() {
         try {
-            var page = elasticHelper.persistJSON(new JSONObject()
-                .put("type", "page")
-                .put("children", new JSONArray().put(new JSONObject().put("type", "anvilApp")))
-            );
-            return "/skills/" + page.getString("id") + "/answer";
+            var skillsApp = elasticHelper.persistJSON(new JSONObject().put("type", "skillsApp"));
+            return "/skills/" + skillsApp.getString("id") + "/answer";
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

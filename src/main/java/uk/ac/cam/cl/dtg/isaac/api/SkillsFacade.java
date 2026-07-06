@@ -7,8 +7,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateSkillsAttemptException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidAnvilMarkingRequestException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsAttemptManager;
-import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SkillsApp;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingRequestDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
@@ -76,9 +75,9 @@ public class SkillsFacade extends AbstractIsaacFacade {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
-            if (!(hasAnvilApp(this.contentManager.getContentDOById(appId)))) {
-                var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for that id.");
-                log.warn("No app found for given id: {}.", appId);
+            if (!(this.contentManager.getContentDOById(appId) instanceof SkillsApp)) {
+                var error = new SegueErrorResponse(Status.NOT_FOUND, "No skills app found for that id.");
+                log.warn("No skills app found for given id: {}.", appId);
                 return error.toResponse();
             }
 
@@ -112,11 +111,5 @@ public class SkillsFacade extends AbstractIsaacFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
-    }
-
-    private boolean hasAnvilApp(final Content content) {
-        return content instanceof AnvilApp
-            || (content != null
-                && content.getChildren().stream().anyMatch(c -> c instanceof Content cc && hasAnvilApp(cc)));
     }
 }
