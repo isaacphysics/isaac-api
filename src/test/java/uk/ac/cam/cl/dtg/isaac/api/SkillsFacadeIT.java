@@ -60,14 +60,14 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void unknownApp_Returns404() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post("/skills/unknown_app/answer", VALID_BODY);
-            response.assertError("No app found for given id: unknown_app", Response.Status.NOT_FOUND);
+            response.assertError("No app found for that id.", Response.Status.NOT_FOUND);
         }
 
         @Test
         public void idMatchesNonApp_Returns404() throws Exception {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var response = client.post("/skills/" + REGRESSION_TEST_PAGE_ID + "/answer", VALID_BODY);
-            response.assertError("No app found for given id: " + REGRESSION_TEST_PAGE_ID, Response.Status.NOT_FOUND);
+            response.assertError("No app found for that id.", Response.Status.NOT_FOUND);
         }
     }
 
