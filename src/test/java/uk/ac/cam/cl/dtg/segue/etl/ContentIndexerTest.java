@@ -30,7 +30,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SkillsApp;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
@@ -499,6 +502,109 @@ public class ContentIndexerTest {
         Collection<List<String>> expected = List.of(List.of(
                 String.format("Drag-and-drop Question: %s has a problem. The question is invalid, because it has an"
                               + " answer with duplicate drop zones.", dndQuestion.getId())));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_skillsAppMissingId_checkErrorIsCorrect() {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var app = new SkillsApp();
+        app.setCanonicalSourceFile("");
+        contents.add(app);
+
+        // ACT
+        for (Content content : contents) {
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of("Skill app is missing an id."));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_skillsAppmissingChildren_checkErrorIsCorrect() {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var app = new SkillsApp();
+        app.setId("some_id");
+        app.setChildren(null);
+        app.setCanonicalSourceFile("");
+        contents.add(app);
+
+        // ACT
+        for (Content content : contents) {
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must have exactly 1 child."));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_skillsAppEmptyChildren_checkErrorIsCorrect() {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var app = new SkillsApp();
+        app.setId("some_id");
+        app.setChildren(List.of());
+        app.setCanonicalSourceFile("");
+        contents.add(app);
+
+        // ACT
+        for (Content content : contents) {
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must have exactly 1 child."));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_skillsApptooManyChildren_checkErrorIsCorrect() {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var app = new SkillsApp();
+        app.setId("some_id");
+        app.setChildren(List.of(new AnvilApp(), new AnvilApp()));
+        app.setCanonicalSourceFile("");
+        contents.add(app);
+
+        // ACT
+        for (Content content : contents) {
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must have exactly 1 child."));
+        assertEquals(expected, List.copyOf(problemCache.values()));
+    }
+
+    @Test
+    public void recordContentTypeSpecificError_nonAnvilAppChildren_checkErrorIsCorrect() {
+        // ARRANGE
+        final Map<Content, List<String>> problemCache = new HashMap<>();
+        final List<Content> contents = new LinkedList<>();
+        var app = new SkillsApp();
+        app.setId("some_id");
+        app.setChildren(List.of(new IsaacDndQuestion()));
+        app.setCanonicalSourceFile("");
+        contents.add(app);
+
+        // ACT
+        for (Content content : contents) {
+            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
+        }
+
+        // ASSERT
+        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' can only have anvilApp children."));
         assertEquals(expected, List.copyOf(problemCache.values()));
     }
 
