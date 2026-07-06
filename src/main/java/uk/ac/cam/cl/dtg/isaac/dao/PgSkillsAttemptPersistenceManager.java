@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import org.postgresql.util.PSQLState;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateSkillsAttemptException;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
@@ -12,11 +12,11 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 
 /** PostgreSQL-backed persistence for Anvil skills question attempts. */
-public class PgSkillsAttemptManager implements ISkillsAttemptManager {
+public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersistenceManager {
     private final PostgresSqlDb database;
 
     @Inject
-    public PgSkillsAttemptManager(final PostgresSqlDb database) {
+    public PgSkillsAttemptPersistenceManager(final PostgresSqlDb database) {
         this.database = database;
     }
 

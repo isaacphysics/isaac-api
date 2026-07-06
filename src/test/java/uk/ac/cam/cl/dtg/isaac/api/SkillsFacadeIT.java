@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
-import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
@@ -320,7 +320,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     private TestServer testServer(final GitContentManager cm) throws Exception {
-        var sm = new SkillsManager(properties, new PgSkillsAttemptManager(postgresSqlDb));
+        var sm = new SkillsAttemptManager(properties, new PgSkillsAttemptPersistenceManager(postgresSqlDb));
         return startServer(
             new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
             new SkillsFacade(properties, userAccountManager, logManager, cm, sm)

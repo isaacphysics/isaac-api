@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.api.managers.DuplicateSkillsAttemptException;
 import uk.ac.cam.cl.dtg.isaac.api.managers.InvalidAnvilMarkingRequestException;
-import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsManager;
+import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingRequestDTO;
@@ -40,7 +40,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
 
     private final UserAccountManager userManager;
     private final GitContentManager contentManager;
-    private final SkillsManager skillsManager;
+    private final SkillsAttemptManager skillsAttemptManager;
 
     /**
      * Constructor.
@@ -48,11 +48,11 @@ public class SkillsFacade extends AbstractIsaacFacade {
     @Inject
     public SkillsFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, final GitContentManager contentManager,
-                        final SkillsManager skillsManager) {
+                        final SkillsAttemptManager skillsAttemptManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
-        this.skillsManager = skillsManager;
+        this.skillsAttemptManager = skillsAttemptManager;
     }
 
     /**
@@ -82,15 +82,15 @@ public class SkillsFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            if (!skillsManager.isHmacValid(markingRequest)) {
+            if (!skillsAttemptManager.isHmacValid(markingRequest)) {
                 var error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature.");
                 log.warn(error.getErrorMessage());
                 return error.toResponse();
             }
 
-            AnvilPayloadDTO payloadDTO = skillsManager.parsePayload(
+            AnvilPayloadDTO payloadDTO = skillsAttemptManager.parsePayload(
                 markingRequest.getPayload(), currentUser.getId(), appId);
-            skillsManager.recordAttempt(payloadDTO);
+            skillsAttemptManager.recordAttempt(payloadDTO);
 
             return Response.ok(payloadDTO).build();
         } catch (final NoUserLoggedInException e) {

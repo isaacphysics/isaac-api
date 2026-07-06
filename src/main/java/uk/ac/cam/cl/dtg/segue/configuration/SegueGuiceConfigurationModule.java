@@ -38,7 +38,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -56,7 +56,7 @@ import uk.ac.cam.cl.dtg.isaac.dao.PgBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
-import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
@@ -193,7 +193,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static UserAccountManager userManager = null;
     private static UserAuthenticationManager userAuthenticationManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
-    private static ISkillsAttemptManager skillsAttemptManager = null;
+    private static ISkillsAttemptPersistenceManager skillsAttemptManager = null;
     private static SegueJobService segueJobService = null;
 
     private static ILogManager logManager;
@@ -886,10 +886,10 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     @Inject
     @Provides
     @Singleton
-    private ISkillsAttemptManager getSkillAttemptManager(final PostgresSqlDb ds) {
+    private ISkillsAttemptPersistenceManager getSkillAttemptManager(final PostgresSqlDb ds) {
         // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
         if (null == skillsAttemptManager) {
-            skillsAttemptManager = new PgSkillsAttemptManager(ds);
+            skillsAttemptManager = new PgSkillsAttemptPersistenceManager(ds);
             log.info("Creating singleton of ISkillsAttemptManager");
         }
 

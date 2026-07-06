@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingRequestDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
-import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptManager;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAuthenticationManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
@@ -16,15 +16,15 @@ import java.util.Date;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
- * Manager for Isaac Skills Practice app interactions.
+ * Manager for Isaac Skills Practice app attempts.
  */
-public class SkillsManager {
+public class SkillsAttemptManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final int MAX_PAYLOAD_LENGTH = 10 * 1024; // about 10 kilobytes for English payloads, even Unicode
     public static final long FIVE_MINUTES_IN_MILLIS = 300_000L;
 
     private final String hmacSecret;
-    private final ISkillsAttemptManager skillsAttemptManager;
+    private final ISkillsAttemptPersistenceManager persistence;
 
     /**
      * Constructor.
@@ -33,9 +33,10 @@ public class SkillsManager {
      * @param skillsAttemptManager - persistence manager for skills attempts
      */
     @Inject
-    public SkillsManager(final AbstractConfigLoader properties, final ISkillsAttemptManager skillsAttemptManager) {
+    public SkillsAttemptManager(
+            final AbstractConfigLoader properties, final ISkillsAttemptPersistenceManager skillsAttemptManager) {
         this.hmacSecret = properties.getProperty(SKILLS_HMAC_SECRET);
-        this.skillsAttemptManager = skillsAttemptManager;
+        this.persistence = skillsAttemptManager;
     }
 
     /**
@@ -88,6 +89,6 @@ public class SkillsManager {
      */
     public void recordAttempt(final AnvilPayloadDTO attempt)
             throws DuplicateSkillsAttemptException, SegueDatabaseException {
-        skillsAttemptManager.registerSkillsAttempt(attempt);
+        persistence.registerSkillsAttempt(attempt);
     }
 }
