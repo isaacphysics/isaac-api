@@ -20,6 +20,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 public class SkillsManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final int MAX_PAYLOAD_LENGTH = 10 * 1024; // about 10 kilobytes for English payloads, even Unicode
 
     private final String hmacSecret;
     private final ISkillsAttemptManager skillsAttemptManager;
@@ -59,7 +60,7 @@ public class SkillsManager {
         final String payloadStr, final long userId, final String appId
     ) throws InvalidAnvilMarkingRequestException {
         try {
-            if (payloadStr.length() > 10 * 1024) {
+            if (payloadStr.length() > MAX_PAYLOAD_LENGTH) {
                 throw new InvalidAnvilMarkingRequestException("Payload too large", null);
             }
 
