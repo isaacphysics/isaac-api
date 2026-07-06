@@ -295,6 +295,8 @@ public class AssignmentFacade extends AbstractIsaacFacade {
                 List<AssignmentDTO> assignments = this.assignmentManager.getAllAssignmentsForSpecificGroups(allGroupsOwnedAndManagedByUser, true);
                 Set<String> gameboardIds = assignments.stream().map(AssignmentDTO::getGameboardId).collect(Collectors.toSet());
                 List<GameboardDTO> liteGameboards = this.gameManager.getLiteGameboards(gameboardIds);
+                gameManager.augmentGameboardsWithLinkedToUserInformation(currentlyLoggedInUser, liteGameboards);
+
                 // Remove unneeded data from the gameboards - very messy but not as messy as feasible alternatives
                 liteGameboards.forEach(g -> {
                     g.setContents(null);

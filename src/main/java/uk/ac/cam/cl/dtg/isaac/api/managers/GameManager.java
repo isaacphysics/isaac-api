@@ -335,7 +335,7 @@ public class GameManager {
 
         // we need to augment the DTO with whether this gameboard is in a users my boards list.
         if (user instanceof RegisteredUserDTO registeredUser) {
-            gameboard.setSavedToCurrentUser(isBoardLinkedToUser(registeredUser, gameboardId));
+            augmentGameboardsWithLinkedToUserInformation(registeredUser, Collections.singletonList(gameboard));
         }
 
         return gameboard;
@@ -865,17 +865,21 @@ public class GameManager {
      * 
      * @param user
      *            to check
-     * @param gameboardId
-     *            to look up
-     * @return true if it is false if not
+     * @param gameboards
+     *            to augment
      * @throws SegueDatabaseException
      *             if there is a database error
      */
-    public boolean isBoardLinkedToUser(final RegisteredUserDTO user, final String gameboardId)
+
+    public void augmentGameboardsWithLinkedToUserInformation(final RegisteredUserDTO user, final Collection<GameboardDTO> gameboards)
             throws SegueDatabaseException {
-        Set<String> linkedIds = this.gameboardPersistenceManager
-                .getGameboardIdsLinkedToUser(user.getId(), Collections.singleton(gameboardId));
-        return linkedIds.contains(gameboardId);
+        Set<String> linkedIds = this.gameboardPersistenceManager.getGameboardIdsLinkedToUser(
+                user.getId(),
+                gameboards.stream().map(GameboardDTO::getId).collect(Collectors.toSet())
+        );
+        gameboards.forEach(gameboard -> gameboard.setSavedToCurrentUser(
+                linkedIds.contains(gameboard.getId())
+        ));
     }
     
     /**
