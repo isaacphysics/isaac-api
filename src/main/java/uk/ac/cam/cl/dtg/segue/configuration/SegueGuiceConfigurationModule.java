@@ -347,6 +347,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IQuizAssignmentPersistenceManager.class).to(PgQuizAssignmentPersistenceManager.class);
         bind(IQuizAttemptPersistenceManager.class).to(PgQuizAttemptPersistenceManager.class);
         bind(IQuizQuestionAttemptPersistenceManager.class).to(PgQuizQuestionAttemptPersistenceManager.class);
+        bind(ISkillsAttemptPersistenceManager.class).to(PgSkillsAttemptPersistenceManager.class);
     }
 
     /**
@@ -875,25 +876,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         }
 
         return questionPersistenceManager;
-    }
-
-    /**
-     * SkillAttemptManager.
-     *
-     * @param ds - postgres data source
-     * @return a singleton for question persistence.
-     */
-    @Inject
-    @Provides
-    @Singleton
-    private ISkillsAttemptPersistenceManager getSkillAttemptManager(final PostgresSqlDb ds) {
-        // this needs to be a singleton as it provides a temporary cache for anonymous question attempts.
-        if (null == skillsAttemptManager) {
-            skillsAttemptManager = new PgSkillsAttemptPersistenceManager(ds);
-            log.info("Creating singleton of ISkillsAttemptManager");
-        }
-
-        return skillsAttemptManager;
     }
 
     /**
