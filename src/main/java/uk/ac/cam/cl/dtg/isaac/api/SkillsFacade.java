@@ -73,8 +73,8 @@ public class SkillsFacade extends AbstractIsaacFacade {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
 
             if (!(hasAnvilApp(this.contentManager.getContentDOById(appId)))) {
-                var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
-                log.warn("No app found for given id: {}", appId);
+                var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for that id.");
+                log.warn("No app found for given id: {}.", appId);
                 return error.toResponse();
             }
 
