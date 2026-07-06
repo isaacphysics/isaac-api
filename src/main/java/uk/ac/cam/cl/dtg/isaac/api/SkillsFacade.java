@@ -80,7 +80,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
             }
 
             if (!skillsManager.isHmacValid(markingRequest)) {
-                var error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature");
+                var error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature.");
                 log.warn(error.getErrorMessage());
                 return error.toResponse();
             }
@@ -97,15 +97,15 @@ public class SkillsFacade extends AbstractIsaacFacade {
             log.warn(error.getErrorMessage() + ", " + e.getDetailedProblem());
             return error.toResponse();
         } catch (final DuplicateSkillsAttemptException e) {
-            var error = new SegueErrorResponse(Status.CONFLICT, "Duplicate attempt ID");
+            var error = new SegueErrorResponse(Status.CONFLICT, "Duplicate attempt ID.");
             log.warn(error.getErrorMessage());
             return error.toResponse();
         } catch (final SegueDatabaseException e) {
-            var error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong");
+            var error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong.");
             log.error(error.getErrorMessage());
             return error.toResponse();
         } catch (final ContentManagerException e) {
-            var error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested", e);
+            var error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }

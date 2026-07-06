@@ -62,22 +62,22 @@ public class SkillsManager {
     ) throws InvalidAnvilMarkingRequestException {
         try {
             if (payloadStr.length() > MAX_PAYLOAD_LENGTH) {
-                throw new InvalidAnvilMarkingRequestException("Payload too large", null);
+                throw new InvalidAnvilMarkingRequestException("Payload too large.", null);
             }
 
             AnvilPayloadDTO dto = objectMapper.readValue(payloadStr, AnvilPayloadDTO.class);
             if (dto.getUserId() != userId) {
-                throw new InvalidAnvilMarkingRequestException("Payload user_id does not match session", null);
+                throw new InvalidAnvilMarkingRequestException("Payload user_id does not match session.", null);
             }
             if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - FIVE_MINUTES_IN_MILLIS))) {
-                throw new InvalidAnvilMarkingRequestException("Payload timestamp is outside the allowed window", null);
+                throw new InvalidAnvilMarkingRequestException("Payload timestamp is outside the allowed window.", null);
             }
             if (!dto.getSkillId().equals(appId)) {
-                throw new InvalidAnvilMarkingRequestException("Payload skill_id does not match app", null);
+                throw new InvalidAnvilMarkingRequestException("Payload skill_id does not match app.", null);
             }
             return dto;
         } catch (final JsonProcessingException e) {
-            throw new InvalidAnvilMarkingRequestException("Invalid payload", e.getMessage());
+            throw new InvalidAnvilMarkingRequestException("Invalid payload.", e.getMessage());
         }
     }
 

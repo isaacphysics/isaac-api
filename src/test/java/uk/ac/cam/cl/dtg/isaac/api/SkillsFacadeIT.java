@@ -85,7 +85,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var body = new JSONObject().put("payload", 123).put("hmac", sign(HMAC_SECRET, "123", HMAC_SHA_256));
             var response = client.post(VALID_URL, body);
-            response.assertError("Invalid payload", Response.Status.BAD_REQUEST);
+            response.assertError("Invalid payload.", Response.Status.BAD_REQUEST);
         }
 
         @Test
@@ -101,7 +101,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var large = validPayload(p -> p.put("question_attempt", "x".repeat(10 * 1024 + 1)));
             var body = new JSONObject().put("payload", large).put("hmac", sign(HMAC_SECRET, large, HMAC_SHA_256));
             var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT).post(VALID_URL, body);
-            response.assertError("Payload too large", Response.Status.BAD_REQUEST);
+            response.assertError("Payload too large.", Response.Status.BAD_REQUEST);
         }
     }
 
@@ -112,13 +112,13 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
                 Arguments.of("missing hmac", new JSONObject().put("payload", VALID_PAYLOAD),
                     "Invalid JSON provided!"),
                 Arguments.of("invalid hmac", new JSONObject().put("payload", VALID_PAYLOAD)
-                    .put("hmac", "not-a-valid-signature"), "Invalid HMAC signature"),
+                    .put("hmac", "not-a-valid-signature"), "Invalid HMAC signature."),
                 Arguments.of("wrong secret", new JSONObject().put("payload", VALID_PAYLOAD)
-                    .put("hmac", sign("wrong-secret", VALID_PAYLOAD, HMAC_SHA_256)), "Invalid HMAC signature"),
+                    .put("hmac", sign("wrong-secret", VALID_PAYLOAD, HMAC_SHA_256)), "Invalid HMAC signature."),
                 Arguments.of("tampered payload", new JSONObject().put("payload", "tampered_payload")
-                    .put("hmac", VALID_HMAC), "Invalid HMAC signature"),
+                    .put("hmac", VALID_HMAC), "Invalid HMAC signature."),
                 Arguments.of("wrong algorithm", new JSONObject().put("payload", VALID_PAYLOAD)
-                    .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, "HmacMD5")), "Invalid HMAC signature")
+                    .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, "HmacMD5")), "Invalid HMAC signature.")
             );
         }
 
@@ -136,7 +136,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Nested
     class PayloadContentCheck {
-        static String MSG_IP = "Invalid payload";
+        static String MSG_IP = "Invalid payload.";
 
         static Stream<Arguments> invalidPayloads() {
             var s = Stream.<Arguments>builder();
@@ -217,7 +217,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         var testBody = new JSONObject().put("payload", testP).put("hmac", sign(HMAC_SECRET, testP, HMAC_SHA_256));
         var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
         client.post(VALID_URL, testBody).readEntity(String.class);
-        client.post(VALID_URL, testBody).assertError("Duplicate attempt ID", Response.Status.CONFLICT);
+        client.post(VALID_URL, testBody).assertError("Duplicate attempt ID.", Response.Status.CONFLICT);
     }
 
     @Test
