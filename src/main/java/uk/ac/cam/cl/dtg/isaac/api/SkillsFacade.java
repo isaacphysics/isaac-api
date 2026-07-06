@@ -74,7 +74,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
 
             if (!(hasAnvilApp(this.contentManager.getContentDOById(appId)))) {
                 var error = new SegueErrorResponse(Status.NOT_FOUND, "No app found for given id: " + appId);
-                log.warn(error.getErrorMessage());
+                log.warn("No app found for given id: {}", appId);
                 return error.toResponse();
             }
 
