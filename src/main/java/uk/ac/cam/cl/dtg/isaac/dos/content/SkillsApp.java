@@ -24,4 +24,13 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.SkillsAppDTO;
 @DTOMapping(SkillsAppDTO.class)
 @JsonContentType("skillsApp")
 public class SkillsApp extends Content {
+    private AnvilApp anvilApp;
+
+    public AnvilApp getAnvilApp() {
+        return anvilApp;
+    }
+
+    public void setAnvilApp(final AnvilApp anvilApp) {
+        this.anvilApp = anvilApp;
+    }
 }

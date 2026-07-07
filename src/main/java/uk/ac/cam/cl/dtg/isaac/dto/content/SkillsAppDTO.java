@@ -20,4 +20,13 @@ package uk.ac.cam.cl.dtg.isaac.dto.content;
  * @author bm710
  */
 public class SkillsAppDTO extends ContentDTO {
+    private AnvilAppDTO anvilApp;
+
+    public AnvilAppDTO getAnvilApp() {
+        return anvilApp;
+    }
+
+    public void setAnvilApp(final AnvilAppDTO anvilApp) {
+        this.anvilApp = anvilApp;
+    }
 }

@@ -510,9 +510,12 @@ public class ContentIndexerTest {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
-        var app = new SkillsApp();
-        app.setCanonicalSourceFile("");
-        contents.add(app);
+        var skillsApp = new SkillsApp();
+        var anvilApp = new AnvilApp();
+        anvilApp.setType("anvilApp");
+        skillsApp.setAnvilApp(anvilApp);
+        skillsApp.setCanonicalSourceFile("");
+        contents.add(skillsApp);
 
         // ACT
         for (Content content : contents) {
@@ -525,13 +528,12 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_skillsAppmissingChildren_checkErrorIsCorrect() {
+    public void recordContentTypeSpecificError_skillsAppMissingAnvilApp_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
         var app = new SkillsApp();
         app.setId("some_id");
-        app.setChildren(null);
         app.setCanonicalSourceFile("");
         contents.add(app);
 
@@ -541,18 +543,18 @@ public class ContentIndexerTest {
         }
 
         // ASSERT
-        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must have exactly 1 child."));
+        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must contain an Anvil app."));
         assertEquals(expected, List.copyOf(problemCache.values()));
     }
 
     @Test
-    public void recordContentTypeSpecificError_skillsAppEmptyChildren_checkErrorIsCorrect() {
+    public void recordContentTypeSpecificError_skillsAppAnvilWrongType_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
         var app = new SkillsApp();
         app.setId("some_id");
-        app.setChildren(List.of());
+        app.setAnvilApp(new AnvilApp());
         app.setCanonicalSourceFile("");
         contents.add(app);
 
@@ -562,49 +564,7 @@ public class ContentIndexerTest {
         }
 
         // ASSERT
-        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must have exactly 1 child."));
-        assertEquals(expected, List.copyOf(problemCache.values()));
-    }
-
-    @Test
-    public void recordContentTypeSpecificError_skillsApptooManyChildren_checkErrorIsCorrect() {
-        // ARRANGE
-        final Map<Content, List<String>> problemCache = new HashMap<>();
-        final List<Content> contents = new LinkedList<>();
-        var app = new SkillsApp();
-        app.setId("some_id");
-        app.setChildren(List.of(new AnvilApp(), new AnvilApp()));
-        app.setCanonicalSourceFile("");
-        contents.add(app);
-
-        // ACT
-        for (Content content : contents) {
-            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
-        }
-
-        // ASSERT
-        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must have exactly 1 child."));
-        assertEquals(expected, List.copyOf(problemCache.values()));
-    }
-
-    @Test
-    public void recordContentTypeSpecificError_nonAnvilAppChildren_checkErrorIsCorrect() {
-        // ARRANGE
-        final Map<Content, List<String>> problemCache = new HashMap<>();
-        final List<Content> contents = new LinkedList<>();
-        var app = new SkillsApp();
-        app.setId("some_id");
-        app.setChildren(List.of(new IsaacDndQuestion()));
-        app.setCanonicalSourceFile("");
-        contents.add(app);
-
-        // ACT
-        for (Content content : contents) {
-            defaultContentIndexer.recordContentTypeSpecificError("", content, problemCache);
-        }
-
-        // ASSERT
-        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' can only have anvilApp children."));
+        Collection<List<String>> expected = List.of(List.of("Skill app 'some_id' must contain an Anvil app."));
         assertEquals(expected, List.copyOf(problemCache.values()));
     }
 

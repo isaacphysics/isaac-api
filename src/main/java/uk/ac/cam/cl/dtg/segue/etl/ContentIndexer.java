@@ -1216,12 +1216,10 @@ public class ContentIndexer {
         if (content instanceof SkillsApp a) {
             if (null == a.getId()) {
                 this.registerContentProblem(content, "Skill app is missing an id.", indexProblemCache);
-            } else if (null == a.getChildren() || a.getChildren().size() != 1) {
+            }
+            if (null == a.getAnvilApp() || null == a.getAnvilApp().getType() || !a.getAnvilApp().getType().equals("anvilApp")) {
                 this.registerContentProblem(content,
-                    String.format("Skill app '%s' must have exactly 1 child.", a.getId()), indexProblemCache);
-            } else if (!(a.getChildren().getFirst() instanceof AnvilApp)) {
-                this.registerContentProblem(content,
-                    String.format("Skill app '%s' can only have anvilApp children.", a.getId()), indexProblemCache);
+                    String.format("Skill app '%s' must contain an Anvil app.", a.getId()), indexProblemCache);
             }
         }
     }
