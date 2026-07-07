@@ -98,7 +98,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
         @Test
         public void oversizedPayload_Returns400() throws Exception {
-            var large = validPayload(p -> p.put("question_attempt", "x".repeat(10 * 1024 + 1)));
+            var large = validPayload(p -> p.put("question_attempt", "x".repeat(30 * 1024 + 1)));
             var body = new JSONObject().put("payload", large).put("hmac", sign(HMAC_SECRET, large, HMAC_SHA_256));
             var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT).post(VALID_URL, body);
             response.assertError("Payload too large.", Response.Status.BAD_REQUEST);
@@ -194,13 +194,13 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         @ParameterizedTest(name = "{0}")
         @MethodSource("invalidPayloads")
         public void invalidPayload_Returns400(
-            final String name, final JSONObject payload, final String expectedMessage
+            final String name, final String payload, final String expectedMessage
         ) throws Exception {
             testServer().client()
                 .loginAs(integrationTestUsers.TEST_STUDENT)
                 .post(VALID_URL, new JSONObject()
-                    .put("payload", payload.toString())
-                    .put("hmac", sign(HMAC_SECRET, payload.toString(), HMAC_SHA_256)))
+                    .put("payload", payload)
+                    .put("hmac", sign(HMAC_SECRET, payload, HMAC_SHA_256)))
                 .assertError(expectedMessage, Response.Status.BAD_REQUEST);
         }
 
@@ -222,11 +222,11 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Test
     public void happy_happy() throws Exception {
-        var expected = new JSONObject(VALID_PAYLOAD);
+        var expected = new JSONArray(VALID_PAYLOAD).getJSONObject(0);
         var actualReq = testServer().client()
             .loginAs(integrationTestUsers.TEST_STUDENT)
             .post(VALID_URL, VALID_BODY)
-            .readEntityAsJson();
+            .readEntityAsJsonArray().getJSONObject(0);
 
         // assert there is exactly 1 row in the database
         try (var conn = postgresSqlDb.getDatabaseConnection();
@@ -298,7 +298,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         if (op != null) {
             op.accept(defaultPayload);
         }
-        return defaultPayload.toString();
+        return new JSONArray().put(defaultPayload).toString();
     }
 
     private static String sign(final String key, final String payload, final String algo) {

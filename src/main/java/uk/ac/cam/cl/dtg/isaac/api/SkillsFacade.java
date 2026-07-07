@@ -30,6 +30,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.util.List;
 
 /** Skills Facade, supports interaction related to the Isaac Skill Practice apps. */
 @Path("/skills")
@@ -87,11 +88,11 @@ public class SkillsFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            AnvilPayloadDTO payloadDTO = skillsAttemptManager.parsePayload(
+            List<AnvilPayloadDTO> payloadDTOs = skillsAttemptManager.parsePayload(
                 markingRequest.getPayload(), currentUser.getId(), appId);
-            skillsAttemptManager.recordAttempt(payloadDTO);
+            skillsAttemptManager.recordAttempt(payloadDTOs);
 
-            return Response.ok(payloadDTO).build();
+            return Response.ok(payloadDTOs).build();
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (final InvalidAnvilMarkingRequestException e) {

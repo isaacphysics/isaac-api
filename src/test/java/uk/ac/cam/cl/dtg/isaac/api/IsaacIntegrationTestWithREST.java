@@ -8,6 +8,7 @@ import org.eclipse.jetty.session.ManagedSession;
 import org.eclipse.jetty.session.SessionCache;
 import org.eclipse.jetty.session.SessionData;
 import org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.function.Executable;
@@ -224,6 +225,11 @@ public class IsaacIntegrationTestWithREST extends AbstractIsaacIntegrationTest {
         JSONObject readEntityAsJson() {
             assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
             return this.readEntityAsJsonUnchecked();
+        }
+
+        JSONArray readEntityAsJsonArray() {
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            return new JSONArray(response.readEntity(String.class));
         }
 
         private JSONObject readEntityAsJsonUnchecked() {

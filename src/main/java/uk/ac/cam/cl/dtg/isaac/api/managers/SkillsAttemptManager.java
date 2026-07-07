@@ -1,6 +1,7 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingRequestDTO;
@@ -12,6 +13,7 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.security.MessageDigest;
 import java.util.Date;
+import java.util.List;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -20,7 +22,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 public class SkillsAttemptManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private static final int MAX_PAYLOAD_LENGTH = 10 * 1024; // about 10 kilobytes for English payloads, even Unicode
+    private static final int MAX_PAYLOAD_LENGTH = 30 * 1024; // about 30 kilobytes for English payloads, even Unicode
     public static final long FIVE_MINUTES_IN_MILLIS = 300_000L;
 
     private final String hmacSecret;
@@ -58,7 +60,7 @@ public class SkillsAttemptManager {
      * @param appId      - the app ID from the URL, which must match the payload's skill_id
      * @throws InvalidAnvilMarkingRequestException if the payload is malformed or any validation fails
      */
-    public AnvilPayloadDTO parsePayload(
+    public List<AnvilPayloadDTO> parsePayload(
         final String payloadStr, final long userId, final String appId
     ) throws InvalidAnvilMarkingRequestException {
         try {
@@ -66,17 +68,18 @@ public class SkillsAttemptManager {
                 throw new InvalidAnvilMarkingRequestException("Payload too large.", null);
             }
 
-            AnvilPayloadDTO dto = objectMapper.readValue(payloadStr, AnvilPayloadDTO.class);
-            if (dto.getUserId() != userId) {
+            List<AnvilPayloadDTO> dtos = objectMapper.readValue(payloadStr, new TypeReference<>() {});
+            if (dtos.stream().anyMatch(dto -> dto.getUserId() != userId)) {
                 throw new InvalidAnvilMarkingRequestException("Payload user_id does not match session.", null);
             }
-            if (dto.getTimestamp().before(new Date(System.currentTimeMillis() - FIVE_MINUTES_IN_MILLIS))) {
+            if (dtos.stream().anyMatch(
+                    dto -> dto.getTimestamp().before(new Date(System.currentTimeMillis() - FIVE_MINUTES_IN_MILLIS)))) {
                 throw new InvalidAnvilMarkingRequestException("Payload timestamp is outside the allowed window.", null);
             }
-            if (!dto.getSkillId().equals(appId)) {
+            if (dtos.stream().anyMatch(dto -> !dto.getSkillId().equals(appId))) {
                 throw new InvalidAnvilMarkingRequestException("Payload skill_id does not match app.", null);
             }
-            return dto;
+            return dtos;
         } catch (final JsonProcessingException e) {
             throw new InvalidAnvilMarkingRequestException("Invalid payload.", e.getMessage());
         }
@@ -87,7 +90,7 @@ public class SkillsAttemptManager {
      *
      * @param attempt - the validated payload DTO
      */
-    public void recordAttempt(final AnvilPayloadDTO attempt)
+    public void recordAttempt(final List<AnvilPayloadDTO> attempt)
             throws DuplicateSkillsAttemptException, SegueDatabaseException {
         persistence.registerSkillsAttempt(attempt);
     }
