@@ -177,6 +177,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             }
 
             // attempt to augment the gameboard with user information.
+            // FIXME augmentGameboardsWithLinkedToUserInformation gets called a second time here
             gameboard = gameManager.getGameboard(gameboardId, randomUser, userQuestionAttempts);
 
             // We decided not to log this on the backend as the front end uses this lots.
