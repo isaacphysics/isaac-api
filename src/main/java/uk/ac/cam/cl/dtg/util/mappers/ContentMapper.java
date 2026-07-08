@@ -174,6 +174,7 @@ public interface ContentMapper {
     ChoiceQuestionDTO map(ChoiceQuestion source);
 
     @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
+    @SubclassMapping(source = SkillsApp.class, target = SkillsAppDTO.class)
     @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
     @SubclassMapping(source = InteractiveCodeSnippet.class, target = InteractiveCodeSnippetDTO.class)
     @SubclassMapping(source = CodeSnippet.class, target = CodeSnippetDTO.class)

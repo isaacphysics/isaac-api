@@ -18,6 +18,7 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.*;
+import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
@@ -35,6 +36,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SkillsApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.isaac.util.ContentValidatorUtils;
@@ -1212,6 +1214,14 @@ public class ContentIndexer {
                     indexProblemCache);
             }
         }
+        if (content instanceof SkillsApp a) {
+            if (null == a.getId()) {
+                this.registerContentProblem(content, "Skill app is missing an id.", indexProblemCache);
+            }
+            if (null == a.getAnvilApp() || null == a.getAnvilApp().getType() || !a.getAnvilApp().getType().equals("anvilApp")) {
+                this.registerContentProblem(content,
+                    String.format("Skill app '%s' must contain an Anvil app.", a.getId()), indexProblemCache);
+            }
+        }
     }
-
 }

@@ -1285,35 +1285,4 @@ public class EventsFacade extends AbstractIsaacFacade {
             return new SegueErrorResponse(Status.BAD_REQUEST, "Invalid request format.").toResponse();
         }
     }
-
-    /**
-     * REST end point to provide a summary of events suitable for mapping.
-     * Excludes nofilter events.
-     *
-     * @param request        - this allows us to check to see if a user is currently logged in.
-     * @param startIndex     - the initial index for the first result.
-     * @param limit          - the maximums number of results to return
-     * @param showActiveOnly - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showStageOnly  - if present, only events with an audience matching this string will be shown
-     * @return a Response containing a list of event map summaries or containing a SegueErrorResponse.
-     */
-    @GET
-    @Path("/map_data")
-    @Produces(MediaType.APPLICATION_JSON)
-    @GZIP
-    @Operation(summary = "List summary details suitable for mapping for events matching the provided criteria.")
-    public final Response getEventMapData(@Context final HttpServletRequest request, @QueryParam("tags") final String tags,
-                                          @DefaultValue(DEFAULT_START_INDEX_AS_STRING) @QueryParam("start_index") final Integer startIndex,
-                                          @DefaultValue(DEFAULT_RESULTS_LIMIT_AS_STRING) @QueryParam("limit") final Integer limit,
-                                          @QueryParam("show_active_only") final Boolean showActiveOnly,
-                                          @QueryParam("show_stage_only") final String showStageOnly) {
-        try {
-            return Response.ok(this.eventsManager.getEventMapData(tags, startIndex, limit, showActiveOnly,
-                showStageOnly)).build();
-        } catch (final ContentManagerException e) {
-            log.error("Error during event request", e);
-            return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Error locating the content you requested.")
-                    .toResponse();
-        }
-    }
 }

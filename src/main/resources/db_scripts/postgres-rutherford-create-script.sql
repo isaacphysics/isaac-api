@@ -501,6 +501,25 @@ CREATE TABLE public.scheduled_emails (
 ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
 --
+-- Name: skills_question_attempts; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.skills_question_attempts (
+     id uuid NOT NULL,
+     user_id integer NOT NULL,
+     skill_assignment_id text,
+     skill_id text NOT NULL,
+     subskill_id text NOT NULL,
+     question jsonb NOT NULL,
+     question_attempt jsonb NOT NULL,
+     marks integer NOT NULL,
+     "timestamp" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.skills_question_attempts OWNER TO rutherford;
+
+--
 -- Name: temporary_user_store; Type: TABLE; Schema: public; Owner: rutherford
 --
 
@@ -1010,6 +1029,14 @@ ALTER TABLE ONLY public.scheduled_emails
 
 
 --
+-- Name: skills_question_attempts skills_question_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.skills_question_attempts
+    ADD CONSTRAINT skills_question_attempts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: temporary_user_store temporary_user_store_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1509,6 +1536,14 @@ ALTER TABLE ONLY public.question_attempts
 
 ALTER TABLE ONLY public.quiz_attempts
     ADD CONSTRAINT user_id_quiz_attempts_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: skills_question_attempts user_id_skills_question_attempts_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.skills_question_attempts
+    ADD CONSTRAINT user_id_skills_question_attempts_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
