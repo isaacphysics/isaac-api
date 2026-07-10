@@ -28,6 +28,8 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ALICE_STUDENT_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.BOB_STUDENT_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 
@@ -41,7 +43,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         private static final String VALID_APP_ID = VALID_URL.split("/")[2];
         private static final String VALID_PAYLOAD = validPayload(null);
         private static final String VALID_HMAC = sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256);
-        private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC);
+        private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD)
+            .put("hmac", VALID_HMAC);
 
         @Test
         public void notLoggedIn_Returns401() throws Exception {
@@ -242,7 +245,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             try (var conn = postgresSqlDb.getDatabaseConnection();
                  var pst = conn.prepareStatement("""
                      SELECT id, user_id, skill_assignment_id, skill_id, subskill_id, question->>'text' AS question_text,
-                            question->>'answer' AS question_answer, question_attempt->>'result' AS result, marks, timestamp
+                            question->>'answer' AS question_answer, question_attempt->>'result' AS result, marks,
+                            timestamp
                      FROM public.skills_question_attempts""");
                  var actualDb = pst.executeQuery()) {
                 actualDb.next();
@@ -252,8 +256,10 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
                 assertEquals(expected.getString("skill_id"), actualDb.getString("skill_id"));
                 assertEquals(expected.get("subskill_id").toString(), actualDb.getString("subskill_id"));
                 assertEquals(expected.getJSONObject("question").getString("text"), actualDb.getString("question_text"));
-                assertEquals(expected.getJSONObject("question").getString("answer"), actualDb.getString("question_answer"));
-                assertEquals(expected.getJSONObject("question_attempt").getString("result"), actualDb.getString("result"));
+                assertEquals(expected.getJSONObject("question").getString("answer"),
+                    actualDb.getString("question_answer"));
+                assertEquals(expected.getJSONObject("question_attempt").getString("result"),
+                    actualDb.getString("result"));
                 assertEquals(expected.getInt("marks"), actualDb.getInt("marks"));
                 assertThat(actualDb.getTimestamp("timestamp").toInstant())
                     .isCloseTo(expected.getString("timestamp"), within(5, ChronoUnit.SECONDS));
@@ -317,21 +323,77 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
     @Nested
     class GetAttempts {
+        private static final String NO_PERMISSION_MSG = "You do not have the permissions to complete this action.";
+
         @Nested
-        class RightsCheck {
+        class AuthorisationCheck {
             @Test
             public void notLoggedIn_Returns401() throws Exception {
                 var response = testServer().client().get("/skills/attempts/30");
                 response.assertError("You must be logged in to access this resource.", Response.Status.UNAUTHORIZED);
             }
+
+            @Test void studentViewsOtherStudent_Returns403() throws Exception {
+                var response = testServer().client()
+                        .loginAs(integrationTestUsers.ALICE_STUDENT)
+                        .get(String.format("/skills/attempts/%s", BOB_STUDENT_ID));
+                response.assertError(NO_PERMISSION_MSG, Response.Status.FORBIDDEN);
+            }
+
+            @Test void teacherViewsUnlinkedStudent_Returns403() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.DAVE_TEACHER)
+                    .get(String.format("/skills/attempts/%s", ALICE_STUDENT_ID));
+                response.assertError(NO_PERMISSION_MSG, Response.Status.FORBIDDEN);
+            }
+
+            @Test void studentViewsOwn_Returns200() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.ALICE_STUDENT)
+                    .get(String.format("/skills/attempts/%s", ALICE_STUDENT_ID));
+                response.assertEntityReturned("OK");
+            }
+
+            @Test void teacherViewsLinkedStudent_Returns200() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.DAVE_TEACHER)
+                    .get(String.format("/skills/attempts/%d", BOB_STUDENT_ID));
+                response.assertEntityReturned("OK");
+            }
+        }
+
+        @Nested
+        class UserIdCheck {
+            @Test void nonNumeric_Returns400() throws Exception {
+                var response = testServer().client().get("/skills/attempts/12str");
+                response.assertError("Endpoint not found", Response.Status.NOT_FOUND);
+            }
+
+            @Test void float_Returns400() throws Exception {
+                var response = testServer().client().get("/skills/attempts/12.23");
+                response.assertError("Endpoint not found", Response.Status.NOT_FOUND);
+            }
+
+            @Test void oversized_Returns400() throws Exception {
+                var response = testServer().client().get("/skills/attempts/9223372036854775808"); // Long.MAX_VALUE + 1
+                response.assertError("Endpoint not found", Response.Status.NOT_FOUND);
+            }
+
+            @Test void nonExistentId_Returns403() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.DAVE_TEACHER)
+                    .get("/skills/attempts/100");
+                response.assertError(NO_PERMISSION_MSG, Response.Status.FORBIDDEN);
+            }
         }
 
         @Test
         public void happy_happy() throws Exception {
-            var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT).get(String.format("/skills/attempts/{}", TEST_STUDENT_ID));
+            var response = testServer().client()
+                .loginAs(integrationTestUsers.TEST_STUDENT)
+                .get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
             response.assertEntityReturned("OK");
         }
-
     }
 
     private TestServer testServer() throws Exception {
@@ -342,7 +404,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         var sm = new SkillsAttemptManager(properties, new PgSkillsAttemptPersistenceManager(postgresSqlDb));
         return startServer(
             new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
-            new SkillsFacade(properties, userAccountManager, logManager, cm, sm)
+            new SkillsFacade(properties, userAccountManager, logManager, cm, sm, userAssociationManager)
         );
     }
 }

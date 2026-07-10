@@ -12,7 +12,10 @@ import uk.ac.cam.cl.dtg.isaac.dto.AnvilMarkingRequestDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.AnvilPayloadDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.users.RegisteredUserDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
+import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
@@ -42,6 +45,8 @@ public class SkillsFacade extends AbstractIsaacFacade {
     private final UserAccountManager userManager;
     private final GitContentManager contentManager;
     private final SkillsAttemptManager skillsAttemptManager;
+    private final UserAssociationManager userAssociationManager;
+
 
     /**
      * Constructor.
@@ -49,11 +54,13 @@ public class SkillsFacade extends AbstractIsaacFacade {
     @Inject
     public SkillsFacade(final AbstractConfigLoader properties, final UserAccountManager userManager,
                         final ILogManager logManager, final GitContentManager contentManager,
-                        final SkillsAttemptManager skillsAttemptManager) {
+                        final SkillsAttemptManager skillsAttemptManager,
+                        final UserAssociationManager userAssociationManager) {
         super(properties, logManager);
         this.userManager = userManager;
         this.contentManager = contentManager;
         this.skillsAttemptManager = skillsAttemptManager;
+        this.userAssociationManager = userAssociationManager;
     }
 
     /**
@@ -115,18 +122,42 @@ public class SkillsFacade extends AbstractIsaacFacade {
         }
     }
 
+    /**
+     * Endpoint to server a user's skill attempt history.
+     *
+     * @param request
+     *            - the servlet request so we can find out if it is a known user.
+     * @param userIdOfInterest
+     *            - the user whose history we're viewing
+     */
     @GET
     @Path("/attempts/{userId}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAttempts(@Context final HttpServletRequest request,
-                                @PathParam("userId") final String appId) {
+                                @PathParam("userId") final Long userIdOfInterest) {
         try {
             RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+            UserSummaryDTO userOfInterestSummaryObject = userManager.convertToUserSummaryObject(
+                userManager.getUserDTOById(userIdOfInterest)
+            );
+
+            // decide if the user is allowed to view this data. If user isn't viewing their own data, user viewing
+            // must have a valid connection with the user of interest and be at least a teacher.
+            if (!currentUser.getId().equals(userIdOfInterest)
+                    && !userAssociationManager.hasTeacherPermission(currentUser, userOfInterestSummaryObject)) {
+                return SegueErrorResponse.getIncorrectRoleResponse();
+            }
 
             return Response.ok("OK").build();
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
+        } catch (final NoUserException e) {
+            return SegueErrorResponse.getIncorrectRoleResponse();
+        } catch (final SegueDatabaseException e) {
+            var error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong.");
+            log.error(error.getErrorMessage());
+            return error.toResponse();
         }
     }
 }
