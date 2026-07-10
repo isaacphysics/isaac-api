@@ -22,6 +22,7 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -111,6 +112,21 @@ public class SkillsFacade extends AbstractIsaacFacade {
             var error = new SegueErrorResponse(Status.NOT_FOUND, "Error locating the version requested.", e);
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
+        }
+    }
+
+    @GET
+    @Path("/attempts/{userId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAttempts(@Context final HttpServletRequest request,
+                                @PathParam("userId") final String appId) {
+        try {
+            RegisteredUserDTO currentUser = userManager.getCurrentRegisteredUser(request);
+
+            return Response.ok("OK").build();
+        } catch (final NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
         }
     }
 }

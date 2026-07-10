@@ -315,6 +315,24 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
     }
 
+    @Nested
+    class GetAttempts {
+        @Nested
+        class RightsCheck {
+            @Test
+            public void notLoggedIn_Returns401() throws Exception {
+                var response = testServer().client().get("/skills/attempts/30");
+                response.assertError("You must be logged in to access this resource.", Response.Status.UNAUTHORIZED);
+            }
+        }
+
+        @Test
+        public void happy_happy() throws Exception {
+            var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT).get(String.format("/skills/attempts/{}", TEST_STUDENT_ID));
+            response.assertEntityReturned("OK");
+        }
+
+    }
 
     private TestServer testServer() throws Exception {
         return testServer(contentManager);
