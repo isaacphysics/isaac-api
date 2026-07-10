@@ -990,6 +990,14 @@ public class ContentIndexer {
                 }
             }
         }
+
+        if (content instanceof IsaacQuestionPage qp
+                && content.getChildren().stream()
+                .allMatch(child -> !(child instanceof Question) || child instanceof IsaacQuickQuestion)) {
+            this.registerContentProblem(content, "Question page: " + qp.getId() + " found without any answerable questions.",
+                    indexProblemCache);
+        }
+
         if (content instanceof Question && content.getId() == null) {
             this.registerContentProblem(content, "Question: " + content.getTitle() + " in " + content.getCanonicalSourceFile()
                     + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
