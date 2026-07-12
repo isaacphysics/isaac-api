@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
@@ -16,7 +17,9 @@ import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -324,6 +327,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class GetAttempts {
         private static final String NO_PERMISSION_MSG = "You do not have the permissions to complete this action.";
+        private static final List<Long> NO_ATTEMPTS_ANY_MONTH = ImmutableList.of(
+            0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
 
         @Nested
         class AuthorisationCheck {
@@ -351,14 +356,14 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
                 var response = testServer().client()
                     .loginAs(integrationTestUsers.ALICE_STUDENT)
                     .get(String.format("/skills/attempts/%s", ALICE_STUDENT_ID));
-                response.assertEntityReturned("OK");
+                assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
             }
 
             @Test void teacherViewsLinkedStudent_Returns200() throws Exception {
                 var response = testServer().client()
                     .loginAs(integrationTestUsers.DAVE_TEACHER)
                     .get(String.format("/skills/attempts/%d", BOB_STUDENT_ID));
-                response.assertEntityReturned("OK");
+                assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
             }
         }
 
@@ -388,11 +393,19 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test
-        public void happy_happy() throws Exception {
+        public void noAttempts_returnsPaddedMathsPracticeForPastYear() throws Exception {
             var response = testServer().client()
                 .loginAs(integrationTestUsers.TEST_STUDENT)
                 .get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
-            response.assertEntityReturned("OK");
+            assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
+        }
+
+        private void assertPastYearsMonthlyMathsResults(final TestResponse resp, final List<Long> expectations) {
+            var mentalMathsResults = resp.readEntityAsJson().getJSONObject("mental_maths_overall");
+            for (int i = 0; i < expectations.size(); i++) {
+                var key = LocalDate.now().withDayOfMonth(1).minusMonths(i).toString();
+                assertEquals(expectations.get(i), mentalMathsResults.getLong(key), key);
+            }
         }
     }
 

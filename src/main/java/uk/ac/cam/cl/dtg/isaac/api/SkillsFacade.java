@@ -34,7 +34,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Skills Facade, supports interaction related to the Isaac Skill Practice apps. */
 @Path("/skills")
@@ -90,13 +93,13 @@ public class SkillsFacade extends AbstractIsaacFacade {
                 return error.toResponse();
             }
 
-            if (!skillsAttemptManager.isHmacValid(markingRequest)) {
+            if (!skillsAttemptManager.isAttemptHmacValid(markingRequest)) {
                 var error = new SegueErrorResponse(Status.BAD_REQUEST, "Invalid HMAC signature.");
                 log.warn(error.getErrorMessage());
                 return error.toResponse();
             }
 
-            List<AnvilPayloadDTO> payloadDTOs = skillsAttemptManager.parsePayload(
+            List<AnvilPayloadDTO> payloadDTOs = skillsAttemptManager.parseAttemptsPayload(
                 markingRequest.getPayload(), currentUser.getId(), appId);
             skillsAttemptManager.recordAttempt(payloadDTOs);
 
@@ -123,7 +126,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
     }
 
     /**
-     * Endpoint to server a user's skill attempt history.
+     * Endpoint to serve a user's skill attempt history. For now, it's hardcoded to just the mental maths app.
      *
      * @param request
      *            - the servlet request so we can find out if it is a known user.
@@ -149,14 +152,18 @@ public class SkillsFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
-            return Response.ok("OK").build();
+            HashMap<String, Map<LocalDate, Long>> resultsMap = new HashMap<>();
+            resultsMap.put("mental_maths_overall", skillsAttemptManager.getMentalMathsAttempts(
+                LocalDate.now().minusYears(1), LocalDate.now()
+            ));
+            return Response.ok(resultsMap).build();
         } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
         } catch (final NoUserException e) {
             return SegueErrorResponse.getIncorrectRoleResponse();
         } catch (final SegueDatabaseException e) {
             var error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Something went wrong.");
-            log.error(error.getErrorMessage());
+            log.error(error.getErrorMessage(), e);
             return error.toResponse();
         }
     }

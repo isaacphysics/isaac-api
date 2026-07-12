@@ -8,10 +8,15 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** PostgreSQL-backed persistence for Anvil skills question attempts. */
 public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersistenceManager {
@@ -53,6 +58,28 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
                 throw new DuplicateSkillsAttemptException(null);
             }
             throw new SegueDatabaseException("Something went wrong saving the attempt.");
+        }
+    }
+
+    @Override
+    public Map<LocalDate, Long> getMentalMathsAttempts(final LocalDate from, final LocalDate to)
+        throws SegueDatabaseException {
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("""
+                SELECT gen_date::DATE AS dt, 0 AS cnt
+                FROM generate_series(date_trunc('month', ?), ?, INTERVAL '1' MONTH) m(gen_date)"""
+             )
+        ) {
+            pst.setObject(1, from);
+            pst.setObject(2, to);
+            ResultSet results = pst.executeQuery();
+            HashMap<LocalDate, Long> resultsMap = new HashMap<>();
+            while (results.next()) {
+                resultsMap.put(LocalDate.parse(results.getString("dt")), results.getLong("cnt"));
+            }
+            return resultsMap;
+        } catch (final SQLException e) {
+            throw new SegueDatabaseException("Something went wrong querying the attempts.", e);
         }
     }
 }

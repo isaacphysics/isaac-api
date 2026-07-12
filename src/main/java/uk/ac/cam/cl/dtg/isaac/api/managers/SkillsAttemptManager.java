@@ -12,8 +12,10 @@ import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.security.MessageDigest;
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -47,7 +49,7 @@ public class SkillsAttemptManager {
      * @param dto - the parsed marking request
      * @return whether the hmac was valid
      */
-    public boolean isHmacValid(final AnvilMarkingRequestDTO dto) {
+    public boolean isAttemptHmacValid(final AnvilMarkingRequestDTO dto) {
         String expected = UserAuthenticationManager.calculateHMAC(hmacSecret, dto.getPayload());
         return MessageDigest.isEqual(expected.getBytes(), dto.getHmac().getBytes());
     }
@@ -60,7 +62,7 @@ public class SkillsAttemptManager {
      * @param appId      - the app ID from the URL, which must match the payload's skill_id
      * @throws InvalidAnvilMarkingRequestException if the payload is malformed or any validation fails
      */
-    public List<AnvilPayloadDTO> parsePayload(
+    public List<AnvilPayloadDTO> parseAttemptsPayload(
         final String payloadStr, final long userId, final String appId
     ) throws InvalidAnvilMarkingRequestException {
         try {
@@ -93,5 +95,17 @@ public class SkillsAttemptManager {
     public void recordAttempt(final List<AnvilPayloadDTO> attempt)
             throws DuplicateSkillsAttemptException, SegueDatabaseException {
         persistence.registerSkillsAttempt(attempt);
+    }
+
+    /**
+     * Returns a users attempts in the mental maths skills app.
+     *
+     * @param from - return attempts starting from this date (inclusive)
+     *
+     * @param to - return attempts until this date (exclusive)
+     */
+    public Map<LocalDate, Long> getMentalMathsAttempts(final LocalDate from, final LocalDate to)
+        throws SegueDatabaseException {
+        return persistence.getMentalMathsAttempts(from, to);
     }
 }
