@@ -66,8 +66,22 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
         throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement("""
-                SELECT gen_date::DATE AS dt, 0 AS cnt
-                FROM generate_series(date_trunc('month', ?), ?, INTERVAL '1' MONTH) m(gen_date)"""
+                WITH dates AS (
+                    SELECT gen_date::DATE AS dt
+                    FROM generate_series(date_trunc('month', ?), ?, INTERVAL '1' MONTH) m(gen_date)
+                ), attempts AS (
+                    SELECT
+                        DATE_TRUNC('month', timestamp::DATE) AS dt,
+                        COUNT(1) AS cnt
+                    FROM skills_question_attempts AS qa
+                    GROUP BY dt
+                )
+                SELECT
+                    dates.dt AS dt,
+                    COALESCE(attempts.cnt, 0) AS cnt
+                FROM dates
+                LEFT JOIN attempts USING (dt)
+                """
              )
         ) {
             pst.setObject(1, from);

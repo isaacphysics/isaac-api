@@ -25,7 +25,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class SkillsAttemptManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final int MAX_PAYLOAD_LENGTH = 30 * 1024; // about 30 kilobytes for English payloads, even Unicode
-    public static final long FIVE_MINUTES_IN_MILLIS = 300_000L;
+    public static long FIVE_MINUTES_IN_MILLIS = 300_000L;
 
     private final String hmacSecret;
     private final ISkillsAttemptPersistenceManager persistence;
