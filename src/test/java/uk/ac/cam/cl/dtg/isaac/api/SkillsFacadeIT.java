@@ -401,10 +401,10 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         private void assertPastYearsMonthlyMathsResults(final TestResponse resp, final List<Long> expectations) {
-            var mentalMathsResults = resp.readEntityAsJson().getJSONObject("mental_maths_overall");
+            JSONObject mentalMathsResults = resp.readEntityAsJson().getJSONObject("mental_maths_overall");
             assertEquals(12, mentalMathsResults.keySet().size(), "Expected 12 years worth of mental maths results");
             for (int i = 0; i < expectations.size(); i++) {
-                var key = LocalDate.now().withDayOfMonth(1).minusMonths(i).toString();
+                String key = LocalDate.now().withDayOfMonth(1).minusMonths(i).toString();
                 assertEquals(expectations.get(i), mentalMathsResults.getLong(key), key);
             }
         }

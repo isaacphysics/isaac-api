@@ -75,7 +75,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
             ResultSet results = pst.executeQuery();
             HashMap<LocalDate, Long> resultsMap = new HashMap<>();
             while (results.next()) {
-                resultsMap.put(LocalDate.parse(results.getString("dt")), results.getLong("cnt"));
+                resultsMap.put(results.getObject("dt", LocalDate.class), results.getLong("cnt"));
             }
             return resultsMap;
         } catch (final SQLException e) {
