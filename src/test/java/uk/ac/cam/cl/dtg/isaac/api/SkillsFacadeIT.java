@@ -330,8 +330,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     @Nested
     class GetAttempts {
         private static final String NO_PERMISSION_MSG = "You do not have the permissions to complete this action.";
-        private static final List<Long> NO_ATTEMPTS_ANY_MONTH = ImmutableList.of(
-            0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L);
+        private static final List<Integer> NO_ATTEMPTS_ANY_MONTH = ImmutableList.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
         @Nested
         class AuthorisationCheck {
@@ -404,25 +403,35 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test
-        public void twoAttemptsWithinPeriod_returnsBothAttempts() throws Exception {
-            registerCleanup(() -> {
-                deleteSkillsAttempts();
-                SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 300_000L;
-            });
-            SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 365L * 24 * 60 * 60 * 1000;
+        public void attemptsWithinPeriod_bothCounted() throws Exception {
+            prepare();
             var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                                                  .put("timestamp", Instant.now())),
+                  .put("timestamp", Instant.now())),
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                                                  .put("timestamp",
-                                                      LocalDate.now().withDayOfMonth(1).minusMonths(11) + "T00:00:00Z")
+                  .put("timestamp", LocalDate.now().withDayOfMonth(1).minusMonths(11) + "T00:00:00Z")
             ))).readEntity(String.class);
 
             var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
 
-            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1L, 0L, 0L, 0L, 0L, 0L,
-                0L, 0L, 0L, 0L, 0L, 1L));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1));
+        }
+
+        @Test
+        public void attemptBeforeFirstDayOf12thMonth_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var firstDayOf12thMonth = LocalDate.now().withDayOfMonth(1).minusMonths(11);
+            studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp",  firstDayOf12thMonth + "T00:00:00Z")),
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", firstDayOf12thMonth.minusDays(1) + "T00:00:00Z")
+            ))).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1));
         }
 
         private static void deleteSkillsAttempts() throws SQLException {
@@ -432,16 +441,24 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             }
         }
 
+        private void prepare() {
+            registerCleanup(() -> {
+                deleteSkillsAttempts();
+                SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 300_000L;
+            });
+            SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 365L * 24 * 60 * 60 * 1000;
+        }
+
         /*
          * On "2026-07-10", assertPastYearsMonthlyMathsResults(resp, [0, 0, ..., 0]) checks that the response is
          * { "mental_maths_overall": { "2026-07-01: 0, 2026-06-01: 0, ... 2025-08-01: 0" } }
          */
-        private void assertPastYearsMonthlyMathsResults(final TestResponse resp, final List<Long> expectations) {
+        private void assertPastYearsMonthlyMathsResults(final TestResponse resp, final List<Integer> expectations) {
             JSONObject mentalMathsResults = resp.readEntityAsJson().getJSONObject("mental_maths_overall");
             assertEquals(12, mentalMathsResults.keySet().size(), "Expected 12 years worth of mental maths results");
             for (int i = 0; i < expectations.size(); i++) {
                 String key = LocalDate.now().withDayOfMonth(1).minusMonths(i).toString();
-                assertEquals(expectations.get(i), mentalMathsResults.getLong(key), key);
+                assertEquals(expectations.get(i), mentalMathsResults.getInt(key), key);
             }
         }
     }
