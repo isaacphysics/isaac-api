@@ -73,7 +73,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
                         DATE_TRUNC('month', timestamp::DATE) AS dt,
                         COUNT(1) AS cnt
                     FROM skills_question_attempts AS qa
-                    WHERE user_id = ?
+                    WHERE user_id = ? AND timestamp >= ?
                     GROUP BY dt
                 )
                 SELECT
@@ -87,6 +87,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
             pst.setObject(1, from);
             pst.setObject(2, to);
             pst.setLong(3, userId);
+            pst.setObject(4, from);
             ResultSet results = pst.executeQuery();
             HashMap<LocalDate, Long> resultsMap = new HashMap<>();
             while (results.next()) {
