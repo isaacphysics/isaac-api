@@ -98,14 +98,14 @@ public class SkillsAttemptManager {
     }
 
     /**
-     * Returns a users attempts in the mental maths skills app.
+     * Returns a user's attempts in the mental maths skills app.
      *
      * @param from - return attempts starting from this date (inclusive)
      *
      * @param to - return attempts until this date (exclusive)
      */
-    public Map<LocalDate, Long> getMentalMathsAttempts(final LocalDate from, final LocalDate to)
+    public Map<LocalDate, Long> getMentalMathsAttempts(final Long userId, final LocalDate from, final LocalDate to)
         throws SegueDatabaseException {
-        return persistence.getMentalMathsAttempts(from, to);
+        return persistence.getMentalMathsAttempts(userId, from, to);
     }
 }

@@ -13,6 +13,6 @@ public interface ISkillsAttemptPersistenceManager {
     void registerSkillsAttempt(final List<AnvilPayloadDTO> attempt)
         throws DuplicateSkillsAttemptException, SegueDatabaseException;
 
-    Map<LocalDate, Long> getMentalMathsAttempts(final LocalDate from, final LocalDate to)
+    Map<LocalDate, Long> getMentalMathsAttempts(final Long userId, final LocalDate from, final LocalDate to)
         throws SegueDatabaseException;
 }

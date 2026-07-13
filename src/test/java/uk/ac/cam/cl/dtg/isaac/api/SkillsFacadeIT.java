@@ -440,11 +440,11 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
             studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
-                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                            .put("timestamp",  firstDayOfMonth + "T00:00:00Z")),
-                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                            .put("timestamp", firstDayOfMonth.plusMonths(1).minusDays(1) + "T00:00:00Z")
-                    ))).readEntity(String.class);
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp",  firstDayOfMonth + "T00:00:00Z")),
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", firstDayOfMonth.plusMonths(1).minusDays(1) + "T00:00:00Z")
+            ))).readEntity(String.class);
 
             var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
             assertPastYearsMonthlyMathsResults(response, ImmutableList.of(2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
@@ -456,14 +456,27 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var futureMonth = LocalDate.now().withDayOfMonth(1).plusMonths(1);
             studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
-                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                            .put("timestamp", futureMonth + "T00:00:00Z")),
-                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                            .put("timestamp", futureMonth.minusDays(1) + "T00:00:00Z")
-                    ))).readEntity(String.class);
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", futureMonth + "T00:00:00Z")),
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", futureMonth.minusDays(1) + "T00:00:00Z")
+            ))).readEntity(String.class);
 
             var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
             assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        }
+
+        @Test public void attemptsByOtherUser_notCounted() throws Exception {
+            prepare();
+            testServer().client().loginAs(integrationTestUsers.ALICE_STUDENT)
+                .post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", ALICE_STUDENT_ID)
+                        .put("timestamp", LocalDate.now().withDayOfMonth(1) + "T00:00:00Z"))
+                )).readEntity(String.class);
+
+            var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+                .get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
         }
 
         private static void deleteSkillsAttempts() throws SQLException {

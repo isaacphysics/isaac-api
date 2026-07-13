@@ -154,7 +154,7 @@ public class SkillsFacade extends AbstractIsaacFacade {
 
             HashMap<String, Map<LocalDate, Long>> resultsMap = new HashMap<>();
             resultsMap.put("mental_maths_overall", skillsAttemptManager.getMentalMathsAttempts(
-                LocalDate.now().withDayOfMonth(1).minusMonths(11), LocalDate.now()
+                userIdOfInterest, LocalDate.now().withDayOfMonth(1).minusMonths(11), LocalDate.now()
             ));
             return Response.ok(resultsMap).build();
         } catch (final NoUserLoggedInException e) {

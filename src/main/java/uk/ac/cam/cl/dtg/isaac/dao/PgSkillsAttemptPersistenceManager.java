@@ -62,7 +62,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
     }
 
     @Override
-    public Map<LocalDate, Long> getMentalMathsAttempts(final LocalDate from, final LocalDate to)
+    public Map<LocalDate, Long> getMentalMathsAttempts(final Long userId, final LocalDate from, final LocalDate to)
         throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement("""
@@ -73,6 +73,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
                         DATE_TRUNC('month', timestamp::DATE) AS dt,
                         COUNT(1) AS cnt
                     FROM skills_question_attempts AS qa
+                    WHERE user_id = ?
                     GROUP BY dt
                 )
                 SELECT
@@ -85,6 +86,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
         ) {
             pst.setObject(1, from);
             pst.setObject(2, to);
+            pst.setLong(3, userId);
             ResultSet results = pst.executeQuery();
             HashMap<LocalDate, Long> resultsMap = new HashMap<>();
             while (results.next()) {
