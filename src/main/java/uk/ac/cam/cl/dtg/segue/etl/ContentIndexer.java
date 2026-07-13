@@ -1007,10 +1007,10 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacQuestionPage qp
-                && content.getChildren().stream()
-                .allMatch(child -> !(child instanceof Question) || child instanceof IsaacQuickQuestion)) {
-            this.registerContentProblem(content, "Question page: " + qp.getId() + " found without any answerable questions.",
-                    indexProblemCache);
+                && flattenContentObjects(content).stream()
+                .allMatch(c -> !(c instanceof Question) || c instanceof IsaacQuickQuestion)) {
+            this.registerContentProblem(content, "Question page: " + qp.getId() + " found without any markable questions."
+                    + "Question progress will not be recorded correctly.", indexProblemCache);
         }
 
         if (content instanceof Question && content.getId() == null) {
