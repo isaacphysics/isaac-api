@@ -75,7 +75,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
                         DATE_TRUNC('month', timestamp::DATE) AS dt,
                         COUNT(1) AS cnt
                     FROM skills_question_attempts
-                    WHERE user_id = ? AND timestamp >= ? AND skill_id = ?
+                    WHERE user_id = ? AND timestamp >= ? AND skill_id = ? AND LENGTH(question_attempt->>'result') > 0
                     GROUP BY dt
                 )
                 SELECT
