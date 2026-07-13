@@ -434,6 +434,38 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             assertPastYearsMonthlyMathsResults(response, ImmutableList.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1));
         }
 
+        @Test
+        public void futureAttemptsWithinMonth_counted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
+            studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                            .put("timestamp",  firstDayOfMonth + "T00:00:00Z")),
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                            .put("timestamp", firstDayOfMonth.plusMonths(1).minusDays(1) + "T00:00:00Z")
+                    ))).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        }
+
+        @Test
+        public void attemptsInFutureMonth_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var futureMonth = LocalDate.now().withDayOfMonth(1).plusMonths(1);
+            studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                            .put("timestamp", futureMonth + "T00:00:00Z")),
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                            .put("timestamp", futureMonth.minusDays(1) + "T00:00:00Z")
+                    ))).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        }
+
         private static void deleteSkillsAttempts() throws SQLException {
             try (var conn = postgresSqlDb.getDatabaseConnection();
                  var pst = conn.prepareStatement("DELETE FROM public.skills_question_attempts WHERE TRUE;")) {
