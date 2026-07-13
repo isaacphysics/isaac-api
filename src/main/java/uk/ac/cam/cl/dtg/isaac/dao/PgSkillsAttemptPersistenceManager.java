@@ -20,6 +20,8 @@ import java.util.Map;
 
 /** PostgreSQL-backed persistence for Anvil skills question attempts. */
 public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersistenceManager {
+    private static final String MENTAL_MATHS_ID = "app_page_mental_maths_overall|0e184f9d-b619-4225-ac12-3c96d3c74046";
+
     private final PostgresSqlDb database;
 
     @Inject
@@ -72,8 +74,8 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
                     SELECT
                         DATE_TRUNC('month', timestamp::DATE) AS dt,
                         COUNT(1) AS cnt
-                    FROM skills_question_attempts AS qa
-                    WHERE user_id = ? AND timestamp >= ?
+                    FROM skills_question_attempts
+                    WHERE user_id = ? AND timestamp >= ? AND skill_id = ?
                     GROUP BY dt
                 )
                 SELECT
@@ -88,6 +90,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
             pst.setObject(2, to);
             pst.setLong(3, userId);
             pst.setObject(4, from);
+            pst.setString(5, MENTAL_MATHS_ID);
             ResultSet results = pst.executeQuery();
             HashMap<LocalDate, Long> resultsMap = new HashMap<>();
             while (results.next()) {

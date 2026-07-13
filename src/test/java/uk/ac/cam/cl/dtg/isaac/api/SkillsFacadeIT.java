@@ -43,7 +43,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     class AnswerQuestion {
         private static final String HMAC_SECRET = "integration-test-anvil-hmac-secret";
         private static final String HMAC_SHA_256 = "HmacSHA256";
-        private static final String VALID_APP_ID = validUrl().split("/")[2];
+        private static final String VALID_APP_ID = "app_page_mental_maths_overall|0e184f9d-b619-4225-ac12-3c96d3c74046";
         private static final String VALID_PAYLOAD = new JSONArray().put(validAttempt(null)).toString();
         private static final String VALID_BODY = validBody(validAttempt(null));
 
@@ -82,7 +82,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             @Test
             public void missingPayload_Returns400() throws Exception {
                 var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-                var response = client.post(validUrl(), "{}");
+                var response = client.post(validUrl(null), "{}");
                 response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
             }
 
@@ -90,7 +90,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             public void numericPayload_Returns400() throws Exception {
                 var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
                 var body = new JSONObject().put("payload", 123).put("hmac", sign(HMAC_SECRET, "123", HMAC_SHA_256));
-                var response = client.post(validUrl(), body);
+                var response = client.post(validUrl(null), body);
                 response.assertError("Invalid payload.", Response.Status.BAD_REQUEST);
             }
 
@@ -98,7 +98,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             public void extraAttribute_Returns400() throws Exception {
                 var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
                 var body = new JSONObject(validBody(validAttempt(null))).put("extra", "value");
-                var response = client.post(validUrl(), body);
+                var response = client.post(validUrl(null), body);
                 response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
             }
 
@@ -106,7 +106,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             public void oversizedPayload_Returns400() throws Exception {
                 var large = validAttempt(p -> p.put("question_attempt", "x".repeat(30 * 1024 + 1)));
                 var body = validBody(large);
-                var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT).post(validUrl(), body);
+                var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+                    .post(validUrl(null), body);
                 response.assertError("Payload too large.", Response.Status.BAD_REQUEST);
             }
         }
@@ -135,7 +136,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             ) throws Exception {
                 testServer().client()
                     .loginAs(integrationTestUsers.TEST_STUDENT)
-                    .post(validUrl(), body)
+                    .post(validUrl(null), body)
                     .assertError(expectedMessage, Response.Status.BAD_REQUEST);
             }
         }
@@ -204,7 +205,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             ) throws Exception {
                 testServer().client()
                     .loginAs(integrationTestUsers.TEST_STUDENT)
-                    .post(validUrl(), validBody(payload))
+                    .post(validUrl(null), validBody(payload))
                     .assertError(expectedMessage, Response.Status.BAD_REQUEST);
             }
 
@@ -219,8 +220,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void duplicateAttemptId_Returns409() throws Exception {
             var testBody = validBody(validAttempt(null));
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            client.post(validUrl(), testBody).readEntity(String.class);
-            client.post(validUrl(), testBody).assertError("Duplicate attempt ID.", Response.Status.CONFLICT);
+            client.post(validUrl(null), testBody).readEntity(String.class);
+            client.post(validUrl(null), testBody).assertError("Duplicate attempt ID.", Response.Status.CONFLICT);
         }
 
         @Test
@@ -228,7 +229,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var expectedAttempt = validAttempt(null);
             var actualReq = testServer().client()
                 .loginAs(integrationTestUsers.TEST_STUDENT)
-                .post(validUrl(), validBody(expectedAttempt))
+                .post(validUrl(null), validBody(expectedAttempt))
                 .readEntityAsJsonArray().getJSONObject(0);
 
             // assert there is exactly 1 row in the database
@@ -283,9 +284,12 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             return new GitContentManager(null, brokenProvider, mainMapper, contentMapper, properties);
         }
 
-        private static String validUrl() {
+        private static String validUrl(final String skillId) {
             try {
-                var skillsApp = elasticHelper.persistJSON(new JSONObject().put("type", "skillsApp"));
+                var skillsApp = elasticHelper.persistJSON(new JSONObject()
+                    .put("type", "skillsApp")
+                    .put("id", skillId == null ? VALID_APP_ID : skillId)
+                );
                 return "/skills/" + skillsApp.getString("id") + "/answer";
             } catch (final Exception e) {
                 throw new RuntimeException(e);
@@ -406,7 +410,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         public void attemptsWithinPeriod_bothCounted() throws Exception {
             prepare();
             var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
                   .put("timestamp", Instant.now())),
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
@@ -423,7 +427,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             prepare();
             var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var firstDayOf12thMonth = LocalDate.now().withDayOfMonth(1).minusMonths(11);
-            studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
                     .put("timestamp",  firstDayOf12thMonth + "T00:00:00Z")),
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
@@ -439,7 +443,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             prepare();
             var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
-            studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
                     .put("timestamp",  firstDayOfMonth + "T00:00:00Z")),
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
@@ -455,7 +459,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             prepare();
             var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var futureMonth = LocalDate.now().withDayOfMonth(1).plusMonths(1);
-            studentClient.post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
                     .put("timestamp", futureMonth + "T00:00:00Z")),
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
@@ -469,7 +473,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         @Test public void attemptsByOtherUser_notCounted() throws Exception {
             prepare();
             testServer().client().loginAs(integrationTestUsers.ALICE_STUDENT)
-                .post(AnswerQuestion.validUrl(), AnswerQuestion.validBody(
+                .post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                     AnswerQuestion.validAttempt(a -> a.put("user_id", ALICE_STUDENT_ID)
                         .put("timestamp", LocalDate.now().withDayOfMonth(1) + "T00:00:00Z"))
                 )).readEntity(String.class);
@@ -477,6 +481,24 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
             var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
                 .get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
             assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
+        }
+
+        @Test public void attemptsOtherThanMentalMaths_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            studentClient.post(AnswerQuestion.validUrl("irrelevant_app_id"), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                    .put("skill_id", "irrelevant_app_id"))
+            )).readEntity(String.class);
+            studentClient.post(AnswerQuestion.validUrl(AnswerQuestion.VALID_APP_ID), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                    .put("skill_id", AnswerQuestion.VALID_APP_ID))
+            )).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         }
 
         private static void deleteSkillsAttempts() throws SQLException {
