@@ -1009,7 +1009,7 @@ public class ContentIndexer {
         if (content instanceof IsaacQuestionPage qp
                 && flattenContentObjects(content).stream()
                 .allMatch(c -> !(c instanceof Question) || c instanceof IsaacQuickQuestion)) {
-            this.registerContentProblem(content, "Question page: " + qp.getId() + " found without any markable questions."
+            this.registerContentProblem(content, "Question page: " + qp.getId() + " found without any markable questions. "
                     + "Question progress will not be recorded correctly.", indexProblemCache);
         }
 
