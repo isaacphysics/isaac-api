@@ -43,7 +43,9 @@ public class ElasticSearchTestHelper {
 
     /** Indexes a raw JSON content object with a fixed ID of {@code "i1"} and returns it. */
     public JSONObject persistJSON(final JSONObject contentJSON) throws Exception {
-        contentJSON.put("id", "i1");
+        if (!contentJSON.has("id")) {
+            contentJSON.put("id", "i1");
+        }
         elasticSearchProvider.bulkIndexWithIDs(
             contentManager.getCurrentContentSHA(),
             "content",

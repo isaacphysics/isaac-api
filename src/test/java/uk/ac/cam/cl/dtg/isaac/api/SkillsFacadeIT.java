@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.shaded.com.google.common.collect.ImmutableList;
 import uk.ac.cam.cl.dtg.isaac.api.managers.SkillsAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
@@ -15,8 +16,11 @@ import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 
 import jakarta.ws.rs.core.Response;
+import java.sql.SQLException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -28,287 +32,527 @@ import static org.assertj.core.api.Assertions.within;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.ALICE_STUDENT_ID;
+import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.BOB_STUDENT_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.REGRESSION_TEST_PAGE_ID;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.TEST_STUDENT_ID;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
 public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
-    private static final String HMAC_SECRET = "integration-test-anvil-hmac-secret";
-    private static final String HMAC_SHA_256 = "HmacSHA256";
-    private static final String VALID_URL = validUrl();
-    private static final String VALID_APP_ID = VALID_URL.split("/")[2];
-    private static final String VALID_PAYLOAD = validPayload(null);
-    private static final String VALID_HMAC = sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256);
-    private static final JSONObject VALID_BODY = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC);
-
-    @Test
-    public void notLoggedIn_Returns401() throws Exception {
-        var response = testServer().client().post("/skills/unknown_app/answer", VALID_BODY);
-        response.assertError("You must be logged in to access this resource.", Response.Status.UNAUTHORIZED);
-    }
-
     @Nested
-    class AppIdCheck {
+    class AnswerQuestion {
+        private static final String HMAC_SECRET = "integration-test-anvil-hmac-secret";
+        private static final String HMAC_SHA_256 = "HmacSHA256";
+        private static final String VALID_APP_ID = "app_page_mental_maths_overall|0e184f9d-b619-4225-ac12-3c96d3c74046";
+        private static final String VALID_PAYLOAD = new JSONArray().put(validAttempt(null)).toString();
+        private static final String VALID_BODY = validBody(validAttempt(null));
+
         @Test
-        public void elasticsearchUnavailable_Returns404() throws Exception {
-            var client = testServer(brokenContentManager()).client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post("/skills/unknown_app/answer", VALID_BODY);
-            response.assertError("Error locating the version requested", Response.Status.NOT_FOUND);
+        public void notLoggedIn_Returns401() throws Exception {
+            var response = testServer().client().post("/skills/unknown_app/answer", VALID_BODY);
+            response.assertError("You must be logged in to access this resource.", Response.Status.UNAUTHORIZED);
+        }
+
+        @Nested
+        class AppIdCheck {
+            @Test
+            public void elasticsearchUnavailable_Returns404() throws Exception {
+                var client = testServer(brokenContentManager()).client().loginAs(integrationTestUsers.TEST_STUDENT);
+                var response = client.post("/skills/unknown_app/answer", VALID_BODY);
+                response.assertError("Error locating the version requested", Response.Status.NOT_FOUND);
+            }
+
+            @Test
+            public void unknownApp_Returns404() throws Exception {
+                var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+                var response = client.post("/skills/unknown_app/answer", VALID_BODY);
+                response.assertError("No skills app found for that id.", Response.Status.NOT_FOUND);
+            }
+
+            @Test
+            public void idMatchesNonApp_Returns404() throws Exception {
+                var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+                var response = client.post("/skills/" + REGRESSION_TEST_PAGE_ID + "/answer", VALID_BODY);
+                response.assertError("No skills app found for that id.", Response.Status.NOT_FOUND);
+            }
+        }
+
+        @Nested
+        class RequestPayloadCheck {
+            @Test
+            public void missingPayload_Returns400() throws Exception {
+                var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+                var response = client.post(validUrl(null), "{}");
+                response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
+            }
+
+            @Test
+            public void numericPayload_Returns400() throws Exception {
+                var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+                var body = new JSONObject().put("payload", 123).put("hmac", sign(HMAC_SECRET, "123", HMAC_SHA_256));
+                var response = client.post(validUrl(null), body);
+                response.assertError("Invalid payload.", Response.Status.BAD_REQUEST);
+            }
+
+            @Test
+            public void extraAttribute_Returns400() throws Exception {
+                var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+                var body = new JSONObject(validBody(validAttempt(null))).put("extra", "value");
+                var response = client.post(validUrl(null), body);
+                response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
+            }
+
+            @Test
+            public void oversizedPayload_Returns400() throws Exception {
+                var large = validAttempt(p -> p.put("question_attempt", "x".repeat(30 * 1024 + 1)));
+                var body = validBody(large);
+                var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+                    .post(validUrl(null), body);
+                response.assertError("Payload too large.", Response.Status.BAD_REQUEST);
+            }
+        }
+
+        @Nested
+        class HmacVerification {
+            static Stream<Arguments> invalidBodies() {
+                return Stream.of(
+                    Arguments.of("missing hmac", new JSONObject().put("payload", VALID_PAYLOAD),
+                        "Invalid JSON provided!"),
+                    Arguments.of("invalid hmac", new JSONObject().put("payload", VALID_PAYLOAD)
+                        .put("hmac", "not-a-valid-signature"), "Invalid HMAC signature."),
+                    Arguments.of("wrong secret", new JSONObject().put("payload", VALID_PAYLOAD)
+                        .put("hmac", sign("wrong-secret", VALID_PAYLOAD, HMAC_SHA_256)), "Invalid HMAC signature"),
+                    Arguments.of("tampered payload", new JSONObject().put("payload", "tampered_payload")
+                        .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, HMAC_SHA_256)), "Invalid HMAC signature."),
+                    Arguments.of("wrong algorithm", new JSONObject().put("payload", VALID_PAYLOAD)
+                        .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, "HmacMD5")), "Invalid HMAC signature.")
+                );
+            }
+
+            @ParameterizedTest(name = "{0}")
+            @MethodSource("invalidBodies")
+            public void invalidBody_Returns400(
+                final String name, final JSONObject body, final String expectedMessage
+            ) throws Exception {
+                testServer().client()
+                    .loginAs(integrationTestUsers.TEST_STUDENT)
+                    .post(validUrl(null), body)
+                    .assertError(expectedMessage, Response.Status.BAD_REQUEST);
+            }
+        }
+
+        @Nested
+        class PayloadContentCheck {
+            static String MSG_IP = "Invalid payload.";
+
+            static Stream<Arguments> invalidPayloads() {
+                var s = Stream.<Arguments>builder();
+
+                // id
+                addNonEmptyCasesFor("id", s);
+                s.add(Arguments.of("invalid id", validAttempt(p -> p.put("id", "not-uuid")), MSG_IP));
+
+                // user_id
+                addNonEmptyCasesFor("user_id", s);
+                s.add(Arguments.of("non-numeric user_id", validAttempt(p -> p.put("user_id", "ab")), MSG_IP));
+                s.add(Arguments.of("wrong user_id", validAttempt(p -> p.put("user_id", TEST_STUDENT_ID + 1)),
+                    "Payload user_id does not match session"));
+
+                // skill_assignment_id
+                s.add(Arguments.of("missing skill_assignment_id", validAttempt(p -> p.remove("skill_assignment_id")),
+                    MSG_IP));
+                s.add(Arguments.of("non-null skill_assignment_id",
+                    validAttempt(p -> p.put("skill_assignment_id", "some_id")), MSG_IP));
+
+                // skill_id
+                addNonEmptyCasesFor("skill_id", s);
+                s.add(Arguments.of("wrong skill_id", validAttempt(p -> p.put("skill_id", "wrong_skill_id")),
+                    "Payload skill_id does not match app"));
+
+                // subskill_id
+                addNonEmptyCasesFor("subskill_id", s);
+
+                // question
+                addNonEmptyCasesFor("question", s);
+                s.add(Arguments.of("invalid question JSON, str", validAttempt(p -> p.put("question", "ab")), MSG_IP));
+                s.add(Arguments.of("invalid question JSON, number", validAttempt(p -> p.put("question", 1)), MSG_IP));
+
+                // question_attempt
+                addNonEmptyCasesFor("question_attempt", s);
+                s.add(Arguments.of("invalid attempts JSON", validAttempt(p -> p.put("question_attempt", "a")), MSG_IP));
+
+                // marks
+                addNonEmptyCasesFor("marks", s);
+                s.add(Arguments.of("invalid mark 2", validAttempt(p -> p.put("marks", 2)), MSG_IP));
+                s.add(Arguments.of("invalid mark -0.4", validAttempt(p -> p.put("marks", -0.4)), MSG_IP));
+
+                // timestamp
+                addNonEmptyCasesFor("timestamp", s);
+                s.add(Arguments.of("invalid timestamp", validAttempt(p -> p.put("timestamp", "n/d")), MSG_IP));
+                s.add(Arguments.of("expired timestamp", validAttempt(p -> p.put("timestamp", "2022-01-01T13:00:00Z")),
+                    "Payload timestamp is outside the allowed window"));
+
+                // other cases
+                s.add(Arguments.of("extra value", validAttempt(p -> p.put("extra", "value")), MSG_IP));
+
+                return s.build();
+            }
+
+            @ParameterizedTest(name = "{0}")
+            @MethodSource("invalidPayloads")
+            public void invalidPayload_Returns400(
+                final String name, final JSONObject payload, final String expectedMessage
+            ) throws Exception {
+                testServer().client()
+                    .loginAs(integrationTestUsers.TEST_STUDENT)
+                    .post(validUrl(null), validBody(payload))
+                    .assertError(expectedMessage, Response.Status.BAD_REQUEST);
+            }
+
+            private static void addNonEmptyCasesFor(final String fieldName, final Stream.Builder<Arguments> s) {
+                s.add(Arguments.of("missing " + fieldName, validAttempt(p -> p.remove(fieldName)), MSG_IP));
+                s.add(Arguments.of("null " + fieldName, validAttempt(p -> p.put(fieldName, JSONObject.NULL)), MSG_IP));
+                s.add(Arguments.of("empty " + fieldName, validAttempt(p -> p.put(fieldName, "")), MSG_IP));
+            }
         }
 
         @Test
-        public void unknownApp_Returns404() throws Exception {
+        public void duplicateAttemptId_Returns409() throws Exception {
+            var testBody = validBody(validAttempt(null));
             var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post("/skills/unknown_app/answer", VALID_BODY);
-            response.assertError("No skills app found for that id.", Response.Status.NOT_FOUND);
+            client.post(validUrl(null), testBody).readEntity(String.class);
+            client.post(validUrl(null), testBody).assertError("Duplicate attempt ID.", Response.Status.CONFLICT);
         }
 
         @Test
-        public void idMatchesNonApp_Returns404() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post("/skills/" + REGRESSION_TEST_PAGE_ID + "/answer", VALID_BODY);
-            response.assertError("No skills app found for that id.", Response.Status.NOT_FOUND);
-        }
-    }
-
-    @Nested
-    class RequestPayloadCheck {
-        @Test
-        public void missingPayload_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var response = client.post(VALID_URL, "{}");
-            response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void numericPayload_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var body = new JSONObject().put("payload", 123).put("hmac", sign(HMAC_SECRET, "123", HMAC_SHA_256));
-            var response = client.post(VALID_URL, body);
-            response.assertError("Invalid payload.", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void extraAttribute_Returns400() throws Exception {
-            var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-            var body = new JSONObject().put("payload", VALID_PAYLOAD).put("hmac", VALID_HMAC).put("extra", "value");
-            var response = client.post(VALID_URL, body);
-            response.assertError("Invalid JSON provided!", Response.Status.BAD_REQUEST);
-        }
-
-        @Test
-        public void oversizedPayload_Returns400() throws Exception {
-            var large = validPayload(p -> p.put("question_attempt", "x".repeat(30 * 1024 + 1)));
-            var body = new JSONObject().put("payload", large).put("hmac", sign(HMAC_SECRET, large, HMAC_SHA_256));
-            var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT).post(VALID_URL, body);
-            response.assertError("Payload too large.", Response.Status.BAD_REQUEST);
-        }
-    }
-
-    @Nested
-    class HmacVerification {
-        static Stream<Arguments> invalidBodies() {
-            return Stream.of(
-                Arguments.of("missing hmac", new JSONObject().put("payload", VALID_PAYLOAD),
-                    "Invalid JSON provided!"),
-                Arguments.of("invalid hmac", new JSONObject().put("payload", VALID_PAYLOAD)
-                    .put("hmac", "not-a-valid-signature"), "Invalid HMAC signature."),
-                Arguments.of("wrong secret", new JSONObject().put("payload", VALID_PAYLOAD)
-                    .put("hmac", sign("wrong-secret", VALID_PAYLOAD, HMAC_SHA_256)), "Invalid HMAC signature."),
-                Arguments.of("tampered payload", new JSONObject().put("payload", "tampered_payload")
-                    .put("hmac", VALID_HMAC), "Invalid HMAC signature."),
-                Arguments.of("wrong algorithm", new JSONObject().put("payload", VALID_PAYLOAD)
-                    .put("hmac", sign(HMAC_SECRET, VALID_PAYLOAD, "HmacMD5")), "Invalid HMAC signature.")
-            );
-        }
-
-        @ParameterizedTest(name = "{0}")
-        @MethodSource("invalidBodies")
-        public void invalidBody_Returns400(
-            final String name, final JSONObject body, final String expectedMessage
-        ) throws Exception {
-            testServer().client()
+        public void happy_happy() throws Exception {
+            var expectedAttempt = validAttempt(null);
+            var actualReq = testServer().client()
                 .loginAs(integrationTestUsers.TEST_STUDENT)
-                .post(VALID_URL, body)
-                .assertError(expectedMessage, Response.Status.BAD_REQUEST);
+                .post(validUrl(null), validBody(expectedAttempt))
+                .readEntityAsJsonArray().getJSONObject(0);
+
+            // assert there is exactly 1 row in the database
+            try (var conn = postgresSqlDb.getDatabaseConnection();
+                 var pst = conn.prepareStatement("SELECT COUNT(*) FROM public.skills_question_attempts");
+                 var rs = pst.executeQuery()) {
+                rs.next();
+                assertEquals(1, rs.getInt(1));
+            }
+
+            // assert everything has been recorded to the database
+            try (var conn = postgresSqlDb.getDatabaseConnection();
+                 var pst = conn.prepareStatement("""
+                     SELECT id, user_id, skill_assignment_id, skill_id, subskill_id, question->>'text' AS question_text,
+                            question->>'answer' AS question_answer, question_attempt->>'result' AS result, marks,
+                            timestamp
+                     FROM public.skills_question_attempts""");
+                 var actualDb = pst.executeQuery()) {
+                actualDb.next();
+                assertEquals(expectedAttempt.getString("id"), actualDb.getString("id"));
+                assertEquals(expectedAttempt.getInt("user_id"), actualDb.getInt("user_id"));
+                assertNull(actualDb.getString("skill_assignment_id"));
+                assertEquals(expectedAttempt.getString("skill_id"), actualDb.getString("skill_id"));
+                assertEquals(expectedAttempt.get("subskill_id").toString(), actualDb.getString("subskill_id"));
+                assertEquals(expectedAttempt.getJSONObject("question").getString("text"),
+                    actualDb.getString("question_text"));
+                assertEquals(expectedAttempt.getJSONObject("question").getString("answer"),
+                    actualDb.getString("question_answer"));
+                assertEquals(expectedAttempt.getJSONObject("question_attempt").getString("result"),
+                    actualDb.getString("result"));
+                assertEquals(expectedAttempt.getInt("marks"), actualDb.getInt("marks"));
+                assertThat(actualDb.getTimestamp("timestamp").toInstant())
+                    .isCloseTo(expectedAttempt.getString("timestamp"), within(5, ChronoUnit.SECONDS));
+            }
+
+            // assert the request echoes back the payload
+            assertEquals(expectedAttempt.getString("id"), actualReq.getString("id"));
+            assertEquals(expectedAttempt.getInt("user_id"), actualReq.getInt("user_id"));
+            assertEquals(expectedAttempt.getString("skill_id"), actualReq.getString("skill_id"));
+            assertEquals(expectedAttempt.get("subskill_id").toString(), actualReq.getString("subskill_id"));
+            assertEquals(expectedAttempt.getJSONObject("question").toString(),
+                actualReq.getJSONObject("question").toString());
+            assertEquals(expectedAttempt.getJSONObject("question_attempt").toString(),
+                actualReq.getJSONObject("question_attempt").toString());
+            assertEquals(expectedAttempt.getInt("marks"), actualReq.getInt("marks"));
+            assertFalse(actualReq.has("skill_assignment_id"));
+        }
+
+        private static GitContentManager brokenContentManager() throws Exception {
+            var brokenClient = ElasticSearchProvider.getClient("localhost", 1, "elastic", "elastic");
+            var brokenProvider = new ElasticSearchProvider(brokenClient);
+            return new GitContentManager(null, brokenProvider, mainMapper, contentMapper, properties);
+        }
+
+        private static String validUrl(final String skillId) {
+            try {
+                var skillsApp = elasticHelper.persistJSON(new JSONObject()
+                    .put("type", "skillsApp")
+                    .put("id", skillId == null ? VALID_APP_ID : skillId)
+                );
+                return "/skills/" + skillsApp.getString("id") + "/answer";
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static JSONObject validAttempt(final Consumer<JSONObject> op) {
+            var defaultPayload = new JSONObject()
+                .put("id", UUID.randomUUID().toString())
+                .put("user_id", TEST_STUDENT_ID)
+                .put("skill_assignment_id", JSONObject.NULL)
+                .put("skill_id", VALID_APP_ID)
+                .put("subskill_id", 21)
+                .put("question", new JSONObject().put("text", "2+2").put("answer", "4"))
+                .put("question_attempt", new JSONObject().put("result", "4"))
+                .put("marks", 1)
+                .put("timestamp", Instant.now().toString());
+            if (op != null) {
+                op.accept(defaultPayload);
+            }
+            return defaultPayload;
+        }
+
+        private static String validBody(final JSONObject... attempts) {
+            var payload = new JSONArray(attempts);
+            var hmac = sign(AnswerQuestion.HMAC_SECRET, payload.toString(), AnswerQuestion.HMAC_SHA_256);
+            return new JSONObject().put("payload", payload.toString()).put("hmac", hmac).toString();
+        }
+
+        private static String sign(final String key, final String payload, final String algo) {
+            try {
+                var signingKey = new SecretKeySpec(key.getBytes(), algo);
+                var mac = Mac.getInstance(algo);
+                mac.init(signingKey);
+                return new String(Base64.encodeBase64(mac.doFinal(payload.getBytes())));
+            } catch (final Exception e) {
+                return "NOT_SIGNED";
+            }
         }
     }
 
     @Nested
-    class PayloadContentCheck {
-        static String MSG_IP = "Invalid payload.";
+    class GetAttempts {
+        private static final String NO_PERMISSION_MSG = "You do not have the permissions to complete this action.";
+        private static final List<Integer> NO_ATTEMPTS_ANY_MONTH = ImmutableList.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
-        static Stream<Arguments> invalidPayloads() {
-            var s = Stream.<Arguments>builder();
+        @Nested
+        class AuthorisationCheck {
+            @Test
+            public void notLoggedIn_Returns401() throws Exception {
+                var response = testServer().client().get("/skills/attempts/30");
+                response.assertError("You must be logged in to access this resource.", Response.Status.UNAUTHORIZED);
+            }
 
-            // id
-            addNonEmptyCasesFor("id", s);
-            s.add(Arguments.of("invalid id", validPayload(p -> p.put("id", "not-uuid")), MSG_IP));
+            @Test void studentViewsOtherStudent_Returns403() throws Exception {
+                var response = testServer().client()
+                        .loginAs(integrationTestUsers.ALICE_STUDENT)
+                        .get(String.format("/skills/attempts/%s", BOB_STUDENT_ID));
+                response.assertError(NO_PERMISSION_MSG, Response.Status.FORBIDDEN);
+            }
 
-            // user_id
-            addNonEmptyCasesFor("user_id", s);
-            s.add(Arguments.of("non-numeric user_id", validPayload(p -> p.put("user_id", "ab")), MSG_IP));
-            s.add(Arguments.of("wrong user_id", validPayload(p -> p.put("user_id", TEST_STUDENT_ID + 1)),
-                "Payload user_id does not match session"));
+            @Test void teacherViewsUnlinkedStudent_Returns403() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.DAVE_TEACHER)
+                    .get(String.format("/skills/attempts/%s", ALICE_STUDENT_ID));
+                response.assertError(NO_PERMISSION_MSG, Response.Status.FORBIDDEN);
+            }
 
-            // skill_assignment_id
-            s.add(Arguments.of("missing skill_assignment_id", validPayload(p -> p.remove("skill_assignment_id")),
-                MSG_IP));
-            s.add(Arguments.of("non-null skill_assignment_id",
-                validPayload(p -> p.put("skill_assignment_id", "some_id")), MSG_IP));
+            @Test void studentViewsOwn_Returns200() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.ALICE_STUDENT)
+                    .get(String.format("/skills/attempts/%s", ALICE_STUDENT_ID));
+                assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
+            }
 
-            // skill_id
-            addNonEmptyCasesFor("skill_id", s);
-            s.add(Arguments.of("wrong skill_id", validPayload(p -> p.put("skill_id", "wrong_skill_id")),
-                "Payload skill_id does not match app"));
-
-            // subskill_id
-            addNonEmptyCasesFor("subskill_id", s);
-
-            // question
-            addNonEmptyCasesFor("question", s);
-            s.add(Arguments.of("invalid question JSON, str", validPayload(p -> p.put("question", "ab")), MSG_IP));
-            s.add(Arguments.of("invalid question JSON, number", validPayload(p -> p.put("question", 1)), MSG_IP));
-
-            // question_attempt
-            addNonEmptyCasesFor("question_attempt", s);
-            s.add(Arguments.of("invalid attempts JSON", validPayload(p -> p.put("question_attempt", "a")), MSG_IP));
-
-            // marks
-            addNonEmptyCasesFor("marks", s);
-            s.add(Arguments.of("invalid mark 2", validPayload(p -> p.put("marks", 2)), MSG_IP));
-            s.add(Arguments.of("invalid mark -0.4", validPayload(p -> p.put("marks", -0.4)), MSG_IP));
-
-            // timestamp
-            addNonEmptyCasesFor("timestamp", s);
-            s.add(Arguments.of("invalid timestamp", validPayload(p -> p.put("timestamp", "n/d")), MSG_IP));
-            s.add(Arguments.of("expired timestamp", validPayload(p -> p.put("timestamp", "2022-01-01T13:00:00Z")),
-                "Payload timestamp is outside the allowed window"));
-
-            // other cases
-            s.add(Arguments.of("extra value", validPayload(p -> p.put("extra", "value")), MSG_IP));
-
-            return s.build();
+            @Test void teacherViewsLinkedStudent_Returns200() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.DAVE_TEACHER)
+                    .get(String.format("/skills/attempts/%d", BOB_STUDENT_ID));
+                assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
+            }
         }
 
-        @ParameterizedTest(name = "{0}")
-        @MethodSource("invalidPayloads")
-        public void invalidPayload_Returns400(
-            final String name, final String payload, final String expectedMessage
-        ) throws Exception {
-            testServer().client()
+        @Nested
+        class UserIdCheck {
+            @Test void nonNumeric_Returns400() throws Exception {
+                var response = testServer().client().get("/skills/attempts/12str");
+                response.assertError("Endpoint not found", Response.Status.NOT_FOUND);
+            }
+
+            @Test void float_Returns400() throws Exception {
+                var response = testServer().client().get("/skills/attempts/12.23");
+                response.assertError("Endpoint not found", Response.Status.NOT_FOUND);
+            }
+
+            @Test void oversized_Returns400() throws Exception {
+                var response = testServer().client().get("/skills/attempts/9223372036854775808"); // Long.MAX_VALUE + 1
+                response.assertError("Endpoint not found", Response.Status.NOT_FOUND);
+            }
+
+            @Test void nonExistentId_Returns403() throws Exception {
+                var response = testServer().client()
+                    .loginAs(integrationTestUsers.DAVE_TEACHER)
+                    .get("/skills/attempts/100");
+                response.assertError(NO_PERMISSION_MSG, Response.Status.FORBIDDEN);
+            }
+        }
+
+        @Test
+        public void noAttempts_returnsPaddedMathsPracticeForPastYear() throws Exception {
+            var response = testServer().client()
                 .loginAs(integrationTestUsers.TEST_STUDENT)
-                .post(VALID_URL, new JSONObject()
-                    .put("payload", payload)
-                    .put("hmac", sign(HMAC_SECRET, payload, HMAC_SHA_256)))
-                .assertError(expectedMessage, Response.Status.BAD_REQUEST);
+                .get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
         }
 
-        private static void addNonEmptyCasesFor(final String fieldName, final Stream.Builder<Arguments> s) {
-            s.add(Arguments.of("missing " + fieldName, validPayload(p -> p.remove(fieldName)), MSG_IP));
-            s.add(Arguments.of("null " + fieldName, validPayload(p -> p.put(fieldName, JSONObject.NULL)), MSG_IP));
-            s.add(Arguments.of("empty " + fieldName, validPayload(p -> p.put(fieldName, "")), MSG_IP));
-        }
-    }
+        @Test
+        public void attemptsWithinPeriod_bothCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                  .put("timestamp", Instant.now())),
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                  .put("timestamp", LocalDate.now().withDayOfMonth(1).minusMonths(11) + "T00:00:00Z")
+            ))).readEntity(String.class);
 
-    @Test
-    public void duplicateAttemptId_Returns409() throws Exception {
-        var testP = validPayload(null);
-        var testBody = new JSONObject().put("payload", testP).put("hmac", sign(HMAC_SECRET, testP, HMAC_SHA_256));
-        var client = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
-        client.post(VALID_URL, testBody).readEntity(String.class);
-        client.post(VALID_URL, testBody).assertError("Duplicate attempt ID.", Response.Status.CONFLICT);
-    }
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
 
-    @Test
-    public void happy_happy() throws Exception {
-        var expected = new JSONArray(VALID_PAYLOAD).getJSONObject(0);
-        var actualReq = testServer().client()
-            .loginAs(integrationTestUsers.TEST_STUDENT)
-            .post(VALID_URL, VALID_BODY)
-            .readEntityAsJsonArray().getJSONObject(0);
-
-        // assert there is exactly 1 row in the database
-        try (var conn = postgresSqlDb.getDatabaseConnection();
-             var pst = conn.prepareStatement("SELECT COUNT(*) FROM public.skills_question_attempts");
-             var rs = pst.executeQuery()) {
-            rs.next();
-            assertEquals(1, rs.getInt(1));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1));
         }
 
-        // assert everything has been recorded to the database
-        try (var conn = postgresSqlDb.getDatabaseConnection();
-             var pst = conn.prepareStatement("""
-                 SELECT id, user_id, skill_assignment_id, skill_id, subskill_id, question->>'text' AS question_text,
-                        question->>'answer' AS question_answer, question_attempt->>'result' AS result, marks, timestamp
-                 FROM public.skills_question_attempts""");
-             var actualDb = pst.executeQuery()) {
-            actualDb.next();
-            assertEquals(expected.getString("id"), actualDb.getString("id"));
-            assertEquals(expected.getInt("user_id"), actualDb.getInt("user_id"));
-            assertNull(actualDb.getString("skill_assignment_id"));
-            assertEquals(expected.getString("skill_id"), actualDb.getString("skill_id"));
-            assertEquals(expected.get("subskill_id").toString(), actualDb.getString("subskill_id"));
-            assertEquals(expected.getJSONObject("question").getString("text"), actualDb.getString("question_text"));
-            assertEquals(expected.getJSONObject("question").getString("answer"), actualDb.getString("question_answer"));
-            assertEquals(expected.getJSONObject("question_attempt").getString("result"), actualDb.getString("result"));
-            assertEquals(expected.getInt("marks"), actualDb.getInt("marks"));
-            assertThat(actualDb.getTimestamp("timestamp").toInstant())
-                .isCloseTo(expected.getString("timestamp"), within(5, ChronoUnit.SECONDS));
+        @Test
+        public void attemptBeforeFirstDayOf12thMonth_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var firstDayOf12thMonth = LocalDate.now().withDayOfMonth(1).minusMonths(11);
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp",  firstDayOf12thMonth + "T00:00:00Z")),
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", firstDayOf12thMonth.minusDays(1) + "T00:00:00Z")
+            ))).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1));
         }
 
-        // assert the request echoes back the payload
-        assertEquals(expected.getString("id"), actualReq.getString("id"));
-        assertEquals(expected.getInt("user_id"), actualReq.getInt("user_id"));
-        assertEquals(expected.getString("skill_id"), actualReq.getString("skill_id"));
-        assertEquals(expected.get("subskill_id").toString(), actualReq.getString("subskill_id"));
-        assertEquals(expected.getJSONObject("question").toString(), actualReq.getJSONObject("question").toString());
-        assertEquals(expected.getJSONObject("question_attempt").toString(),
-            actualReq.getJSONObject("question_attempt").toString());
-        assertEquals(expected.getInt("marks"), actualReq.getInt("marks"));
-        assertFalse(actualReq.has("skill_assignment_id"));
-    }
+        @Test
+        public void futureAttemptsWithinMonth_counted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp",  firstDayOfMonth + "T00:00:00Z")),
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", firstDayOfMonth.plusMonths(1).minusDays(1) + "T00:00:00Z")
+            ))).readEntity(String.class);
 
-    private static GitContentManager brokenContentManager() throws Exception {
-        var brokenClient = ElasticSearchProvider.getClient("localhost", 1, "elastic", "elastic");
-        var brokenProvider = new ElasticSearchProvider(brokenClient);
-        return new GitContentManager(null, brokenProvider, mainMapper, contentMapper, properties);
-    }
-
-    private static String validUrl() {
-        try {
-            var skillsApp = elasticHelper.persistJSON(new JSONObject().put("type", "skillsApp"));
-            return "/skills/" + skillsApp.getString("id") + "/answer";
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         }
-    }
 
-    private static String validPayload(final Consumer<JSONObject> op) {
-        var defaultPayload = new JSONObject()
-            .put("id", UUID.randomUUID().toString())
-            .put("user_id", TEST_STUDENT_ID)
-            .put("skill_assignment_id", JSONObject.NULL)
-            .put("skill_id", SkillsFacadeIT.VALID_APP_ID)
-            .put("subskill_id", 21)
-            .put("question", new JSONObject().put("text", "2+2").put("answer", "4"))
-            .put("question_attempt", new JSONObject().put("result", "4"))
-            .put("marks", 1)
-            .put("timestamp", Instant.now().toString());
-        if (op != null) {
-            op.accept(defaultPayload);
+        @Test
+        public void attemptsInFutureMonth_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            var futureMonth = LocalDate.now().withDayOfMonth(1).plusMonths(1);
+            studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", futureMonth + "T00:00:00Z")),
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", futureMonth.minusDays(1) + "T00:00:00Z")
+            ))).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
         }
-        return new JSONArray().put(defaultPayload).toString();
-    }
 
-    private static String sign(final String key, final String payload, final String algo) {
-        try {
-            var signingKey = new SecretKeySpec(key.getBytes(), algo);
-            var mac = Mac.getInstance(algo);
-            mac.init(signingKey);
-            return new String(Base64.encodeBase64(mac.doFinal(payload.getBytes())));
-        } catch (final Exception e) {
-            return "NOT_SIGNED";
+        @Test public void attemptsByOtherUser_notCounted() throws Exception {
+            prepare();
+            testServer().client().loginAs(integrationTestUsers.ALICE_STUDENT)
+                .post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", ALICE_STUDENT_ID)
+                        .put("timestamp", LocalDate.now().withDayOfMonth(1) + "T00:00:00Z"))
+                )).readEntity(String.class);
+
+            var response = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT)
+                .get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, NO_ATTEMPTS_ANY_MONTH);
+        }
+
+        @Test public void attemptsOtherThanMentalMaths_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            studentClient.post(AnswerQuestion.validUrl("irrelevant_app_id"), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                    .put("skill_id", "irrelevant_app_id"))
+            )).readEntity(String.class);
+            studentClient.post(AnswerQuestion.validUrl(AnswerQuestion.VALID_APP_ID), AnswerQuestion.validBody(
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                    .put("skill_id", AnswerQuestion.VALID_APP_ID))
+            )).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        }
+
+        @Test public void emptyAttempts_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            studentClient.post(AnswerQuestion.validUrl(AnswerQuestion.VALID_APP_ID), AnswerQuestion.validBody(
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                        .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                        .put("question_attempt", new JSONObject().put("result", "")))
+            )).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        }
+
+        @Test public void anomalousAttemptWithoutResult_notCounted() throws Exception {
+            prepare();
+            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            studentClient.post(AnswerQuestion.validUrl(AnswerQuestion.VALID_APP_ID), AnswerQuestion.validBody(
+                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                            .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                            .put("question_attempt", new JSONObject()))
+            )).readEntity(String.class);
+
+            var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
+            assertPastYearsMonthlyMathsResults(response, ImmutableList.of(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+        }
+
+        private static void deleteSkillsAttempts() throws SQLException {
+            try (var conn = postgresSqlDb.getDatabaseConnection();
+                 var pst = conn.prepareStatement("DELETE FROM public.skills_question_attempts WHERE TRUE;")) {
+                pst.executeUpdate();
+            }
+        }
+
+        private void prepare() {
+            registerCleanup(() -> {
+                deleteSkillsAttempts();
+                SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 300_000L;
+            });
+            SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 365L * 24 * 60 * 60 * 1000;
+        }
+
+        /*
+         * On "2026-07-10", assertPastYearsMonthlyMathsResults(resp, [0, 0, ..., 0]) checks that the response is
+         * { "mental_maths_overall": { "2026-07-01: 0, 2026-06-01: 0, ... 2025-08-01: 0" } }
+         */
+        private void assertPastYearsMonthlyMathsResults(final TestResponse resp, final List<Integer> expectations) {
+            JSONObject mentalMathsResults = resp.readEntityAsJson().getJSONObject("mental_maths_overall");
+            assertEquals(12, mentalMathsResults.keySet().size(), "Expected 12 years worth of mental maths results");
+            for (int i = 0; i < expectations.size(); i++) {
+                String key = LocalDate.now().withDayOfMonth(1).minusMonths(i).toString();
+                assertEquals(expectations.get(i), mentalMathsResults.getInt(key), key);
+            }
         }
     }
 
@@ -320,7 +564,7 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         var sm = new SkillsAttemptManager(properties, new PgSkillsAttemptPersistenceManager(postgresSqlDb));
         return startServer(
             new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
-            new SkillsFacade(properties, userAccountManager, logManager, cm, sm)
+            new SkillsFacade(properties, userAccountManager, logManager, cm, sm, userAssociationManager)
         );
     }
 }
