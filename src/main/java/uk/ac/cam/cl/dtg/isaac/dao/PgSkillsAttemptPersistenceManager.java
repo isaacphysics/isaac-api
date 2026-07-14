@@ -68,8 +68,8 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
         throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement("""
-                WITH dates(dt) AS (
-                    SELECT generate_series(?, ?, INTERVAL '1' MONTH)::DATE
+                WITH dates AS (
+                    SELECT generate_series(?, ?, INTERVAL '1' MONTH)::DATE AS dt
                 ), attempts AS (
                     SELECT
                         DATE_TRUNC('month', timestamp::DATE) AS dt,
