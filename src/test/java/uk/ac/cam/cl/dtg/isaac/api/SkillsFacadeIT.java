@@ -57,7 +57,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         class AppIdCheck {
             @Test
             public void elasticsearchUnavailable_Returns404() throws Exception {
-                var client = testServer(brokenContentManager()).client().loginAs(integrationTestUsers.TEST_STUDENT);
+                var client = testServer(brokenContentManager(), null).client()
+                    .loginAs(integrationTestUsers.TEST_STUDENT);
                 var response = client.post("/skills/unknown_app/answer", VALID_BODY);
                 response.assertError("Error locating the version requested", Response.Status.NOT_FOUND);
             }
@@ -408,8 +409,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
         @Test
         public void attemptsWithinPeriod_bothCounted() throws Exception {
-            prepare();
-            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            var studentClient = testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.TEST_STUDENT);
             studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
                   .put("timestamp", Instant.now())),
@@ -424,8 +425,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
         @Test
         public void attemptBeforeFirstDayOf12thMonth_notCounted() throws Exception {
-            prepare();
-            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            var studentClient = testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var firstDayOf12thMonth = LocalDate.now().withDayOfMonth(1).minusMonths(11);
             studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
@@ -440,8 +441,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
         @Test
         public void futureAttemptsWithinMonth_counted() throws Exception {
-            prepare();
-            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            var studentClient = testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
             studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
@@ -456,8 +457,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
 
         @Test
         public void attemptsInFutureMonth_notCounted() throws Exception {
-            prepare();
-            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            var studentClient = testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.TEST_STUDENT);
             var futureMonth = LocalDate.now().withDayOfMonth(1).plusMonths(1);
             studentClient.post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
@@ -471,8 +472,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test public void attemptsByOtherUser_notCounted() throws Exception {
-            prepare();
-            testServer().client().loginAs(integrationTestUsers.ALICE_STUDENT)
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.ALICE_STUDENT)
                 .post(AnswerQuestion.validUrl(null), AnswerQuestion.validBody(
                     AnswerQuestion.validAttempt(a -> a.put("user_id", ALICE_STUDENT_ID)
                         .put("timestamp", LocalDate.now().withDayOfMonth(1) + "T00:00:00Z"))
@@ -484,8 +485,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test public void attemptsOtherThanMentalMaths_notCounted() throws Exception {
-            prepare();
-            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            var studentClient = testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.TEST_STUDENT);
             studentClient.post(AnswerQuestion.validUrl("irrelevant_app_id"), AnswerQuestion.validBody(
                 AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
                     .put("timestamp", LocalDate.now() + "T00:00:00Z")
@@ -502,12 +503,12 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test public void emptyAttempts_notCounted() throws Exception {
-            prepare();
-            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            var studentClient = testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.TEST_STUDENT);
             studentClient.post(AnswerQuestion.validUrl(AnswerQuestion.VALID_APP_ID), AnswerQuestion.validBody(
-                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                        .put("timestamp", LocalDate.now() + "T00:00:00Z")
-                        .put("question_attempt", new JSONObject().put("result", "")))
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                    .put("question_attempt", new JSONObject().put("result", "")))
             )).readEntity(String.class);
 
             var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
@@ -515,12 +516,12 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
         }
 
         @Test public void anomalousAttemptWithoutResult_notCounted() throws Exception {
-            prepare();
-            var studentClient = testServer().client().loginAs(integrationTestUsers.TEST_STUDENT);
+            registerCleanup(GetAttempts::deleteSkillsAttempts);
+            var studentClient = testServerExtendedAttemptAge().client().loginAs(integrationTestUsers.TEST_STUDENT);
             studentClient.post(AnswerQuestion.validUrl(AnswerQuestion.VALID_APP_ID), AnswerQuestion.validBody(
-                    AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
-                            .put("timestamp", LocalDate.now() + "T00:00:00Z")
-                            .put("question_attempt", new JSONObject()))
+                AnswerQuestion.validAttempt(a -> a.put("user_id", TEST_STUDENT_ID)
+                    .put("timestamp", LocalDate.now() + "T00:00:00Z")
+                    .put("question_attempt", new JSONObject()))
             )).readEntity(String.class);
 
             var response = studentClient.get(String.format("/skills/attempts/%s", TEST_STUDENT_ID));
@@ -532,14 +533,6 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
                  var pst = conn.prepareStatement("DELETE FROM public.skills_question_attempts WHERE TRUE;")) {
                 pst.executeUpdate();
             }
-        }
-
-        private void prepare() {
-            registerCleanup(() -> {
-                deleteSkillsAttempts();
-                SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 300_000L;
-            });
-            SkillsAttemptManager.FIVE_MINUTES_IN_MILLIS = 365L * 24 * 60 * 60 * 1000;
         }
 
         /*
@@ -557,14 +550,28 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     private TestServer testServer() throws Exception {
-        return testServer(contentManager);
+        return testServer(null, null);
     }
 
-    private TestServer testServer(final GitContentManager cm) throws Exception {
-        var sm = new SkillsAttemptManager(properties, new PgSkillsAttemptPersistenceManager(postgresSqlDb));
+    private TestServer testServer(
+        final GitContentManager gitContentManager, final SkillsAttemptManager skillsAttemptManager
+    ) throws Exception {
         return startServer(
             new AuthenticationFacade(properties, userAccountManager, logManager, misuseMonitor),
-            new SkillsFacade(properties, userAccountManager, logManager, cm, sm, userAssociationManager)
+            new SkillsFacade(
+                properties,
+                userAccountManager,
+                logManager,
+                gitContentManager != null ? gitContentManager : contentManager,
+                skillsAttemptManager != null ? skillsAttemptManager : new SkillsAttemptManager(
+                    properties, new PgSkillsAttemptPersistenceManager(postgresSqlDb)),
+                userAssociationManager)
         );
+    }
+
+    private TestServer testServerExtendedAttemptAge() throws Exception {
+        Long oneYearInMillis = 365L * 24 * 60 * 60 * 1000;
+        return testServer(null, new SkillsAttemptManager(properties,
+                new PgSkillsAttemptPersistenceManager(postgresSqlDb), oneYearInMillis));
     }
 }
