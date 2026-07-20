@@ -20,8 +20,6 @@ import java.util.Map;
 
 /** PostgreSQL-backed persistence for Anvil skills question attempts. */
 public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersistenceManager {
-    private static final String MENTAL_MATHS_ID = "app_page_mental_maths_overall|0e184f9d-b619-4225-ac12-3c96d3c74046";
-
     private final PostgresSqlDb database;
 
     @Inject
@@ -64,8 +62,9 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
     }
 
     @Override
-    public Map<LocalDate, Long> getMentalMathsAttempts(final Long userId, final LocalDate from, final LocalDate to)
-        throws SegueDatabaseException {
+    public Map<LocalDate, Long> getAppAttempts(
+        final String appId, final Long userId, final LocalDate from, final LocalDate to
+    ) throws SegueDatabaseException {
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement("""
                 WITH dates AS (
@@ -90,7 +89,7 @@ public class PgSkillsAttemptPersistenceManager implements ISkillsAttemptPersiste
             pst.setObject(2, to);
             pst.setLong(3, userId);
             pst.setObject(4, from);
-            pst.setString(5, MENTAL_MATHS_ID);
+            pst.setString(5, appId);
             ResultSet results = pst.executeQuery();
             HashMap<LocalDate, Long> resultsMap = new HashMap<>();
             while (results.next()) {

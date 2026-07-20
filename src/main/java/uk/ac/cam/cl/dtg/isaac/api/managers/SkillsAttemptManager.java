@@ -104,8 +104,9 @@ public class SkillsAttemptManager {
      *
      * @param to - return attempts until this date (exclusive)
      */
-    public Map<LocalDate, Long> getMentalMathsAttempts(final Long userId, final LocalDate from, final LocalDate to)
+    public Map<LocalDate, Long> getAppAttempts(
+        final String appId, final Long userId, final LocalDate from, final LocalDate to)
         throws SegueDatabaseException {
-        return persistence.getMentalMathsAttempts(userId, from, to);
+        return persistence.getAppAttempts(appId, userId, from, to);
     }
 }

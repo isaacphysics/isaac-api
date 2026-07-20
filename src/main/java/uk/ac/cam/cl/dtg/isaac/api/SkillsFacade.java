@@ -44,6 +44,7 @@ import java.util.Map;
 @Tag(name = "SkillsFacade", description = "/skills")
 public class SkillsFacade extends AbstractIsaacFacade {
     private static final Logger log = LoggerFactory.getLogger(SkillsFacade.class);
+    private static final String MENTAL_MATHS_ID = "app_page_mental_maths_overall|0e184f9d-b619-4225-ac12-3c96d3c74046";
 
     private final UserAccountManager userManager;
     private final GitContentManager contentManager;
@@ -153,7 +154,8 @@ public class SkillsFacade extends AbstractIsaacFacade {
             }
 
             HashMap<String, Map<LocalDate, Long>> resultsMap = new HashMap<>();
-            resultsMap.put("mental_maths_overall", skillsAttemptManager.getMentalMathsAttempts(
+            resultsMap.put("mental_maths_overall", skillsAttemptManager.getAppAttempts(
+                MENTAL_MATHS_ID,
                 userIdOfInterest,
                 LocalDate.now().withDayOfMonth(1).minusMonths(11),
                 LocalDate.now().withDayOfMonth(1).plusMonths(1).minusDays(1)
