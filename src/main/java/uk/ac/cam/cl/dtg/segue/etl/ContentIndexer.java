@@ -990,6 +990,29 @@ public class ContentIndexer {
                 }
             }
         }
+
+        if (content instanceof EmailTemplate e) {
+            if (e.getPlainTextContent() == null) {
+                this.registerContentProblem(content,
+                        "Email template should always have plain text content field", indexProblemCache);
+            }
+        }
+
+        if (content instanceof IsaacEventPage e) {
+            if (e.getEndDate() == null) {
+                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
+            } else if (e.getEndDate().before(e.getDate())) {
+                this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
+            }
+        }
+
+        if (content instanceof IsaacQuestionPage qp
+                && flattenContentObjects(content).stream()
+                .allMatch(c -> !(c instanceof Question) || c instanceof IsaacQuickQuestion)) {
+            this.registerContentProblem(content, "Question page: " + qp.getId() + " found without any markable questions. "
+                    + "Question progress will not be recorded correctly.", indexProblemCache);
+        }
+
         if (content instanceof Question && content.getId() == null) {
             this.registerContentProblem(content, "Question: " + content.getTitle() + " in " + content.getCanonicalSourceFile()
                     + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
@@ -1014,21 +1037,6 @@ public class ContentIndexer {
                             "Question: " + question.getId() + " found without a correct answer. "
                                     + "This question will always be automatically marked as incorrect", indexProblemCache);
                 }
-            }
-        }
-
-        if (content instanceof EmailTemplate e) {
-            if (e.getPlainTextContent() == null) {
-                this.registerContentProblem(content,
-                        "Email template should always have plain text content field", indexProblemCache);
-            }
-        }
-
-        if (content instanceof IsaacEventPage e) {
-            if (e.getEndDate() == null) {
-                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
-            } else if (e.getEndDate().before(e.getDate())) {
-                this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
             }
         }
 
@@ -1214,6 +1222,7 @@ public class ContentIndexer {
                     indexProblemCache);
             }
         }
+
         if (content instanceof SkillsApp a) {
             if (null == a.getId()) {
                 this.registerContentProblem(content, "Skill app is missing an id.", indexProblemCache);
