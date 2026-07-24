@@ -59,6 +59,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -498,12 +499,20 @@ public class GitContentManager {
             }
         }
 
+        // Use a LinkedHashMap: addSortInstructions() adds a sort clause per entry in iteration order, so insertion
+        // order here determines primary vs. tie-breaking sort key.
+        Map<String, Constants.SortOrder> sortOrder = new LinkedHashMap<>();
         // If no search terms or random seed, sort by ascending alphabetical order of title.
-        Map<String, Constants.SortOrder> sortOrder = null;
         if (searchTerms.isEmpty() && null == randomSeed) {
-            sortOrder = new HashMap<>();
             sortOrder.put(
                     Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                    Constants.SortOrder.ASC
+            );
+        // otherwise, order them by the strength of the match, and break ties using the id
+        } else {
+            sortOrder.put("_score", Constants.SortOrder.DESC);
+            sortOrder.put(
+                    Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     Constants.SortOrder.ASC
             );
         }
