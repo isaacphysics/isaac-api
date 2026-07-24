@@ -25,13 +25,13 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class SkillsAttemptManager {
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final int MAX_PAYLOAD_LENGTH = 30 * 1024; // about 30 kilobytes for English payloads, even Unicode
-    public static long FIVE_MINUTES_IN_MILLIS = 300_000L;
 
     private final String hmacSecret;
     private final ISkillsAttemptPersistenceManager persistence;
+    private final Long maxTimestampAgeMillis;
 
     /**
-     * Constructor.
+     * Constructor used by Guice for live site.
      *
      * @param properties          - application configuration
      * @param skillsAttemptManager - persistence manager for skills attempts
@@ -39,8 +39,24 @@ public class SkillsAttemptManager {
     @Inject
     public SkillsAttemptManager(
             final AbstractConfigLoader properties, final ISkillsAttemptPersistenceManager skillsAttemptManager) {
+        Long fiveMinutesInMillis = 300_000L;
+        this(properties, skillsAttemptManager, fiveMinutesInMillis);
+    }
+
+    /**
+     * Constructor used for integration tests.
+     *
+     * @param properties          - application configuration
+     * @param skillsAttemptManager - persistence manager for skills attempts
+     * @param maxTimestampAgeMillis - the age, in milliseconds, of the oldest timestamp we should still allow
+     */
+    public SkillsAttemptManager(
+        final AbstractConfigLoader properties, final ISkillsAttemptPersistenceManager skillsAttemptManager,
+        final Long maxTimestampAgeMillis
+    ) {
         this.hmacSecret = properties.getProperty(SKILLS_HMAC_SECRET);
         this.persistence = skillsAttemptManager;
+        this.maxTimestampAgeMillis = maxTimestampAgeMillis;
     }
 
     /**
@@ -75,7 +91,7 @@ public class SkillsAttemptManager {
                 throw new InvalidAnvilMarkingRequestException("Payload user_id does not match session.", null);
             }
             if (dtos.stream().anyMatch(
-                    dto -> dto.getTimestamp().before(new Date(System.currentTimeMillis() - FIVE_MINUTES_IN_MILLIS)))) {
+                    dto -> dto.getTimestamp().before(new Date(System.currentTimeMillis() - maxTimestampAgeMillis)))) {
                 throw new InvalidAnvilMarkingRequestException("Payload timestamp is outside the allowed window.", null);
             }
             if (dtos.stream().anyMatch(dto -> !dto.getSkillId().equals(appId))) {
@@ -104,8 +120,9 @@ public class SkillsAttemptManager {
      *
      * @param to - return attempts until this date (exclusive)
      */
-    public Map<LocalDate, Long> getMentalMathsAttempts(final Long userId, final LocalDate from, final LocalDate to)
+    public Map<LocalDate, Long> getAppAttempts(
+        final String appId, final Long userId, final LocalDate from, final LocalDate to)
         throws SegueDatabaseException {
-        return persistence.getMentalMathsAttempts(userId, from, to);
+        return persistence.getAppAttempts(appId, userId, from, to);
     }
 }

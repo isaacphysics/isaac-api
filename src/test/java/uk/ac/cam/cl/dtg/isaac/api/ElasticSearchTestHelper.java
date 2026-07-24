@@ -41,7 +41,7 @@ public class ElasticSearchTestHelper {
         return content;
     }
 
-    /** Indexes a raw JSON content object with a fixed ID of {@code "i1"} and returns it. */
+    /** Indexes a raw JSON content object and returns it. Unless an id is provided, sets `i1` as the id. */
     public JSONObject persistJSON(final JSONObject contentJSON) throws Exception {
         if (!contentJSON.has("id")) {
             contentJSON.put("id", "i1");
