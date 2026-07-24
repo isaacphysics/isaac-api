@@ -1177,6 +1177,27 @@ public class ContentIndexer {
             }
         }
 
+        if (content instanceof IsaacReorderQuestion q || content instanceof IsaacParsonsQuestion) {
+            IsaacReorderQuestion q = (IsaacReorderQuestion) content;
+
+            if (q.getUseSingleList()) {
+                boolean allItemsMatch = q.getChoices().stream()
+                    .map(choice -> (ItemChoice) choice)
+                    .filter(ItemChoice::isCorrect)
+                    .allMatch(choice ->
+                            choice.getItems().size() == q.getItems().size()
+                                    && q.getItems().stream().allMatch(item ->
+                                    choice.getItems().stream()
+                                            .anyMatch(choiceItem -> Objects.equals(choiceItem.getId(), item.getId()))
+                            )
+                    );
+                if (!allItemsMatch) {
+                    this.registerContentProblem(content, "Reorder Question: " + q.getId() + " has useSingleList"
+                            + " and contains a correct answer with missing items.", indexProblemCache);
+                }
+            }
+        }
+
         if (content instanceof IsaacCoordinateQuestion q) {
 
             if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
