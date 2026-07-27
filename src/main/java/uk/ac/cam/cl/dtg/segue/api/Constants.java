@@ -449,6 +449,8 @@ public final class Constants {
 
     public static final Integer NO_SEARCH_LIMIT = -1;
 
+    public static final String ES_PSEUDOFIELD_SCORE = "ES_PSEUDOFIELD_SCORE";
+
     // Content model specific stuff
     public static final String ID_FIELDNAME = "id";
     public static final String TITLE_FIELDNAME = "title";

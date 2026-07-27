@@ -235,9 +235,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                             ? co.elastic.clients.elasticsearch._types.SortOrder.Asc
                             : co.elastic.clients.elasticsearch._types.SortOrder.Desc;
 
-            if ("_score".equals(sortField)) {
-                // _score is a special pseudo-field: it must use the dedicated score sort variant, which (unlike a
-                // field sort) does not support a "missing" value clause.
+            if (Constants.ES_PSEUDOFIELD_SCORE.equals(sortField)) {
                 requestBuilder.sort(SortOptions.of(s -> s.score(sc -> sc.order(clientOrder))));
             } else {
                 requestBuilder.sort(SortOptions.of(s -> s.field(f -> f

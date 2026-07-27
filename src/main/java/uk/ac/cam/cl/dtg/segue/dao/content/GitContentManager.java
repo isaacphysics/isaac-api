@@ -510,7 +510,7 @@ public class GitContentManager {
             );
         // otherwise, order them by the strength of the match, and break ties using the id
         } else {
-            sortOrder.put("_score", Constants.SortOrder.DESC);
+            sortOrder.put(Constants.ES_PSEUDOFIELD_SCORE, Constants.SortOrder.DESC);
             sortOrder.put(
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     Constants.SortOrder.ASC
