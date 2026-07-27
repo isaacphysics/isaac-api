@@ -78,7 +78,11 @@ public class IsaacParsonsValidator implements IValidator {
         // STEP 1: Did they provide a valid answer?
 
         if (null == feedback && (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty())) {
-            feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
+            if (null != parsonsQuestion.getUseSingleList() && parsonsQuestion.getUseSingleList()) {
+                feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
+            } else {
+                feedback = new Content("You did not provide an answer. Remember to move items from the available items to your answer.");
+            }
         }
 
         Set<String> submittedItemIdSet = null;
