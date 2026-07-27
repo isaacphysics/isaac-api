@@ -235,10 +235,14 @@ public class ElasticSearchProvider implements ISearchProvider {
                             ? co.elastic.clients.elasticsearch._types.SortOrder.Asc
                             : co.elastic.clients.elasticsearch._types.SortOrder.Desc;
 
-            requestBuilder.sort(SortOptions.of(s -> s.field(f -> f
-                .field(sortField)
-                .order(clientOrder)
-                .missing("_last"))));
+            if (Constants.ES_PSEUDOFIELD_SCORE.equals(sortField)) {
+                requestBuilder.sort(SortOptions.of(s -> s.score(sc -> sc.order(clientOrder))));
+            } else {
+                requestBuilder.sort(SortOptions.of(s -> s.field(f -> f
+                    .field(sortField)
+                    .order(clientOrder)
+                    .missing("_last"))));
+            }
         }
     }
 
