@@ -1179,20 +1179,20 @@ public class ContentIndexer {
 
         if (content instanceof IsaacReorderQuestion q) {
             if (q.getUseSingleList()) {
-                if (q.getChoices().stream().map(ItemChoice.class::cast).filter(ItemChoice::isCorrect)
+                if (q.getChoices().stream().map(ItemChoice.class::cast).filter(c -> !c.isAllowSubsetMatch())
                         .allMatch(choice -> choice.getItems().size() == q.getItems().size())) {
                     this.registerContentProblem(content, "Reorder Question: " + q.getId() + " has useSingleList"
-                            + " and contains a correct answer with missing items.", indexProblemCache);
+                            + " and contains a non wildcard-matched answer with missing items.", indexProblemCache);
                 }
             }
         }
 
         if (content instanceof IsaacParsonsQuestion q) {
             if (q.getUseSingleList()) {
-                if (q.getChoices().stream().map(ItemChoice.class::cast).filter(ItemChoice::isCorrect)
+                if (q.getChoices().stream().map(ItemChoice.class::cast).filter(c -> !c.isAllowSubsetMatch())
                         .allMatch(choice -> choice.getItems().size() == q.getItems().size())) {
                     this.registerContentProblem(content, "Parsons Question: " + q.getId() + " has useSingleList"
-                            + " and contains a correct answer with missing items.", indexProblemCache);
+                            + " and contains a non wildcard-matched answer with missing items.", indexProblemCache);
                 }
             }
         }
