@@ -499,17 +499,17 @@ public class GitContentManager {
             }
         }
 
-        // Use a LinkedHashMap: addSortInstructions() adds a sort clause per entry in iteration order, so insertion
-        // order here determines primary vs. tie-breaking sort key.
-        Map<String, Constants.SortOrder> sortOrder = new LinkedHashMap<>();
+        Map<String, Constants.SortOrder> sortOrder = null;
         // If no search terms or random seed, sort by ascending alphabetical order of title.
         if (searchTerms.isEmpty() && null == randomSeed) {
+            sortOrder = new HashMap<>();
             sortOrder.put(
                     Constants.TITLE_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     Constants.SortOrder.ASC
             );
-        // otherwise, order them by the strength of the match, and break ties using the id
-        } else {
+        // otherwise, unless this is a randomised search, order them by the strength of the match, and break ties using the id
+        } else if (null == randomSeed) {
+            sortOrder = new LinkedHashMap<>();
             sortOrder.put(Constants.ES_PSEUDOFIELD_SCORE, Constants.SortOrder.DESC);
             sortOrder.put(
                     Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
