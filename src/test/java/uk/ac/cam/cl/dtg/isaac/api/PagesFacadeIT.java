@@ -191,6 +191,42 @@ public class PagesFacadeIT extends IsaacIntegrationTest{
     }
 
     @Test
+    public void getQuestionList_searchWithRandomSeed_returnsMatchingQuestionsInRandomOrder() throws Exception {
+        // Arrange
+        // log in as Student, create request
+        LoginResult studentLogin = loginAs(httpSession, ITConstants.TEST_STUDENT_EMAIL,
+                ITConstants.TEST_STUDENT_PASSWORD);
+        HttpServletRequest searchRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(searchRequest);
+
+        // Act
+        // make request
+        Response searchResponse = pagesFacade.getQuestionList(searchRequest,
+                "Regression Test Page", "", "", "", "", "", "", "", "", "", "", "", false, 0, MAX_SEARCH_RESULT_LIMIT, 1L, null, false);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), searchResponse.getStatus());
+
+        // check the search returned the expected content summary
+        @SuppressWarnings("unchecked") ResultsWrapper<ContentSummaryDTO> responseBody =
+                (ResultsWrapper<ContentSummaryDTO>) searchResponse.getEntity();
+
+        List<String> questionIDs = responseBody.getResults()
+                .stream()
+                .map(ContentSummaryDTO::getId)
+                .collect(Collectors.toList());
+
+        assertEquals(
+                // this is the order we observed for random seed 1
+                List.of(ITConstants.EXACT_MATCH_TEST_PAGE_ID, ITConstants.REGRESSION_TEST_PAGE_ID,
+                        // These pages have "page" in their content thus match "Regression Test _Page_"
+                        ITConstants.ASSIGNMENT_TEST_PAGE_ID, ITConstants.FUZZY_MATCH_TEST_PAGE_ID),
+                questionIDs
+        );
+    }
+
+    @Test
     public void getQuestionList_limitedSearchByStringAsStudent_returnsLimitedNumberOfQuestions() throws Exception {
         // Arrange
         // log in as Student, create request
