@@ -212,6 +212,12 @@ public interface ContentMapper {
     @Mapping(target = "prioritisedSearchableContent", ignore = true)
     @SubclassMapping(source = ChoiceDTO.class, target = Choice.class)
     @SubclassMapping(source = ItemDTO.class, target = Item.class)
+    // Media subclasses. Figure must come before Image.
+    @SubclassMapping(source = FigureDTO.class, target = Figure.class)
+    @SubclassMapping(source = ImageDTO.class, target = Image.class)
+    @SubclassMapping(source = VideoDTO.class, target = Video.class)
+    @SubclassMapping(source = DesmosEmbeddingDTO.class, target = DesmosEmbedding.class)
+    @SubclassMapping(source = GeogebraEmbeddingDTO.class, target = GeogebraEmbedding.class)
     Content map(ContentDTO source);
 
     @Mapping(target = "bestAttempt", ignore = true)
