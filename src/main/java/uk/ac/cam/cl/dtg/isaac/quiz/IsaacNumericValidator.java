@@ -116,15 +116,6 @@ public class IsaacNumericValidator implements IValidator {
                 bestResponse = this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);
             }
 
-            // If incorrect and we have not used the default validation response then go ahead and return it 
-            // - this provides more helpful feedback than sig figs errors.
-            if (!bestResponse.isCorrect() && bestResponse.getExplanation() != null
-                    && !(DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue())
-                    || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE
-                    .equals(bestResponse.getExplanation().getValue()))) {
-                return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
-            }
-
             // Step 2 - do sig fig checking (unless specified otherwise by question):
             if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
                 if (ValidationUtils.tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin, log)) {
@@ -319,8 +310,10 @@ public class IsaacNumericValidator implements IValidator {
         Content feedback = response.getExplanation();
         boolean feedbackEmptyOrGeneric = feedbackIsNullOrEmpty(feedback) || DEFAULT_VALIDATION_RESPONSE.equals(feedback.getValue())
                 || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE.equals(feedback.getValue());
+        // Prioritise too many sig figs above default feedback, but not too few sig figs
+        boolean tooManySigFigs = feedback.getTags().contains("sig_figs_too_many");
 
-        if (null != question.getDefaultFeedback() && feedbackEmptyOrGeneric) {
+        if (null != question.getDefaultFeedback() && feedbackEmptyOrGeneric && !tooManySigFigs) {
             log.debug("Replacing generic or blank explanation with default feedback from question.");
             response.setExplanation(question.getDefaultFeedback());
             // TODO - should this preserve the 'sig_figs' tag? If so, how to do it without modifying the referenced default feedback?
