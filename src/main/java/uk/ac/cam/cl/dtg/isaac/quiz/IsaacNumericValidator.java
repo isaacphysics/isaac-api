@@ -311,7 +311,7 @@ public class IsaacNumericValidator implements IValidator {
         boolean feedbackEmptyOrGeneric = feedbackIsNullOrEmpty(feedback) || DEFAULT_VALIDATION_RESPONSE.equals(feedback.getValue())
                 || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE.equals(feedback.getValue());
         // Prioritise too many sig figs above default feedback, but not too few sig figs
-        boolean tooManySigFigs = feedback.getTags().contains("sig_figs_too_many");
+        boolean tooManySigFigs = null != feedback && null != feedback.getTags() && feedback.getTags().contains("sig_figs_too_many");
 
         if (null != question.getDefaultFeedback() && feedbackEmptyOrGeneric && !tooManySigFigs) {
             log.debug("Replacing generic or blank explanation with default feedback from question.");
