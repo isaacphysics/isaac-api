@@ -35,6 +35,7 @@ import java.util.List;
 import static org.easymock.EasyMock.createMock;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -511,6 +512,98 @@ public class IsaacNumericValidatorTest {
 
         assertFalse(response.isCorrect());
         assertTrue(quantityValidationResponse.getCorrectUnits());
+    }
+
+    /*
+     Test that "correct but too many sig figs" feedback takes precedence over default feedback.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckTooManySigFigsFeedbackPrecedence_TooManySigFigsResponseShouldHappen() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setSignificantFiguresMin(3);
+        someNumericQuestion.setSignificantFiguresMax(3);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("31.4", "m");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        Content defaultFeedback = new Content("DEFAULT FEEDBACK!");
+        someNumericQuestion.setDefaultFeedback(defaultFeedback);
+
+        // Set up user answer:
+        Quantity q = new Quantity("31.40", "m");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuantityValidationResponse quantityValidationResponse = (QuantityValidationResponse) response;
+
+        assertFalse(response.isCorrect());
+        assertNotEquals(response.getExplanation(), defaultFeedback);
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs_too_many"));
+    }
+
+    /*
+     Test that default feedback takes precedence over "too few sig figs" feedback.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckDefaultFeedbackPrecedence_DefaultFeedbackResponseShouldHappen() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setSignificantFiguresMin(3);
+        someNumericQuestion.setSignificantFiguresMax(3);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("31.4", "m");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        Content defaultFeedback = new Content("DEFAULT FEEDBACK!");
+        someNumericQuestion.setDefaultFeedback(defaultFeedback);
+
+        // Set up user answer:
+        Quantity q = new Quantity("31", "m");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuantityValidationResponse quantityValidationResponse = (QuantityValidationResponse) response;
+
+        assertFalse(response.isCorrect());
+        assertEquals(response.getExplanation(), defaultFeedback);
+        assertFalse(quantityValidationResponse.getExplanation().getTags().contains("sig_figs"));
+        assertFalse(quantityValidationResponse.getExplanation().getTags().contains("sig_figs_too_few"));
+    }
+
+    /*
+     Test that "too few sig figs" feedback can be returned if no default feedback is set.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckTooFewSigFigsFeedbackPrecedence_TooFewSigFigsResponseShouldHappen() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+        someNumericQuestion.setSignificantFiguresMin(3);
+        someNumericQuestion.setSignificantFiguresMax(3);
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("31.4", "m");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up user answer:
+        Quantity q = new Quantity("31", "m");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuantityValidationResponse quantityValidationResponse = (QuantityValidationResponse) response;
+
+        assertFalse(response.isCorrect());
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs_too_few"));
     }
 
     //  ---------- Tests from here test invalid questions themselves ----------
