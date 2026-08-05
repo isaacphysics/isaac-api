@@ -39,6 +39,9 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.SIG_FIGS_TAG;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.SIG_FIGS_TOO_FEW_TAG;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.SIG_FIGS_TOO_MANY_TAG;
 
 /**
  * Test class for the user manager class.
@@ -340,7 +343,7 @@ public class IsaacNumericValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
     }
 
     /*
@@ -366,14 +369,14 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response_3sf = validator.validateQuestionResponse(someNumericQuestion, q_3sf);
         assertFalse(response_3sf.isCorrect());
-        assertFalse(response_3sf.getExplanation().getTags().contains("sig_figs"));
+        assertFalse(response_3sf.getExplanation().getTags().contains(SIG_FIGS_TAG));
 
         // Set up a user answer:
         Quantity q_2sf = new Quantity("2.0");
         // Test response:
         QuestionValidationResponse response_2sf = validator.validateQuestionResponse(someNumericQuestion, q_2sf);
         assertFalse(response_2sf.isCorrect());
-        assertFalse(response_2sf.getExplanation().getTags().contains("sig_figs"));
+        assertFalse(response_2sf.getExplanation().getTags().contains(SIG_FIGS_TAG));
     }
 
     /*
@@ -399,14 +402,14 @@ public class IsaacNumericValidatorTest {
         // Test response:
         QuestionValidationResponse response_5sf = validator.validateQuestionResponse(someNumericQuestion, q_5sf);
         assertFalse(response_5sf.isCorrect(), "expected 1.6875 not to match 1.6875 to 2 or 3 sf");
-        assertTrue(response_5sf.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response_5sf.getExplanation().getTags().contains(SIG_FIGS_TAG));
 
         // Set up a user answer:
         Quantity q_1sf = new Quantity("2");
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
         assertFalse(response_1sf.isCorrect(), "expected 2 not to match 1.6875 to 2 or 3 sf");
-        assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
+        assertTrue(response_1sf.getExplanation().getTags().contains(SIG_FIGS_TAG));
     }
 
     /*
@@ -432,23 +435,23 @@ public class IsaacNumericValidatorTest {
         // Test response is sig fig message:
         QuestionValidationResponse response_5sf_corr = validator.validateQuestionResponse(someNumericQuestion, q_5sf_corr);
         assertFalse(response_5sf_corr.isCorrect(), "expected 1.6875 not to match 1.6875 to 2 or 3 sf");
-        assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response_5sf_corr.getExplanation().getTags().contains("sig_figs_too_many"));
+        assertTrue(response_5sf_corr.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response_5sf_corr.getExplanation().getTags().contains(SIG_FIGS_TOO_MANY_TAG));
 
         // Set up a wrong user answer with too many sig figs:
         Quantity q_5sf_wrong = new Quantity("2.7986");
         // Test response does not mention sig figs:
         QuestionValidationResponse response_5sf_wrong = validator.validateQuestionResponse(someNumericQuestion, q_5sf_wrong);
         assertFalse(response_5sf_wrong.isCorrect(), "expected 2.7986 not to match 1.6875");
-        assertFalse(response_5sf_wrong.getExplanation().getTags().contains("sig_figs"), "expected 2.7986 without sig fig message");
+        assertFalse(response_5sf_wrong.getExplanation().getTags().contains(SIG_FIGS_TAG), "expected 2.7986 without sig fig message");
 
         // Set up a user answer:
         Quantity q_1sf = new Quantity("5");
         // Test response:
         QuestionValidationResponse response_1sf = validator.validateQuestionResponse(someNumericQuestion, q_1sf);
         assertFalse(response_1sf.isCorrect(), "expected 5 not to match 1.6875 to 2 or 3 sf");
-        assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response_1sf.getExplanation().getTags().contains("sig_figs_too_few"));
+        assertTrue(response_1sf.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response_1sf.getExplanation().getTags().contains(SIG_FIGS_TOO_FEW_TAG));
     }
 
     /*
@@ -542,8 +545,8 @@ public class IsaacNumericValidatorTest {
 
         assertFalse(response.isCorrect());
         assertNotEquals(response.getExplanation(), defaultFeedback);
-        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs_too_many"));
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains(SIG_FIGS_TOO_MANY_TAG));
     }
 
     /*
@@ -574,8 +577,8 @@ public class IsaacNumericValidatorTest {
 
         assertFalse(response.isCorrect());
         assertEquals(response.getExplanation(), defaultFeedback);
-        assertFalse(quantityValidationResponse.getExplanation().getTags().contains("sig_figs"));
-        assertFalse(quantityValidationResponse.getExplanation().getTags().contains("sig_figs_too_few"));
+        assertFalse(quantityValidationResponse.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertFalse(quantityValidationResponse.getExplanation().getTags().contains(SIG_FIGS_TOO_FEW_TAG));
     }
 
     /*
@@ -602,8 +605,8 @@ public class IsaacNumericValidatorTest {
         QuantityValidationResponse quantityValidationResponse = (QuantityValidationResponse) response;
 
         assertFalse(response.isCorrect());
-        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(quantityValidationResponse.getExplanation().getTags().contains("sig_figs_too_few"));
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(quantityValidationResponse.getExplanation().getTags().contains(SIG_FIGS_TOO_FEW_TAG));
     }
 
     //  ---------- Tests from here test invalid questions themselves ----------
