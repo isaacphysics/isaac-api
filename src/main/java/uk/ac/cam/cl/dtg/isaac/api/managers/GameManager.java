@@ -141,6 +141,21 @@ public class GameManager {
     }
 
     /**
+     * Update the last visited date for a gameboard saved to a user.
+     *
+     * @param gameboardId
+     *            - ID of gameboard that was visited
+     * @param user
+     *            - user ID that visited the board
+     * @throws SegueDatabaseException
+     *             - if there is a problem persisting the updated date in the database.
+     */
+    public void updateGameboardLastVisited(final String gameboardId, final RegisteredUserDTO user)
+            throws SegueDatabaseException {
+        this.gameboardPersistenceManager.updateUserLinkToGameboard(user.getId(), gameboardId);
+    }
+
+    /**
      * This method allows a user to gameboard link to be destroyed.
      *
      * @param user

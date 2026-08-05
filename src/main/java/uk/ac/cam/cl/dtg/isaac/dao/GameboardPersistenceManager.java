@@ -353,6 +353,38 @@ public class GameboardPersistenceManager {
     }
 
     /**
+     * Update the last visited date for a gameboard saved to a user.
+     *
+     * @param userId
+     *            - user ID that visited the board
+     * @param gameboardId
+     *            - gameboard ID that was visited
+     * @throws SegueDatabaseException
+     *             - if there is a problem persisting the updated date in the database.
+     */
+    public void updateUserLinkToGameboard(final Long userId, final String gameboardId)
+            throws SegueDatabaseException {
+
+        String query = "UPDATE user_gameboards SET last_visited = ? WHERE user_id = ? AND gameboard_id = ?";
+
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setTimestamp(1, new Timestamp(new Date().getTime()));
+            pst.setLong(2, userId);
+            pst.setString(3, gameboardId);
+
+            log.debug("Updating last visited date for gameboard");
+            int affectedRows = pst.executeUpdate();
+            if (affectedRows == 0) {
+                throw new SQLException("Updating gameboard last visited date failed, no rows changed");
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    /**
      * Allows a link between users and a gameboard to be destroyed.
      *
      * @param userId - users id.
