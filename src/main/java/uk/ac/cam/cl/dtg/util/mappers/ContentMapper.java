@@ -212,7 +212,18 @@ public interface ContentMapper {
     @Mapping(target = "prioritisedSearchableContent", ignore = true)
     @SubclassMapping(source = ChoiceDTO.class, target = Choice.class)
     @SubclassMapping(source = ItemDTO.class, target = Item.class)
+    @SubclassMapping(source = MediaDTO.class, target = Media.class)
     Content map(ContentDTO source);
+
+    @Mapping(target = "searchableContent", ignore = true)
+    @Mapping(target = "prioritisedSearchableContent", ignore = true)
+    @Mapping(target = "decorative", ignore = true)
+    @SubclassMapping(source = FigureDTO.class, target = Figure.class)
+    @SubclassMapping(source = ImageDTO.class, target = Image.class)
+    @SubclassMapping(source = VideoDTO.class, target = Video.class)
+    @SubclassMapping(source = DesmosEmbeddingDTO.class, target = DesmosEmbedding.class)
+    @SubclassMapping(source = GeogebraEmbeddingDTO.class, target = GeogebraEmbedding.class)
+    Media map(MediaDTO source);
 
     @Mapping(target = "bestAttempt", ignore = true)
     @SubclassMapping(source = IsaacQuickQuestion.class, target = IsaacQuickQuestionDTO.class)
