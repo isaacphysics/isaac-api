@@ -152,7 +152,7 @@ public class GameManager {
      */
     public void updateGameboardLastVisited(final String gameboardId, final RegisteredUserDTO user)
             throws SegueDatabaseException {
-        this.gameboardPersistenceManager.updateUserLinkToGameboard(user.getId(), gameboardId);
+        this.gameboardPersistenceManager.updateGameboardLastVisited(user.getId(), gameboardId);
     }
 
     /**

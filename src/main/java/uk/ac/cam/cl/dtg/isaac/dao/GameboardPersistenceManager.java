@@ -362,7 +362,7 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException
      *             - if there is a problem persisting the updated date in the database.
      */
-    public void updateUserLinkToGameboard(final Long userId, final String gameboardId)
+    public void updateGameboardLastVisited(final Long userId, final String gameboardId)
             throws SegueDatabaseException {
 
         String query = "UPDATE user_gameboards SET last_visited = ? WHERE user_id = ? AND gameboard_id = ?";
