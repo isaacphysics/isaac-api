@@ -145,14 +145,14 @@ public class GameManager {
      *
      * @param gameboardId
      *            - ID of gameboard that was visited
-     * @param user
-     *            - user ID that visited the board
+     * @param userId
+     *            - ID of user that visited the board
      * @throws SegueDatabaseException
      *             - if there is a problem persisting the updated date in the database.
      */
-    public void updateGameboardLastVisited(final String gameboardId, final RegisteredUserDTO user)
+    public void updateGameboardLastVisited(final String gameboardId, final Long userId)
             throws SegueDatabaseException {
-        this.gameboardPersistenceManager.updateGameboardLastVisited(user.getId(), gameboardId);
+        this.gameboardPersistenceManager.updateGameboardLastVisited(userId, gameboardId);
     }
 
     /**

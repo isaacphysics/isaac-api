@@ -165,7 +165,7 @@ public class GameboardsFacade extends AbstractIsaacFacade {
                 gameManager.augmentGameboardsWithLinkedToUserInformation(registeredUser, Collections.singletonList(gameboardWithoutAttemptInfo));
 
                 if (gameboardWithoutAttemptInfo.isSavedToCurrentUser()) {
-                    gameManager.updateGameboardLastVisited(gameboardWithoutAttemptInfo.getId(), registeredUser);
+                    gameManager.updateGameboardLastVisited(gameboardWithoutAttemptInfo.getId(), registeredUser.getId());
                 }
             }
 
