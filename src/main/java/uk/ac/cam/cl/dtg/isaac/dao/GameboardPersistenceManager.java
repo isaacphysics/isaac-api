@@ -377,7 +377,7 @@ public class GameboardPersistenceManager {
             log.debug("Updating last visited date for gameboard");
             int affectedRows = pst.executeUpdate();
             if (affectedRows == 0) {
-                throw new SQLException("Updating gameboard last visited date failed, no rows changed");
+                log.warn("Updating gameboard last visited date failed, no rows changed");
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
