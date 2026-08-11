@@ -117,7 +117,9 @@ public class IsaacNumericValidator implements IValidator {
             }
 
             // Step 2 - If we don't yet have useful feedback, check if sig fig feedback is applicable (unless specified otherwise by question):
-            if (DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue()) && !isaacNumericQuestion.getDisregardSignificantFigures()) {
+            boolean feedbackIsGenericOrEmpty = feedbackIsNullOrEmpty(bestResponse.getExplanation())
+                    || DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue());
+            if (feedbackIsGenericOrEmpty && !isaacNumericQuestion.getDisregardSignificantFigures()) {
                 if (ValidationUtils.tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin, log)) {
                     // If too few sig figs then give feedback about this.
 
