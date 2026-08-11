@@ -37,6 +37,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -260,15 +261,21 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         }
     }
 
-    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getLightweightQuestionAttemptsByUsers(final List<Long> userIds)
-            throws SegueDatabaseException {
+    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getLightweightQuestionAttemptsByUsers(
+            final List<Long> userIds, final Date toDate) throws SegueDatabaseException {
 
         if (userIds.isEmpty()) {
             return Collections.emptyMap();
         }
 
-        String query = "SELECT id, user_id, question_id, correct, marks, timestamp FROM question_attempts"
-                     + " WHERE user_id = ANY(?) ORDER BY \"timestamp\" ASC";
+        String query;
+        if (null != toDate) {
+            query = "SELECT id, user_id, question_id, correct, marks, timestamp FROM question_attempts"
+                    + " WHERE user_id = ANY(?) AND timestamp < ? ORDER BY \"timestamp\" ASC";
+        } else {
+            query = "SELECT id, user_id, question_id, correct, marks, timestamp FROM question_attempts"
+                    + " WHERE user_id = ANY(?) ORDER BY \"timestamp\" ASC";
+        }
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
                 = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newLinkedHashMap()));
@@ -279,25 +286,29 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
             Array userIdArray = conn.createArrayOf("INTEGER", userIds.toArray());
             pst.setArray(1, userIdArray);
 
+            if (null != toDate) {
+                pst.setTimestamp(2, new Timestamp(toDate.getTime()));
+            }
+
             try (ResultSet results = pst.executeQuery()) {
                 augmentMapLightweightValidationResponseByUserPagePartWithResults(mapToReturn, results);
                 return mapToReturn;
             } finally {
                 userIdArray.free();
             }
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);
         }
     }
 
     @Override
-    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getLightweightQuestionAttempts(Long userId) throws SegueDatabaseException {
-        return this.getLightweightQuestionAttemptsByUsers(Collections.singletonList(userId)).getOrDefault(userId, Collections.emptyMap());
+    public Map<String, Map<String, List<LightweightQuestionValidationResponse>>> getLightweightQuestionAttempts(final Long userId) throws SegueDatabaseException {
+        return this.getLightweightQuestionAttemptsByUsers(Collections.singletonList(userId), null).getOrDefault(userId, Collections.emptyMap());
     }
 
     @Override
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>>
-        getMatchingLightweightQuestionAttempts(final List<Long> userIds, final List<String> allQuestionPageIds)
+        getMatchingLightweightQuestionAttempts(final List<Long> userIds, final List<String> allQuestionPageIds, final Date toDate)
             throws SegueDatabaseException {
 
         if (allQuestionPageIds.isEmpty() || userIds.isEmpty()) {
@@ -307,16 +318,23 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
         List<String> uniquePageIds = allQuestionPageIds.stream().distinct().toList();
         if (uniquePageIds.size() > MAX_PAGE_IDS_TO_MATCH) {
             log.debug("Attempting to match too many ({}) question page IDs; returning all attempts for these users instead!", uniquePageIds.size());
-            return this.getLightweightQuestionAttemptsByUsers(userIds);
+            return this.getLightweightQuestionAttemptsByUsers(userIds, toDate);
         }
 
         Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> mapToReturn
                 = userIds.stream().collect(Collectors.toMap(Function.identity(), k -> Maps.newHashMap()));;
 
         try (Connection conn = database.getDatabaseConnection()) {
-            String query = "SELECT id, user_id, question_id, correct, marks, timestamp FROM question_attempts"
-                         + " WHERE user_id = ANY(?) AND page_id = ANY(?)"
-                         + " ORDER BY \"timestamp\" ASC";
+            String query;
+            if (null != toDate) {
+                query = "SELECT id, user_id, question_id, correct, marks, timestamp FROM question_attempts"
+                        + " WHERE user_id = ANY(?) AND page_id = ANY(?) AND timestamp < ?"
+                        + " ORDER BY \"timestamp\" ASC";
+            } else {
+                query = "SELECT id, user_id, question_id, correct, marks, timestamp FROM question_attempts"
+                        + " WHERE user_id = ANY(?) AND page_id = ANY(?)"
+                        + " ORDER BY \"timestamp\" ASC";
+            }
 
             try (PreparedStatement pst = conn.prepareStatement(query)) {
 
@@ -324,6 +342,10 @@ public class PgQuestionAttempts implements IQuestionAttemptManager {
                 Array pageIdArray = conn.createArrayOf("TEXT", uniquePageIds.toArray());
                 pst.setArray(1, userIdArray);
                 pst.setArray(2, pageIdArray);
+
+                if (null != toDate) {
+                    pst.setTimestamp(3, new Timestamp(toDate.getTime()));
+                }
 
                 try (ResultSet results = pst.executeQuery()) {
                     augmentMapLightweightValidationResponseByUserPagePartWithResults(mapToReturn, results);

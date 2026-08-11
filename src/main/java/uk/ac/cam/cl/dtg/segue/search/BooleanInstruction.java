@@ -4,6 +4,11 @@ import com.google.api.client.util.Lists;
 
 import java.util.List;
 
+/**
+ * Class to represent an Elasticsearch boolean query.
+ * musts/shoulds/shouldNots work as described in the Elasticsearch documentation:
+ * https://www.elastic.co/docs/reference/query-languages/query-dsl/query-dsl-bool-query
+ */
 public class BooleanInstruction extends AbstractInstruction {
     private List<AbstractInstruction> musts = Lists.newArrayList();
     private List<AbstractInstruction> shoulds = Lists.newArrayList();

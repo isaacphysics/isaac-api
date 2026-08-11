@@ -25,14 +25,10 @@ import uk.ac.cam.cl.dtg.isaac.dos.LocationHistoryEvent;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.Location;
 import uk.ac.cam.cl.dtg.util.locations.LocationServerException;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeRadius;
 
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,7 +42,6 @@ public class LocationManager {
 
     private final ILocationHistory dao;
     private final IPLocationResolver ipLocationResolver;
-    private final PostCodeLocationResolver postCodeLocationResolver;
     private final Cache<String, Boolean> locationUpdatedRecentlyCache;
 
     /**
@@ -54,15 +49,11 @@ public class LocationManager {
      *            - the location history data access object.
      * @param ipLocationResolver
      *            - the external ip location resolver.
-     * @param postCodeLocationResolver
-     *            - the external postCode location resolver.
      */
     @Inject
-    public LocationManager(final ILocationHistory dao, final IPLocationResolver ipLocationResolver,
-                           final PostCodeLocationResolver postCodeLocationResolver) {
+    public LocationManager(final ILocationHistory dao, final IPLocationResolver ipLocationResolver) {
         this.dao = dao;
         this.ipLocationResolver = ipLocationResolver;
-        this.postCodeLocationResolver = postCodeLocationResolver;
 
         // This cache is here to prevent lots of needless look-ups to the database.
         locationUpdatedRecentlyCache = CacheBuilder.newBuilder().expireAfterWrite(NON_PERSISTENT_CACHE_TIME_IN_HOURS, TimeUnit.HOURS).build();
@@ -135,25 +126,4 @@ public class LocationManager {
             this.locationUpdatedRecentlyCache.put(ipAddress, false);
         }
     }
-
-    /**
-     * @param postCodeAndUserIds
-     *            - A map of postcodes to userids
-     * @param targetPostCode
-     *            - The post code we want to find users near to
-     * @param radius
-     *            - radius to search
-     * @return - a list of userids who have schools in that radius
-     * @throws LocationServerException
-     *             - anm exception when the location service fails
-     * @throws SegueDatabaseException
-     *             - anm exception when the database service fails
-     */
-    public List<Long> getUsersWithinPostCodeDistanceOf(final Map<String, List<Long>> postCodeAndUserIds,
-            final String targetPostCode, final PostCodeRadius radius) throws LocationServerException,
-            SegueDatabaseException {
-        return postCodeLocationResolver.filterPostcodesWithinProximityOfPostcode(postCodeAndUserIds,
-                targetPostCode, radius);
-    }
-    
 }

@@ -26,11 +26,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.jboss.resteasy.annotations.GZIP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
+import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.scheduler.SegueJobService;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -39,6 +42,7 @@ import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -47,6 +51,7 @@ import java.net.http.HttpResponse;
 import java.util.Objects;
 import java.util.Set;
 
+import static jakarta.ws.rs.core.MediaType.APPLICATION_XML;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
@@ -62,6 +67,7 @@ public class InfoFacade extends AbstractSegueFacade {
     private final SegueJobService segueJobService;
     private final ElasticsearchClient searchClient;
     private final HttpClient httpClient;
+    private final GitContentManager contentManager;
 
     /**
      * @param properties
@@ -71,12 +77,13 @@ public class InfoFacade extends AbstractSegueFacade {
      */
     @Inject
     public InfoFacade(final AbstractConfigLoader properties, final SegueJobService segueJobService,
-                      final ElasticsearchClient searchClient,
+                      final ElasticsearchClient searchClient, final GitContentManager contentManager,
                       final ILogManager logManager) {
         super(properties, logManager);
         this.segueJobService = segueJobService;
         this.searchClient = searchClient;
         this.httpClient = HttpClient.newHttpClient();
+        this.contentManager = contentManager;
     }
 
     /**
@@ -120,6 +127,40 @@ public class InfoFacade extends AbstractSegueFacade {
 
         return Response.ok(result).cacheControl(this.getCacheControl(NUMBER_SECONDS_IN_THIRTY_DAYS, true)).tag(etag)
                 .build();
+    }
+
+    /**
+     * Gets the sitemap from the content database.
+     *
+     * @return a Response containing the sitemap file, or a SegueErrorResponse.
+     */
+    @GET
+    @Produces(APPLICATION_XML)
+    @Path("/sitemap.xml")
+    @Operation(summary = "Get the sitemap file from the content database.")
+    public final Response getSitemap() {
+        String path = "sitemap.xml";
+        try {
+            ByteArrayOutputStream fileContent = this.contentManager.getFileBytes(path);
+
+            if (null == fileContent) {
+                log.warn("Unable to locate sitemap file.");
+                return Response.status(Response.Status.NOT_FOUND).type(APPLICATION_XML).build();
+            }
+
+            return Response.ok(fileContent.toByteArray()).type(APPLICATION_XML)
+                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_DAY, true))
+                    .build();
+
+        } catch (final IOException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Error reading file!");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        } catch (final UnsupportedOperationException e) {
+            SegueErrorResponse error = new SegueErrorResponse(Response.Status.INTERNAL_SERVER_ERROR, "Multiple files match the path provided.");
+            log.error(error.getErrorMessage(), e);
+            return error.toResponse();
+        }
     }
 
     /**

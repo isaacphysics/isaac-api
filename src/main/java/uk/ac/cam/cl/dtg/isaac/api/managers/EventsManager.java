@@ -93,6 +93,8 @@ public class EventsManager {
             searchInstructionBuilder.includeHiddenContent(true);
         }
 
+        searchInstructionBuilder.excludeDeprecatedContent(true);
+
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         if (sortOrder != null && sortOrder.equals("title")) {
             sortInstructions.put(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
@@ -128,7 +130,10 @@ public class EventsManager {
                                                                  final String filter, final RegisteredUserDTO currentUser)
             throws ContentManagerException, SegueDatabaseException {
 
+        // This is only used for a staff-only endpoint, so always include nofilter content
         IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
+                .includeHiddenContent(true)
+                .excludeDeprecatedContent(true)
                 .includeContentTypes(Collections.singleton(EVENT_TYPE));
 
         final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
@@ -190,93 +195,6 @@ public class EventsManager {
 
             resultList.add(eventOverviewBuilder.build());
         }
-        return new ResultsWrapper<>(resultList, findByFieldNames.getTotalResults());
-    }
-
-    /**
-     * Logic for the /events/map_data endpoint to provide a list of events suitable for mapping.
-     *
-     * @param tags           - a comma separated list of tags to include in the search.
-     * @param startIndex     - the initial index for the first result.
-     * @param limit          - the maximum number of results to return.
-     * @param showActiveOnly - true will impose filtering on the results. False will not. Defaults to false.
-     * @param showStageOnly  - if present, only events with an audience matching this string will be shown.
-     * @return a ResultsWrapper containing a list of event map summaries.
-     */
-    public ResultsWrapper<Map<String, Object>> getEventMapData(final String tags, final Integer startIndex,
-                                                               final Integer limit, final Boolean showActiveOnly,
-                                                               final String showStageOnly)
-            throws ContentManagerException {
-
-        IsaacSearchInstructionBuilder searchInstructionBuilder = this.contentManager.getBaseSearchInstructionBuilder()
-                .includeContentTypes(Collections.singleton(EVENT_TYPE));
-
-        if (tags != null) {
-            searchInstructionBuilder.searchFor(new SearchInField(TAGS_FIELDNAME,
-                    Arrays.stream(tags.split(",")).collect(Collectors.toSet())));
-        }
-
-        if (showStageOnly != null) {
-            searchInstructionBuilder.searchFor(new SearchInField(STAGE_FIELDNAME,
-                    Arrays.stream(showStageOnly.split(",")).collect(Collectors.toSet())));
-        }
-
-        final Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-
-        if (null == showActiveOnly || showActiveOnly) {
-            // Should default to future events only, but set this explicitly anyway
-            searchInstructionBuilder.setEventFilterOption(Constants.EventFilterOption.FUTURE);
-            sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.ASC);
-        } else {
-            searchInstructionBuilder.setEventFilterOption(Constants.EventFilterOption.ALL);
-        }
-
-        if (sortInstructions.isEmpty()) {
-            sortInstructions.put(DATE_FIELDNAME, Constants.SortOrder.DESC);
-        }
-
-        BooleanInstruction instruction = searchInstructionBuilder.build();
-        ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.nestedMatchSearch(instruction, startIndex,
-                limit, null, sortInstructions);
-
-        List<Map<String, Object>> resultList = Lists.newArrayList();
-
-        for (ContentDTO c : findByFieldNames.getResults()) {
-            if (!(c instanceof IsaacEventPageDTO)) {
-                continue;
-            }
-
-            IsaacEventPageDTO e = (IsaacEventPageDTO) c;
-            if (null == e.getLocation() || (null == e.getLocation().getLatitude() && null == e.getLocation().getLongitude())) {
-                // Ignore events without locations.
-                continue;
-            }
-            if (e.getLocation().getLatitude().equals(0.0) && e.getLocation().getLongitude().equals(0.0)) {
-                // Ignore events with locations that haven't been set properly.
-                log.info("Event with 0.0 lat/long: {}", e.getId());
-                continue;
-            }
-
-            ImmutableMap.Builder<String, Object> eventOverviewBuilder = new ImmutableMap.Builder<>();
-            eventOverviewBuilder.put("id", e.getId());
-            eventOverviewBuilder.put("title", e.getTitle());
-            eventOverviewBuilder.put("date", e.getDate());
-            eventOverviewBuilder.put("subtitle", e.getSubtitle());
-            if (e.getEventStatus() != null) {
-                eventOverviewBuilder.put("status", e.getEventStatus());
-            }
-            // The schema required needs lat and long at top-level, so add address at top-level too.
-            eventOverviewBuilder.put("address", e.getLocation().getAddress());
-            eventOverviewBuilder.put("latitude", e.getLocation().getLatitude());
-            eventOverviewBuilder.put("longitude", e.getLocation().getLongitude());
-
-            if (null != e.getBookingDeadline()) {
-                eventOverviewBuilder.put("deadline", e.getBookingDeadline());
-            }
-
-            resultList.add(eventOverviewBuilder.build());
-        }
-
         return new ResultsWrapper<>(resultList, findByFieldNames.getTotalResults());
     }
 

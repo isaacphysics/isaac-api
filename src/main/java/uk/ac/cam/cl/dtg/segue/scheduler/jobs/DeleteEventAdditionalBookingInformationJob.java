@@ -11,23 +11,20 @@ import uk.ac.cam.cl.dtg.isaac.dto.IsaacEventPageDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.PostgresSqlDb;
-import uk.ac.cam.cl.dtg.segue.search.AbstractFilterInstruction;
-import uk.ac.cam.cl.dtg.segue.search.DateRangeFilterInstruction;
-import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.RangeInstruction;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
@@ -36,7 +33,6 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class DeleteEventAdditionalBookingInformationJob implements Job {
     private static final Logger log = LoggerFactory.getLogger(DeleteEventAdditionalBookingInformationJob.class);
 
-    private final AbstractConfigLoader properties;
     private final PostgresSqlDb database;
     private final GitContentManager contentManager;
 
@@ -46,7 +42,6 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
      */
     public DeleteEventAdditionalBookingInformationJob() {
         Injector injector = SegueGuiceConfigurationModule.getGuiceInjector();
-        properties = injector.getInstance(AbstractConfigLoader.class);
         contentManager = injector.getInstance(GitContentManager.class);
         database = injector.getInstance(PostgresSqlDb.class);
 
@@ -57,20 +52,24 @@ public class DeleteEventAdditionalBookingInformationJob implements Job {
         // Magic number
         Integer limit = 10000;
         Integer startIndex = 0;
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
-        Map<String, AbstractFilterInstruction> filterInstructions = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Collections.singletonList(EVENT_TYPE));
         sortInstructions.put(DATE_FIELDNAME, SortOrder.DESC);
-        DateRangeFilterInstruction anyEventsToNow = new DateRangeFilterInstruction(null, new Date());
-        filterInstructions.put(ENDDATE_FIELDNAME, anyEventsToNow);
+
+        BooleanInstruction instruction = new BooleanInstruction();
+        instruction.must(new MatchInstruction(TYPE_FIELDNAME, EVENT_TYPE));
+
+        // Start with all events with end dates in the past OR dates in the past, in case end date isn't set
+        BooleanInstruction pastEventsInstruction = new BooleanInstruction();
+        pastEventsInstruction.should(new RangeInstruction<Long>(ENDDATE_FIELDNAME).lessThanOrEqual(new Date().getTime()));
+        pastEventsInstruction.should(new RangeInstruction<Long>(DATE_FIELDNAME).lessThanOrEqual(new Date().getTime()));
+        instruction.must(pastEventsInstruction);
+
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime thirtyDaysAgo = now.plusDays(-30);
         try {
-            ResultsWrapper<ContentDTO> findByFieldNames = this.contentManager.findByFieldNames(
-                    ContentService.generateDefaultFieldToMatch(fieldsToMatch),
-                    startIndex, limit, sortInstructions, filterInstructions);
-            for (ContentDTO contentResult : findByFieldNames.getResults()) {
+            ResultsWrapper<ContentDTO> results = this.contentManager.nestedMatchSearch(
+                    instruction, startIndex, limit, null, sortInstructions);
+            for (ContentDTO contentResult : results.getResults()) {
                 if (contentResult instanceof IsaacEventPageDTO page) {
                     // Event end date (if present) > 30 days ago, else event date > 30 days ago
                     boolean endDate30DaysAgo = page.getEndDate() != null && page.getEndDate().toInstant().isBefore(thirtyDaysAgo.toInstant());

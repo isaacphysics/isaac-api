@@ -192,6 +192,7 @@ public final class Constants {
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
+    public static final String SKILLS_HMAC_SECRET = "SKILLS_HMAC_SECRET";
     public static final int TRUNCATED_TOKEN_LENGTH = 8;
 
     // Search stuff
@@ -447,6 +448,8 @@ public final class Constants {
     public static final Integer CONTACT_FORM_CHAR_LIMIT = 5000;
 
     public static final Integer NO_SEARCH_LIMIT = -1;
+
+    public static final String ES_PSEUDOFIELD_SCORE = "ES_PSEUDOFIELD_SCORE";
 
     // Content model specific stuff
     public static final String ID_FIELDNAME = "id";

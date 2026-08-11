@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.content.MediaDTO;
 public abstract class Media extends Content {
     protected String src;
     protected String altText;
+    protected Boolean decorative;
 
     /**
      * Gets the src.
@@ -63,6 +64,25 @@ public abstract class Media extends Content {
      */
     public void setAltText(final String altText) {
         this.altText = altText;
+    }
+
+    /**
+     * Gets whether the media is decorative.
+     *
+     * @return whether the media is decorative
+     */
+    public Boolean getDecorative() {
+        return decorative;
+    }
+
+    /**
+     * Sets whether the media is decorative.
+     *
+     * @param decorative
+     *            whether the media is decorative
+     */
+    public void setDecorative(final Boolean decorative) {
+        this.decorative = decorative;
     }
 
 }

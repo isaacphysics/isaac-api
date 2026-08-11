@@ -38,6 +38,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.cam.cl.dtg.isaac.quiz.ISkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.AssignmentManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.GameManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAssignmentManager;
@@ -46,13 +47,16 @@ import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.api.services.GroupChangedService;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.IBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.IQuizQuestionAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgAssignmentPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgBookmarks;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAssignmentPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dao.PgQuizQuestionAttemptPersistenceManager;
+import uk.ac.cam.cl.dtg.isaac.dao.PgSkillsAttemptPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AbstractUserPreferenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.ILocationHistory;
 import uk.ac.cam.cl.dtg.isaac.dos.IUserAlerts;
@@ -144,8 +148,6 @@ import uk.ac.cam.cl.dtg.util.YamlLoader;
 import uk.ac.cam.cl.dtg.util.email.MailJetApiClientWrapper;
 import uk.ac.cam.cl.dtg.util.locations.IPLocationResolver;
 import uk.ac.cam.cl.dtg.util.locations.MaxMindIPLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeIOLocationResolver;
-import uk.ac.cam.cl.dtg.util.locations.PostCodeLocationResolver;
 import uk.ac.cam.cl.dtg.util.mappers.AssignmentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
 import uk.ac.cam.cl.dtg.util.mappers.EventBookingMapper;
@@ -191,6 +193,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private static UserAccountManager userManager = null;
     private static UserAuthenticationManager userAuthenticationManager = null;
     private static IQuestionAttemptManager questionPersistenceManager = null;
+    private static ISkillsAttemptPersistenceManager skillsAttemptManager = null;
     private static SegueJobService segueJobService = null;
 
     private static ILogManager logManager;
@@ -344,6 +347,7 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IQuizAssignmentPersistenceManager.class).to(PgQuizAssignmentPersistenceManager.class);
         bind(IQuizAttemptPersistenceManager.class).to(PgQuizAttemptPersistenceManager.class);
         bind(IQuizQuestionAttemptPersistenceManager.class).to(PgQuizQuestionAttemptPersistenceManager.class);
+        bind(ISkillsAttemptPersistenceManager.class).to(PgSkillsAttemptPersistenceManager.class);
     }
 
     /**
@@ -422,8 +426,6 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
     private void configureApplicationManagers() {
         bind(ILocationHistory.class).to(PgLocationHistory.class);
 
-        bind(PostCodeLocationResolver.class).to(PostCodeIOLocationResolver.class);
-
         bind(IUserDataManager.class).to(PgUsers.class);
 
         bind(IAnonymousUserDataManager.class).to(PgAnonymousUsers.class);
@@ -437,6 +439,8 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
         bind(IUserAlerts.class).to(PgUserAlerts.class);
 
         bind(IUserStreaksManager.class).to(PgUserStreakManager.class);
+
+        bind(IBookmarks.class).to(PgBookmarks.class);
 
         bind(IStatisticsManager.class).to(StatisticsManager.class);
 

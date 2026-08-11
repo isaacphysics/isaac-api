@@ -174,6 +174,7 @@ public interface ContentMapper {
     ChoiceQuestionDTO map(ChoiceQuestion source);
 
     @SubclassMapping(source = AnvilApp.class, target = AnvilAppDTO.class)
+    @SubclassMapping(source = SkillsApp.class, target = SkillsAppDTO.class)
     @SubclassMapping(source = Choice.class, target = ChoiceDTO.class)
     @SubclassMapping(source = InteractiveCodeSnippet.class, target = InteractiveCodeSnippetDTO.class)
     @SubclassMapping(source = CodeSnippet.class, target = CodeSnippetDTO.class)
@@ -211,7 +212,18 @@ public interface ContentMapper {
     @Mapping(target = "prioritisedSearchableContent", ignore = true)
     @SubclassMapping(source = ChoiceDTO.class, target = Choice.class)
     @SubclassMapping(source = ItemDTO.class, target = Item.class)
+    @SubclassMapping(source = MediaDTO.class, target = Media.class)
     Content map(ContentDTO source);
+
+    @Mapping(target = "searchableContent", ignore = true)
+    @Mapping(target = "prioritisedSearchableContent", ignore = true)
+    @Mapping(target = "decorative", ignore = true)
+    @SubclassMapping(source = FigureDTO.class, target = Figure.class)
+    @SubclassMapping(source = ImageDTO.class, target = Image.class)
+    @SubclassMapping(source = VideoDTO.class, target = Video.class)
+    @SubclassMapping(source = DesmosEmbeddingDTO.class, target = DesmosEmbedding.class)
+    @SubclassMapping(source = GeogebraEmbeddingDTO.class, target = GeogebraEmbedding.class)
+    Media map(MediaDTO source);
 
     @Mapping(target = "bestAttempt", ignore = true)
     @SubclassMapping(source = IsaacQuickQuestion.class, target = IsaacQuickQuestionDTO.class)
@@ -257,6 +269,7 @@ public interface ContentMapper {
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     DetailedQuizSummaryDTO mapToDetailedQuizSummaryDTO(IsaacQuizDTO source);
@@ -265,6 +278,7 @@ public interface ContentMapper {
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     @Mapping(target = "deprecated", ignore = true)
@@ -273,6 +287,7 @@ public interface ContentMapper {
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     ContentSummaryDTO mapSeguePageDTOtoContentSummaryDTO(SeguePageDTO source);
@@ -312,6 +327,7 @@ public interface ContentMapper {
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "hiddenFromRoles", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
@@ -321,6 +337,7 @@ public interface ContentMapper {
 
     @Mapping(target = "url", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "difficulty", ignore = true)
     @Named("mapQuizDTOtoQuizSummaryDTO")
@@ -330,6 +347,7 @@ public interface ContentMapper {
     @Mapping(target = "supersededBy", ignore = true)
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "rubric", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "hiddenFromRoles", ignore = true)
@@ -354,6 +372,7 @@ public interface ContentMapper {
     @Mapping(target = "summary", ignore = true)
     @Mapping(target = "subtitle", ignore = true)
     @Mapping(target = "state", ignore = true)
+    @Mapping(target = "bookmarked", ignore = true)
     @Mapping(target = "questionPartIds", ignore = true)
     @Mapping(target = "level", ignore = true)
     @Mapping(target = "difficulty", ignore = true)

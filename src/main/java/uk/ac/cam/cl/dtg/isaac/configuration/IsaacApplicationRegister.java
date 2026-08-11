@@ -28,11 +28,13 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
 import uk.ac.cam.cl.dtg.isaac.api.AssignmentFacade;
+import uk.ac.cam.cl.dtg.isaac.api.BookmarksFacade;
 import uk.ac.cam.cl.dtg.isaac.api.EventsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.GameboardsFacade;
 import uk.ac.cam.cl.dtg.isaac.api.IsaacController;
 import uk.ac.cam.cl.dtg.isaac.api.PagesFacade;
 import uk.ac.cam.cl.dtg.isaac.api.QuizFacade;
+import uk.ac.cam.cl.dtg.isaac.api.SkillsFacade;
 import uk.ac.cam.cl.dtg.segue.api.AdminFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthenticationFacade;
 import uk.ac.cam.cl.dtg.segue.api.AuthorisationFacade;
@@ -121,6 +123,8 @@ public class IsaacApplicationRegister extends Application {
             this.singletons.add(injector.getInstance(NotificationFacade.class));
             this.singletons.add(injector.getInstance(EmailFacade.class));
             this.singletons.add(injector.getInstance(QuizFacade.class));
+            this.singletons.add(injector.getInstance(BookmarksFacade.class));
+            this.singletons.add(injector.getInstance(SkillsFacade.class));
 
             // initialise filters
             this.singletons.add(injector.getInstance(PerformanceMonitor.class));

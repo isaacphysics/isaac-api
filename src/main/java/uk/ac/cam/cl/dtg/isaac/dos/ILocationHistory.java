@@ -18,9 +18,6 @@ package uk.ac.cam.cl.dtg.isaac.dos;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import uk.ac.cam.cl.dtg.segue.dao.SegueDatabaseException;
 import uk.ac.cam.cl.dtg.util.locations.Location;
-import uk.ac.cam.cl.dtg.util.locations.PostCode;
-
-import java.util.List;
 
 /**
  *
@@ -67,21 +64,4 @@ public interface ILocationHistory {
      *             - if there is a db error.
      */
     void updateLocationEventDate(final Long id, boolean isCurrent) throws SegueDatabaseException;
-    
-    /**
-     * @param postCode
-     *            - a given postcode
-     * @return - a postcode object
-     * @throws SegueDatabaseException
-     *             - if something goes wrong with the database.
-     */
-    PostCode getPostCode(final String postCode) throws SegueDatabaseException;
-
-    /**
-     * @param postCodes
-     *            - a list of given postcodes
-     * @throws SegueDatabaseException
-     *             - if something goes wrong with the database.
-     */
-    void storePostCodes(List<PostCode> postCodes) throws SegueDatabaseException;
 }

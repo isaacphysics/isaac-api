@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.2 (Debian 16.2-1.pgdg120+2)
--- Dumped by pg_dump version 16.2 (Debian 16.2-1.pgdg120+2)
+-- Dumped from database version 18.3
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -49,7 +49,6 @@ CREATE TABLE public.archived_users (
 
 
 ALTER TABLE public.archived_users OWNER TO rutherford;
-
 
 --
 -- Name: assignments; Type: TABLE; Schema: public; Owner: rutherford
@@ -501,6 +500,24 @@ CREATE TABLE public.scheduled_emails (
 
 ALTER TABLE public.scheduled_emails OWNER TO rutherford;
 
+--
+-- Name: skills_question_attempts; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.skills_question_attempts (
+     id uuid NOT NULL,
+     user_id integer NOT NULL,
+     skill_assignment_id text,
+     skill_id text NOT NULL,
+     subskill_id text NOT NULL,
+     question jsonb NOT NULL,
+     question_attempt jsonb NOT NULL,
+     marks integer NOT NULL,
+     "timestamp" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.skills_question_attempts OWNER TO rutherford;
 
 --
 -- Name: temporary_user_store; Type: TABLE; Schema: public; Owner: rutherford
@@ -586,6 +603,20 @@ CREATE TABLE public.user_associations_tokens (
 
 
 ALTER TABLE public.user_associations_tokens OWNER TO rutherford;
+
+--
+-- Name: user_bookmarks; Type: TABLE; Schema: public; Owner: rutherford
+--
+
+CREATE TABLE public.user_bookmarks (
+    user_id integer NOT NULL,
+    content_id text NOT NULL,
+    content_type text NOT NULL,
+    created timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.user_bookmarks OWNER TO rutherford;
 
 --
 -- Name: user_credentials; Type: TABLE; Schema: public; Owner: rutherford
@@ -998,6 +1029,14 @@ ALTER TABLE ONLY public.scheduled_emails
 
 
 --
+-- Name: skills_question_attempts skills_question_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.skills_question_attempts
+    ADD CONSTRAINT skills_question_attempts_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: temporary_user_store temporary_user_store_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1043,6 +1082,14 @@ ALTER TABLE ONLY public.user_alerts
 
 ALTER TABLE ONLY public.user_associations
     ADD CONSTRAINT user_associations_composite_pkey PRIMARY KEY (user_id_granting_permission, user_id_receiving_permission);
+
+
+--
+-- Name: user_bookmarks user_bookmarks_pk; Type: CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_bookmarks
+    ADD CONSTRAINT user_bookmarks_pk PRIMARY KEY (user_id, content_id);
 
 
 --
@@ -1436,6 +1483,14 @@ ALTER TABLE ONLY public.user_associations_tokens
 
 
 --
+-- Name: user_bookmarks user_bookmarks_user_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.user_bookmarks
+    ADD CONSTRAINT user_bookmarks_user_id_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+--
 -- Name: user_associations user_granting_permission_fkey; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
 --
 
@@ -1481,6 +1536,14 @@ ALTER TABLE ONLY public.question_attempts
 
 ALTER TABLE ONLY public.quiz_attempts
     ADD CONSTRAINT user_id_quiz_attempts_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- Name: skills_question_attempts user_id_skills_question_attempts_fk; Type: FK CONSTRAINT; Schema: public; Owner: rutherford
+--
+
+ALTER TABLE ONLY public.skills_question_attempts
+    ADD CONSTRAINT user_id_skills_question_attempts_fk FOREIGN KEY (user_id) REFERENCES public.users(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
