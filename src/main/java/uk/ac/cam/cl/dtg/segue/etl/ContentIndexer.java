@@ -1073,8 +1073,13 @@ public class ContentIndexer {
             }
             // Verify that significant figure bounds are correct
             if (!q.getDisregardSignificantFigures()) {
-                if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
-                    // Both bounds need to be present, or both not present
+                // If not 'exact answers only', s.f. bounds should be set
+                if (null == q.getSignificantFiguresMin() && null == q.getSignificantFiguresMax()) {
+                    this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has no "
+                            + "significant figure bounds set. If this question does not use significant figures then "
+                            + "'exact answers only' should be set.", indexProblemCache);
+                } else if (null == q.getSignificantFiguresMin() || null == q.getSignificantFiguresMax()) {
+                    // Both bounds need to be present
                     this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has only one "
                             + "significant figure bound, and may be unanswerable as a result. Please add both upper "
                             + "and lower significant figure bounds, or omit both.", indexProblemCache);
