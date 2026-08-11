@@ -116,25 +116,8 @@ public class IsaacNumericValidator implements IValidator {
                 bestResponse = this.validateWithoutUnits(isaacNumericQuestion, answerFromUser);
             }
 
-            // Step 2 - If we don't yet have useful feedback, check if sig fig feedback is applicable (unless specified otherwise by question):
-            boolean feedbackIsGenericOrEmpty = feedbackIsNullOrEmpty(bestResponse.getExplanation())
-                    || DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue());
-            if (feedbackIsGenericOrEmpty && !isaacNumericQuestion.getDisregardSignificantFigures()) {
-                if (ValidationUtils.tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin, log)) {
-                    // If too few sig figs then give feedback about this.
-
-                    // If we have unit information available put it in our response.
-                    Boolean validUnits = null;
-                    if (isaacNumericQuestion.getRequireUnits()) {
-                        // Whatever the current bestResponse is, it contains all we need to know about the units:
-                        validUnits = bestResponse.getCorrectUnits();
-                    }
-                    // Our new bestResponse is about incorrect significant figures:
-                    Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
-                    sigFigResponse.setTags(new HashSet<>(ImmutableList.of(SIG_FIGS_TAG, SIG_FIGS_TOO_FEW_TAG)));
-                    bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
-                            false, validUnits, new Date());
-                }
+            // Step 2 - do sig fig checking (unless specified otherwise by question):
+            if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
                 if (ValidationUtils.tooManySignificantFigures(answerFromUser.getValue(), significantFiguresMax, log)
                         && bestResponse.isCorrect()) {
                     // If (and only if) _correct_, but to too many sig figs, give feedback about this.
@@ -148,6 +131,33 @@ public class IsaacNumericValidator implements IValidator {
                     // Our new bestResponse is about incorrect significant figures:
                     Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
                     sigFigResponse.setTags(new HashSet<>(ImmutableList.of(SIG_FIGS_TAG, SIG_FIGS_TOO_MANY_TAG)));
+                    bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
+                            false, validUnits, new Date());
+                }
+            }
+
+            // If incorrect and we have not used the default validation response then go ahead and return it
+            // - this provides more helpful feedback than too few sig figs errors.
+            if (!bestResponse.isCorrect() && bestResponse.getExplanation() != null
+                    && !(DEFAULT_VALIDATION_RESPONSE.equals(bestResponse.getExplanation().getValue())
+                    || DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE
+                    .equals(bestResponse.getExplanation().getValue()))) {
+                return useDefaultFeedbackIfNecessary(isaacNumericQuestion, bestResponse);
+            }
+
+            if (!isaacNumericQuestion.getDisregardSignificantFigures()) {
+                if (ValidationUtils.tooFewSignificantFigures(answerFromUser.getValue(), significantFiguresMin, log)) {
+                    // If too few sig figs then give feedback about this.
+
+                    // If we have unit information available put it in our response.
+                    Boolean validUnits = null;
+                    if (isaacNumericQuestion.getRequireUnits()) {
+                        // Whatever the current bestResponse is, it contains all we need to know about the units:
+                        validUnits = bestResponse.getCorrectUnits();
+                    }
+                    // Our new bestResponse is about incorrect significant figures:
+                    Content sigFigResponse = new Content(DEFAULT_VALIDATION_RESPONSE);
+                    sigFigResponse.setTags(new HashSet<>(ImmutableList.of(SIG_FIGS_TAG, SIG_FIGS_TOO_FEW_TAG)));
                     bestResponse = new QuantityValidationResponse(question.getId(), answerFromUser, false, sigFigResponse,
                             false, validUnits, new Date());
                 }
