@@ -23,4 +23,14 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
  */
 @JsonContentType("isaacReorderQuestion")
 public class IsaacReorderQuestionDTO extends IsaacItemQuestionDTO {
+
+    private Boolean useSingleList;
+
+    public Boolean getUseSingleList() {
+        return useSingleList;
+    }
+
+    public void setUseSingleList(Boolean useSingleList) {
+        this.useSingleList = useSingleList;
+    }
 }

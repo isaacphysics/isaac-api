@@ -30,4 +30,14 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 @JsonContentType("isaacReorderQuestion")
 @ValidatesWith(IsaacReorderValidator.class)
 public class IsaacReorderQuestion extends IsaacItemQuestion {
+
+    private Boolean useSingleList;
+
+    public Boolean getUseSingleList() {
+        return useSingleList;
+    }
+
+    public void setUseSingleList(Boolean useSingleList) {
+        this.useSingleList = useSingleList;
+    }
 }
