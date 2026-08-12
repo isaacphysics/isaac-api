@@ -138,10 +138,6 @@ class SchoolIndexer {
                             "true".equals(schoolArray[fieldNameMapping.get(Constants.SCHOOL_CLOSED_FIELDNAME)]),
                             source);
 
-                    if (null == schoolToSave.getPostalCode() || schoolToSave.getPostalCode().isEmpty()) {
-                        log.warn("School with missing postcode! School ID: {}", schoolToSave.getSchoolId());
-                    }
-
                     schools.add(schoolToSave);
                 } catch (IndexOutOfBoundsException e) {
                     // This happens when the school does not have the required data
