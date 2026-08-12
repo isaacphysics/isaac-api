@@ -150,7 +150,7 @@ public class SchoolListReader {
             throw new UnableToIndexSchoolsException("unable to ensure the cache has been populated");
         }
 
-        MatchInstruction searchInstruction = new MatchInstruction(SCHOOL_ID_FIELDNAME.toLowerCase() + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, schoolId);
+        MatchInstruction searchInstruction = new MatchInstruction(SCHOOL_ID_FIELDNAME, schoolId);
 
         List<String> matchingSchoolList = searchProvider.nestedMatchSearch(SCHOOLS_INDEX_BASE,
                 SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, DEFAULT_RESULTS_LIMIT, searchInstruction, null, null
