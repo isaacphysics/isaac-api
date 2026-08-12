@@ -443,6 +443,7 @@ public final class Constants {
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
     public static final Integer MAX_SEARCH_RESULT_LIMIT = 350;
+    public static final Integer MAX_SCHOOLS_RESULT_LIMIT = 50;
 
     public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
     public static final Integer CONTACT_FORM_CHAR_LIMIT = 5000;

@@ -43,6 +43,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
+
 /**
  * Segue School Lookup service.
  * 
@@ -87,9 +89,18 @@ public class SchoolLookupServiceFacade {
             @QueryParam("countryCode") final String countryCode, @QueryParam("schoolId") final String schoolId,
             @QueryParam("limit") final Integer limit) {
 
-        if ((null == searchQuery || searchQuery.isEmpty()) && (null == schoolId || schoolId.isEmpty())) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query or school ID")
-                    .toResponse();
+        if (null != limit && limit > MAX_SCHOOLS_RESULT_LIMIT) {
+            return SegueErrorResponse.getBadRequestResponse("Too many schools requested!");
+        }
+
+        boolean queryEmpty = searchQuery == null || searchQuery.isEmpty();
+        boolean schoolIdEmpty = schoolId == null || schoolId.isEmpty();
+        boolean countryCodeEmpty = countryCode == null || countryCode.isEmpty();
+        if ((queryEmpty && schoolIdEmpty) || (!queryEmpty && !schoolIdEmpty)) {
+            return SegueErrorResponse.getBadRequestResponse("You must provide either a search query, or a school ID.");
+        }
+        if (!schoolIdEmpty && !countryCodeEmpty) {
+            return SegueErrorResponse.getBadRequestResponse("You cannot filter by country when searching by school ID.");
         }
         
         EntityTag etag = new EntityTag(schoolListReader.getDataLastModifiedDate());
