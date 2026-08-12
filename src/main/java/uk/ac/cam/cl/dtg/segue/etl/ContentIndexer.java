@@ -982,7 +982,7 @@ public class ContentIndexer {
             // Check that there is some alt text. Decorative images should have empty alt text.
             boolean isDecorative = null != f.getDecorative() && f.getDecorative();
             if (f.getAltText() == null || (f.getAltText().isEmpty() && !isDecorative)) {
-                if (!(f instanceof Video) && !f.getId().equals("eventThumbnail")) {
+                if (!(f instanceof Video) && !Objects.equals(f.getId(), "eventThumbnail")) {
                     // Videos probably don't need alt text unless there is a good reason. It's not important that event
                     // thumbnails have alt text, so we don't record errors for those either.
                     this.registerContentProblem(content, "No altText attribute set for media element: " + f.getSrc()
@@ -1178,8 +1178,8 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacReorderQuestion q) {
-            if (q.getUseSingleList()) {
-                if (q.getChoices().stream().map(ItemChoice.class::cast).filter(c -> !c.isAllowSubsetMatch())
+            if (null != q.getUseSingleList() && q.getUseSingleList()) {
+                if (q.getChoices().stream().map(ItemChoice.class::cast).filter(c -> null == c.isAllowSubsetMatch() || !c.isAllowSubsetMatch())
                         .allMatch(choice -> choice.getItems().size() == q.getItems().size())) {
                     this.registerContentProblem(content, "Reorder Question: " + q.getId() + " has useSingleList"
                             + " and contains a non wildcard-matched answer with missing items.", indexProblemCache);
@@ -1188,7 +1188,7 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacParsonsQuestion q) {
-            if (q.getUseSingleList()) {
+            if (null != q.getUseSingleList() && q.getUseSingleList()) {
                 if (q.getChoices().stream().map(ItemChoice.class::cast)
                         .allMatch(choice -> choice.getItems().size() == q.getItems().size())) {
                     this.registerContentProblem(content, "Parsons Question: " + q.getId() + " has useSingleList"
