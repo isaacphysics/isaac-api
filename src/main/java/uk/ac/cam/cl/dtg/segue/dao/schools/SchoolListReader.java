@@ -107,7 +107,7 @@ public class SchoolListReader {
                     countryCode, null, false));
         }
         // Attempt to match on school ID, name & postcode
-        matchInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, null, true));
+        matchInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, null, false));
         matchInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, null, true));
         matchInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, null, true));
 
