@@ -34,11 +34,11 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 class SchoolIndexer {
     private static final Logger log = LoggerFactory.getLogger(SchoolIndexer.class);
-    private ElasticSearchIndexer es;
-    private ContentSubclassMapper mapper;
-    private String schoolsListPath;
+    private final ElasticSearchIndexer es;
+    private final ContentSubclassMapper mapper;
+    private final String schoolsListPath;
 
-    SchoolIndexer(ElasticSearchIndexer es, ContentSubclassMapper mapper, String schoolsListPath) {
+    SchoolIndexer(final ElasticSearchIndexer es, final ContentSubclassMapper mapper, final String schoolsListPath) {
         this.es = es;
         this.mapper = mapper;
         this.schoolsListPath = schoolsListPath;
@@ -66,7 +66,7 @@ class SchoolIndexer {
         for (School school : schoolList) {
             try {
                 indexList.add(immutableEntry(school.getSchoolId(), objectMapper.writeValueAsString(school)));
-            } catch (JsonProcessingException e) {
+            } catch (final JsonProcessingException e) {
                 log.error("Unable to serialize the school object into json.", e);
             }
         }
@@ -75,16 +75,16 @@ class SchoolIndexer {
         try {
             es.indexObject(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.METADATA.toString(), objectMapper.writeValueAsString(
                     ImmutableMap.of("lastModified", f.lastModified())), "sourceFile");
-        } catch (SegueSearchException e) {
+        } catch (final SegueSearchException e) {
             log.error("Unable to index school list metadata.", e);
-        } catch (JsonProcessingException e) {
+        } catch (final JsonProcessingException e) {
             log.error("Unable to serialise school list last modified date to JSON.", e);
         }
 
         try {
             es.bulkIndexWithIDs(SCHOOLS_INDEX_BASE, SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), indexList);
             log.info("School list index request complete.");
-        } catch (SegueSearchException e) {
+        } catch (final SegueSearchException e) {
             log.error("Unable to complete bulk index operation for schools list.", e);
         }
 
@@ -139,17 +139,17 @@ class SchoolIndexer {
                             source);
 
                     schools.add(schoolToSave);
-                } catch (IndexOutOfBoundsException e) {
+                } catch (final IndexOutOfBoundsException e) {
                     // This happens when the school does not have the required data
                     log.warn("Unable to load school into list due to missing required fields: {}", Arrays.toString(schoolArray));
                 }
             }
-        } catch (FileNotFoundException e) {
+        } catch (final FileNotFoundException e) {
             log.error("Unable to locate the file requested", e);
             throw new UnableToIndexSchoolsException("Unable to locate the file requested", e);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new UnableToIndexSchoolsException("Unable to load the file requested", e);
-        } catch (CsvValidationException e) {
+        } catch (final CsvValidationException e) {
             throw new UnableToIndexSchoolsException("Unable to parse the file requested", e);
         }
 
