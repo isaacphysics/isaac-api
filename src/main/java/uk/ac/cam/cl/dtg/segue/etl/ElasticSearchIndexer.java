@@ -27,7 +27,6 @@ import com.google.inject.Inject;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.search.ElasticSearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
@@ -39,6 +38,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Created by Ian on 17/10/2016.
@@ -60,9 +61,9 @@ public class ElasticSearchIndexer extends ElasticSearchProvider {
     @Inject
     public ElasticSearchIndexer(final ElasticsearchClient searchClient) {
         super(searchClient);
-        rawFieldsListByType.put("content", Lists.newArrayList("id", "title", "subtitle"));
-        rawFieldsListByType.put("school", Lists.newArrayList("countryCode"));
-        nestedFieldsByType.put("content", Lists.newArrayList("audience"));
+        rawFieldsListByType.put(CONTENT_INDEX_TYPE.CONTENT.toString(), Lists.newArrayList("id", "title", "subtitle"));
+        rawFieldsListByType.put(SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), Lists.newArrayList("countryCode"));
+        nestedFieldsByType.put(CONTENT_INDEX_TYPE.CONTENT.toString(), Lists.newArrayList("audience"));
     }
 
 
@@ -319,11 +320,11 @@ public class ElasticSearchIndexer extends ElasticSearchProvider {
 
             // Add mapping to specify raw, un-analyzed fields
             for (String fieldName : this.rawFieldsListByType.getOrDefault(indexType, Collections.emptyList())) {
-                log.debug("Sending raw mapping correction for {}." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, fieldName);
+                log.debug("Sending raw mapping correction for {}." + UNPROCESSED_SEARCH_FIELD_SUFFIX, fieldName);
                 properties.put(fieldName, Property.of(p -> p
                                             .text(t -> t
                                                 .fields(
-                                                    Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX,
+                                                    UNPROCESSED_SEARCH_FIELD_SUFFIX,
                                                     Property.of(k -> k.keyword(kf -> kf))
                                                 )
                                             )
