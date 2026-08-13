@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuantityValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.QuestionValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 
 import java.util.Arrays;
@@ -530,6 +531,14 @@ public class IsaacNumericValidatorTest {
         List<Choice> answerList = Lists.newArrayList();
         Quantity someCorrectAnswer = new Quantity("31.4", "m");
         someCorrectAnswer.setCorrect(true);
+
+        Content correctExplanation = new Content();
+        correctExplanation.setType("content");
+        List<ContentBase> correctExplanationChildren = Lists.newArrayList();
+        correctExplanationChildren.add(new Content("some correct explanation"));
+        correctExplanation.setChildren(correctExplanationChildren);
+        someCorrectAnswer.setExplanation(correctExplanation);
+
         answerList.add(someCorrectAnswer);
         someNumericQuestion.setChoices(answerList);
 
