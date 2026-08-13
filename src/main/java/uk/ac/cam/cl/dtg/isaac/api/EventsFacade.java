@@ -566,7 +566,7 @@ public class EventsFacade extends AbstractIsaacFacade {
                 if (schoolId != null) {
                     School school = schoolListReader.findSchoolById(schoolId);
                     if (null != school) {
-                        resultRow.add(school.getName());
+                        resultRow.add(school.getSchoolName());
                     } else {
                         resultRow.add(schoolId);
                     }
