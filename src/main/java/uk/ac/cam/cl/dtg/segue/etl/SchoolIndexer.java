@@ -91,7 +91,7 @@ class SchoolIndexer {
         // Create an alias (could be anything) to prevent this schools index from being garbage-collected by ElasticSearchIndexer.expungeOldIndices
         List<String> allSchoolTypes = Arrays.stream(SCHOOLS_INDEX_TYPE.values())
                 .map(SCHOOLS_INDEX_TYPE::toString).collect(Collectors.toList());
-        es.addOrMoveIndexAlias("schools-latest", SCHOOLS_INDEX_BASE, allSchoolTypes);
+        es.addOrMoveIndexAlias(String.format("%s_latest", SCHOOLS_INDEX_BASE), SCHOOLS_INDEX_BASE, allSchoolTypes);
     }
 
     /**
