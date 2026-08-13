@@ -40,8 +40,10 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.ResponseBuilder;
 import jakarta.ws.rs.core.Response.Status;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 /**
  * Segue School Lookup service.
@@ -70,8 +72,8 @@ public class SchoolLookupServiceFacade {
      * 
      * @param request
      *            - for caching purposes.
-     * @param schoolURN
-     *            - find by urn.
+     * @param schoolId
+     *            - find by school ID.
      * @param searchQuery
      *            - query to search fields against.
      * @param limit
@@ -84,11 +86,21 @@ public class SchoolLookupServiceFacade {
     @GZIP
     @Operation(summary = "List all schools matching provided criteria.")
     public Response schoolSearch(@Context final Request request, @QueryParam("query") final String searchQuery,
-            @QueryParam("urn") final String schoolURN, @QueryParam("limit") final Integer limit) {
+            @QueryParam("countryCode") final String countryCode, @QueryParam("schoolId") final String schoolId,
+            @QueryParam("limit") final Integer limit) {
 
-        if ((null == searchQuery || searchQuery.isEmpty()) && (null == schoolURN || schoolURN.isEmpty())) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "You must provide a search query or school URN")
-                    .toResponse();
+        if (null != limit && limit > MAX_SCHOOLS_RESULT_LIMIT) {
+            return SegueErrorResponse.getBadRequestResponse("Too many schools requested!");
+        }
+
+        boolean queryEmpty = searchQuery == null || searchQuery.isEmpty();
+        boolean schoolIdEmpty = schoolId == null || schoolId.isEmpty();
+        boolean countryCodeEmpty = countryCode == null || countryCode.isEmpty();
+        if ((queryEmpty && schoolIdEmpty) || (!queryEmpty && !schoolIdEmpty)) {
+            return SegueErrorResponse.getBadRequestResponse("You must provide either a search query, or a school ID.");
+        }
+        if (!schoolIdEmpty && !countryCodeEmpty) {
+            return SegueErrorResponse.getBadRequestResponse("You cannot filter by country when searching by school ID.");
         }
         
         EntityTag etag = new EntityTag(schoolListReader.getDataLastModifiedDate());
@@ -109,10 +121,10 @@ public class SchoolLookupServiceFacade {
         List<School> list;
         try {
 
-            if (schoolURN != null && !schoolURN.isEmpty()) {
-                list = Arrays.asList(schoolListReader.findSchoolById(schoolURN));
+            if (schoolId != null && !schoolId.isEmpty()) {
+                list = Collections.singletonList(schoolListReader.findSchoolById(schoolId));
             } else {
-                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery, limit);
+                list = schoolListReader.findSchoolByNameOrPostCode(searchQuery, countryCode, limit);
             }
             
         } catch (UnableToIndexSchoolsException | SegueSearchException | IOException e) {
@@ -120,7 +132,7 @@ public class SchoolLookupServiceFacade {
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message, e).toResponse();
         } catch (NumberFormatException e) {
-            return new SegueErrorResponse(Status.BAD_REQUEST, "The school urn provided is invalid.").toResponse();
+            return new SegueErrorResponse(Status.BAD_REQUEST, "The school ID provided is invalid.").toResponse();
         }
 
         return Response.ok(list).tag(etag).cacheControl(cc).build();
