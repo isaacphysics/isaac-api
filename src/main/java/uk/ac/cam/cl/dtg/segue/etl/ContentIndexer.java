@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -251,7 +252,7 @@ public class ContentIndexer {
 
                         // add children (and parent) from flattened Set to
                         // cache if they have ids
-                        for (Content flattenedContent : this.flattenContentObjects(content)) {
+                        for (Content flattenedContent : flattenContentObjects(content)) {
                             if (flattenedContent.getId() == null) {
                                 continue;
                             }
@@ -384,6 +385,12 @@ public class ContentIndexer {
         // id if it doesn't have one.
         if (content instanceof Question && content.getId() == null) {
             log.debug("Found question without id '{}' in {}", content.getTitle(), canonicalSourceFile);
+        }
+
+        // Give title-less questions unique titles so they remain distinct in Set-based flattening, even if they have
+        // the same id.
+        if (content instanceof Question && content.getTitle() == null) {
+            content.setTitle("untitled-question-" + UUID.randomUUID());
         }
 
         // Try to figure out the parent ids.
