@@ -15,33 +15,47 @@ package uk.ac.cam.cl.dtg.segue.etl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import static org.easymock.EasyMock.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.ac.cam.cl.dtg.segue.etl.ContentIndexer.FEEDBACK_QUESTION_UNUSED_DZ;
 
-import java.util.*;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.client.util.Maps;
 import com.google.api.client.util.Sets;
 import com.google.common.collect.ImmutableMap;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
+import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
+import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.isaac.dos.content.SkillsApp;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentSubclassMapper;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.database.GitDb;
-import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
-import uk.ac.cam.cl.dtg.isaac.dos.content.ContentBase;
 import uk.ac.cam.cl.dtg.util.mappers.ContentMapper;
+
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.reset;
+import static org.easymock.EasyMock.verify;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static uk.ac.cam.cl.dtg.segue.etl.ContentIndexer.FEEDBACK_QUESTION_UNUSED_DZ;
 
 /**
  * Test class for the GitContentManager class.
@@ -80,24 +94,24 @@ public class ContentIndexerTest {
      */
 	@Test
 	public void buildSearchIndexes_sendContentToSearchProvider_checkSearchProviderIsSentAllImportantObject()
-			throws Exception {
-		reset(database, searchProvider);
-		String uniqueObjectId = UUID.randomUUID().toString();
-		String uniqueObjectHash = UUID.randomUUID().toString();
+            throws Exception {
+        reset(database, searchProvider);
+        String uniqueObjectId = UUID.randomUUID().toString();
+        String uniqueObjectHash = UUID.randomUUID().toString();
 
-		Map<String, Content> contents = new TreeMap<>();
-		Content content = new Content();
-		content.setId(uniqueObjectId);
-		contents.put(uniqueObjectId, content);
+        Map<String, Content> contents = new TreeMap<>();
+        Content content = new Content();
+        content.setId(uniqueObjectId);
+        contents.put(uniqueObjectId, content);
 
-		Set<String> someTagsList = Sets.newHashSet();
+        Set<String> someTagsList = Sets.newHashSet();
 
-		Map<String, String> someUnitsMap = ImmutableMap.of("N","N", "km", "km");
-		Map<String, String> publishedUnitsMap = ImmutableMap.of("N","N", "km", "km");
+        Map<String, String> someUnitsMap = ImmutableMap.of("N", "N", "km", "km");
+        Map<String, String> publishedUnitsMap = ImmutableMap.of("N", "N", "km", "km");
 
         // This is what is sent to the search provider so needs to be mocked
-        Map<String, String> someUnitsMapRaw = ImmutableMap.of("cleanKey","N", "unit", "N");
-        Map<String, String> someUnitsMapRaw2 = ImmutableMap.of("cleanKey","km", "unit", "km");
+        Map<String, String> someUnitsMapRaw = ImmutableMap.of("cleanKey", "N", "unit", "N");
+        Map<String, String> someUnitsMapRaw2 = ImmutableMap.of("cleanKey", "km", "unit", "km");
 
         Date someCreatedDate = new Date();
         Map versionMeta = ImmutableMap.of("version", INITIAL_VERSION, "created", someCreatedDate.toString());
@@ -111,11 +125,9 @@ public class ContentIndexerTest {
         }
 
         // prepare pre-canned responses for the object mapper
-		ObjectMapper objectMapper = createMock(ObjectMapper.class);
-		expect(contentSubclassMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper)
-				.once();
-		expect(objectMapper.writeValueAsString(content)).andReturn(
-				uniqueObjectHash).once();
+        ObjectMapper objectMapper = createMock(ObjectMapper.class);
+        expect(contentSubclassMapper.generateNewPreconfiguredContentMapper()).andReturn(objectMapper).once();
+        expect(objectMapper.writeValueAsString(content)).andReturn(uniqueObjectHash).once();
         expect(objectMapper.writeValueAsString(
                 anyObject())).andReturn(versionMeta.toString()).once(); // expects versionMeta - possibly differing date
         expect(objectMapper.writeValueAsString(
@@ -153,9 +165,9 @@ public class ContentIndexerTest {
 
         // Ensure at least one bulk index for general content is requested
         searchProvider.bulkIndexWithIDs(eq(INITIAL_VERSION), eq(Constants.CONTENT_INDEX_TYPE.CONTENT.toString()), anyObject());
-		expectLastCall().once();
+        expectLastCall().once();
 
-		replay(searchProvider, contentMapper, contentSubclassMapper, objectMapper);
+        replay(searchProvider, contentMapper, contentSubclassMapper, objectMapper);
 
         ContentIndexer contentIndexer = new ContentIndexer(database, searchProvider, contentSubclassMapper);
 
@@ -163,8 +175,8 @@ public class ContentIndexerTest {
         contentIndexer.buildElasticSearchIndex(INITIAL_VERSION, contents, someTagsList, someUnitsMap, publishedUnitsMap,
                 someContentProblemsMap);
 
-		verify(searchProvider, contentMapper, objectMapper);
-	}
+        verify(searchProvider, contentMapper, objectMapper);
+    }
 
     /**
      * Test the flattenContentObjects method and ensure the expected output is
@@ -185,9 +197,7 @@ public class ContentIndexerTest {
         for (Content c : contents) {
             boolean containsElement = elements.contains(c);
             assertTrue(containsElement);
-            if (containsElement) {
-                elements.remove(c);
-            }
+            elements.remove(c);
         }
 
         assertEquals(0, elements.size());
@@ -195,7 +205,7 @@ public class ContentIndexerTest {
 
     /**
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when neither
-     * significant figure is set whilst disregardSignificantFigures is not set
+     * significant figure is set whilst disregardSignificantFigures is not set.
      */
     @Test
     public void recordContentTypeSpecificError_noSigFigSet_checkNoError() {
@@ -217,7 +227,7 @@ public class ContentIndexerTest {
 
     /**
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCach when only one significant
-     * figure is specified and the other is set to null whilst disregardSignificantFigures is not set
+     * figure is specified and the other is set to null whilst disregardSignificantFigures is not set.
      */
     @Test
     public void recordContentTypeSpecificError_onlyOneSigFigSet_checkErrorIsCorrect() {
@@ -242,7 +252,7 @@ public class ContentIndexerTest {
 
     /**
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when both significant
-     * figures are specified but either is less than 1 whilst disregardSignificantFigures is not set
+     * figures are specified but either is less than 1 whilst disregardSignificantFigures is not set.
      */
     @Test
     public void recordContentTypeSpecificError_bothSigFigSetLessThan1_checkErrorIsCorrect() {
@@ -268,7 +278,7 @@ public class ContentIndexerTest {
 
     /**
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when the maximum significant
-     * figure is less than the minimum significant figure (both above 1) whilst disregardSignificantFigures is not set
+     * figure is less than the minimum significant figure (both above 1) whilst disregardSignificantFigures is not set.
      */
     @Test
     public void recordContentTypeSpecificError_maxLessThanMin_checkErrorIsCorrect() {
@@ -293,7 +303,7 @@ public class ContentIndexerTest {
     /**
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when the minimum
      * significant figure is less than the maximum significant figure (both above 1) whilst disregardSignificantFigures
-     * is not set
+     * is not set.
      */
     @Test
     public void recordContentTypeSpecificError_minLessThanMax_checkNoError() {
@@ -315,7 +325,7 @@ public class ContentIndexerTest {
 
     /**
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when
-     * disregardSignificantFigures is not set
+     * disregardSignificantFigures is not set.
      */
     @Test
     public void recordContentTypeSpecificError_disregardSigFigsSet_checkNoError() {
@@ -581,7 +591,7 @@ public class ContentIndexerTest {
 
     /**
      * Helper method for the recordContentTypeSpecificError tests,
-     * generates an IsaacNumericQuestion with provided significant figure information
+     * generates an IsaacNumericQuestion with provided significant figure information.
      *
      * @param disregardSigFig
      *              - Whether to set the disregardSignificantFigures to true
