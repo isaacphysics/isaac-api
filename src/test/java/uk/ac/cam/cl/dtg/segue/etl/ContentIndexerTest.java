@@ -204,11 +204,11 @@ public class ContentIndexerTest {
     }
 
     /**
-     * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when neither
+     * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when neither
      * significant figure is set whilst disregardSignificantFigures is not set.
      */
     @Test
-    public void recordContentTypeSpecificError_noSigFigSet_checkNoError() {
+    public void recordContentTypeSpecificError_noSigFigSet_checkError() {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -221,7 +221,9 @@ public class ContentIndexerTest {
 
         // ASSERT
         for (Content key : indexProblemCache.keySet()) {
-            assertTrue(indexProblemCache.get(key).isEmpty());
+            for (String problem : indexProblemCache.get(key)) {
+                assertTrue(problem.contains("has no significant figure bounds set."));
+            }
         }
     }
 
