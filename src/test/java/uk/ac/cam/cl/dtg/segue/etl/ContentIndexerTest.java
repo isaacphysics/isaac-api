@@ -169,12 +169,9 @@ public class ContentIndexerTest {
     /**
      * Test the flattenContentObjects method and ensure the expected output is
      * generated.
-     *
-     * @throws Exception
      */
     @Test
-    public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned()
-            throws Exception {
+    public void flattenContentObjects_flattenMultiTierObject_checkCorrectObjectReturned() {
         final int numChildLevels = 5;
         final int numNodes = numChildLevels + 1;
 
@@ -199,12 +196,9 @@ public class ContentIndexerTest {
     /**
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when neither
      * significant figure is set whilst disregardSignificantFigures is not set
-     *
-     * @throws Exception as reflection may not find method
      */
     @Test
-    public void recordContentTypeSpecificError_noSigFigSet_checkNoError()
-            throws Exception {
+    public void recordContentTypeSpecificError_noSigFigSet_checkNoError() {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -224,12 +218,9 @@ public class ContentIndexerTest {
     /**
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCach when only one significant
      * figure is specified and the other is set to null whilst disregardSignificantFigures is not set
-     *
-     * @throws Exception as reflection may not find method
      */
     @Test
-    public void recordContentTypeSpecificError_onlyOneSigFigSet_checkErrorIsCorrect()
-            throws Exception {
+    public void recordContentTypeSpecificError_onlyOneSigFigSet_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -252,12 +243,9 @@ public class ContentIndexerTest {
     /**
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when both significant
      * figures are specified but either is less than 1 whilst disregardSignificantFigures is not set
-     *
-     * @throws Exception as reflection may not find method
      */
     @Test
-    public void recordContentTypeSpecificError_bothSigFigSetLessThan1_checkErrorIsCorrect()
-            throws Exception {
+    public void recordContentTypeSpecificError_bothSigFigSetLessThan1_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -281,12 +269,9 @@ public class ContentIndexerTest {
     /**
      * Test that recordContentTypeSpecificError adds an error message to indexProblemCache when the maximum significant
      * figure is less than the minimum significant figure (both above 1) whilst disregardSignificantFigures is not set
-     *
-     * @throws Exception as reflection may not find method
      */
     @Test
-    public void recordContentTypeSpecificError_maxLessThanMin_checkErrorIsCorrect()
-            throws Exception {
+    public void recordContentTypeSpecificError_maxLessThanMin_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -309,12 +294,9 @@ public class ContentIndexerTest {
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when the minimum
      * significant figure is less than the maximum significant figure (both above 1) whilst disregardSignificantFigures
      * is not set
-     *
-     * @throws Exception as reflection may not find method
      */
     @Test
-    public void recordContentTypeSpecificError_minLessThanMax_checkNoError()
-            throws Exception {
+    public void recordContentTypeSpecificError_minLessThanMax_checkNoError() {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -334,12 +316,9 @@ public class ContentIndexerTest {
     /**
      * Test that recordContentTypeSpecificError does not add an error message to indexProblemCache when
      * disregardSignificantFigures is not set
-     *
-     * @throws Exception as reflection may not find method
      */
     @Test
-    public void recordContentTypeSpecificError_disregardSigFigsSet_checkNoError()
-            throws Exception {
+    public void recordContentTypeSpecificError_disregardSigFigsSet_checkNoError() {
         // ARRANGE
         final Map<Content, List<String>> indexProblemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -364,7 +343,7 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_dndQuestionCorrect_checkNoError() throws Exception {
+    public void recordContentTypeSpecificError_dndQuestionCorrect_checkNoError() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -384,7 +363,7 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_dndQuestionNoDropZones_checkErrorIsCorrect() throws Exception {
+    public void recordContentTypeSpecificError_dndQuestionNoDropZones_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -408,7 +387,7 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_dndQuestionDuplicateDropZones_checkErrorIsCorrect() throws Exception {
+    public void recordContentTypeSpecificError_dndQuestionDuplicateDropZones_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -432,7 +411,7 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_dndQuestionUnusedDropZones_checkErrorIsCorrect() throws Exception {
+    public void recordContentTypeSpecificError_dndQuestionUnusedDropZones_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -456,7 +435,7 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_dndQuestionUnrecognisedDropZones_checkErrorIsCorrect() throws Exception {
+    public void recordContentTypeSpecificError_dndQuestionUnrecognisedDropZones_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
@@ -480,7 +459,7 @@ public class ContentIndexerTest {
     }
 
     @Test
-    public void recordContentTypeSpecificError_answerDuplicateDropZones_checkErrorIsCorrect() throws Exception {
+    public void recordContentTypeSpecificError_answerDuplicateDropZones_checkErrorIsCorrect() {
         // ARRANGE
         final Map<Content, List<String>> problemCache = new HashMap<>();
         final List<Content> contents = new LinkedList<>();
