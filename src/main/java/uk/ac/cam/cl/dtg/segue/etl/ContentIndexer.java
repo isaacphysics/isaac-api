@@ -1082,7 +1082,7 @@ public class ContentIndexer {
                     // Both bounds need to be present
                     this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has only one "
                             + "significant figure bound, and may be unanswerable as a result. Please add both upper "
-                            + "and lower significant figure bounds, or omit both.", indexProblemCache);
+                            + "and lower significant figure bounds, or set 'exact answers only'.", indexProblemCache);
                 } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
                     // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
                     // (0 significant figures makes no sense for example)
