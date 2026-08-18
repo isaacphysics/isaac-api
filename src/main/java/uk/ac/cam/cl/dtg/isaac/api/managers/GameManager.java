@@ -136,8 +136,12 @@ public class GameManager {
             this.permanentlyStoreGameboard(gameboardToLink);
         }
 
-        this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(userToLinkTo.getId(),
-                gameboardToLink.getId());
+        // determine if we need to link the board to the user
+        augmentGameboardsWithLinkedToUserInformation(userToLinkTo, Collections.singletonList(gameboardToLink));
+        if (!gameboardToLink.isSavedToCurrentUser()) {
+            this.gameboardPersistenceManager.createUserLinkToGameboard(userToLinkTo.getId(),
+                    gameboardToLink.getId());
+        }
     }
 
     /**
@@ -569,6 +573,7 @@ public class GameManager {
         validateGameboard(gameboardDTO);
 
         this.permanentlyStoreGameboard(gameboardDTO);
+        this.linkUserToGameboard(gameboardDTO, owner);
 
         return gameboardDTO;
     }
