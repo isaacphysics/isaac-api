@@ -203,15 +203,16 @@ public class IsaacDndValidatorTest {
                         .setAnswer(choice(item(item_6cm, "leg_1"), item(item_5cm, "leg_2"), item(item_5cm, "hypothenuse")))
                         .expectCorrect(false).expectDropZonesCorrect(d -> d.setLeg1(false).setLeg2(false).setHypothenuse(true)),
 
-                enabledItemFeedback.get().setTitle("multipleCorrectAnswers_decidesCorrectnessBasedOnClosestMatch")
+                // The closes correct answer is the first one
+                enabledItemFeedback.get().setTitle("multipleCorrectAnswers_closestIsLast_ShouldReportTheLast")
                         .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")),
                                 correctChoice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2"), item(item_13cm, "hypothenuse")))
-                        .setAnswer(choice(item(item_5cm, "leg_1")))
-                        .expectCorrect(false).expectDropZonesCorrect(d -> d.setLeg1(true)),
+                        .setAnswer(choice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2"), item(item_5cm, "hypothenuse")))
+                        .expectCorrect(false).expectDropZonesCorrect(d -> d.setLeg1(true).setLeg2(true).setHypothenuse(false)),
 
                 // The closest correct answer is the first one, so a validator that keeps the last one it sees would
                 // wrongly mark leg_1 and leg_2 as incorrect here.
-                enabledItemFeedback.get().setTitle("multipleCorrectAnswers_closestIsFirst_ShouldNotReportTheLast")
+                enabledItemFeedback.get().setTitle("multipleCorrectAnswers_closestIsFirst_ShouldReportTheFirst")
                         .setQuestion(correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")),
                                 correctChoice(item(item_5cm, "leg_1"), item(item_12cm, "leg_2"), item(item_13cm, "hypothenuse")))
                         .setAnswer(choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_13cm, "hypothenuse")))
