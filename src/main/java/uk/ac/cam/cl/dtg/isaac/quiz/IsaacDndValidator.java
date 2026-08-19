@@ -65,11 +65,17 @@ public class IsaacDndValidator implements IValidator {
         // These variables store the important features of the response we'll send.
         boolean isCorrect = false;
         Content feedback = null;
-        Map<String, Boolean> dropZonesCorrect = null;
+
+        // A question can have several correct choices, e.g. one per ordering of interchangeable items. 
+        // This saves the one with the most correct items, rather than the one on the last place on the list 
+        // in case it's not 100% correct.
+        Map<String, Boolean> mostDropZonesCorrect = null;
+        int bestMatchCount = -1;
 
         // For all the choices on this question...
         for (Choice choice : orderedChoices) {
             boolean submissionMatches = true;
+            int matchCount = 0;
             DndChoice dndChoice = (DndChoice) choice;
             List<DndItem> expectedItems = dndChoice.getItems();
             List<DndItem> submittedItems = answer.getItems();
@@ -87,14 +93,18 @@ public class IsaacDndValidator implements IValidator {
                     .findFirst().orElse(null);
                 boolean itemMatch = submittedItem != null && submittedItem.getId().equals(expectedItem.getId());
                 itemMatches.put(expectedItem.getDropZoneId(), itemMatch);
-                if (!itemMatch) {
+                if (itemMatch) {
+                    matchCount++;
+                } else {
                     submissionMatches = false;
                 }
             }
 
-            if (detailedItemFeedback && dndChoice.isCorrect()) {
-                dropZonesCorrect = submittedItems.stream().collect(
-                    Collectors.toMap(DndItem::getDropZoneId, i -> itemMatches.getOrDefault(i.getDropZoneId(), false)));
+            // only when the match count is more than the current max
+            if (detailedItemFeedback && dndChoice.isCorrect() && matchCount > bestMatchCount) {
+                bestMatchCount = matchCount;
+                mostDropZonesCorrect = submittedItems.stream().collect(
+                        Collectors.toMap(DndItem::getDropZoneId, i -> itemMatches.getOrDefault(i.getDropZoneId(), false)));
             }
 
             if (submissionMatches) {
@@ -108,7 +118,8 @@ public class IsaacDndValidator implements IValidator {
             feedback = question.getDefaultFeedback();
         }
 
-        return new DndValidationResponse(question.getId(), answer, isCorrect, dropZonesCorrect, feedback, new Date());
+        return new DndValidationResponse(
+            question.getId(), answer, isCorrect, mostDropZonesCorrect, feedback, new Date());
     }
 
     private DndProblem getProblemsWithQuestionOrAnswer(final Question question, final Choice answer) {
