@@ -22,5 +22,5 @@ package uk.ac.cam.cl.dtg.isaac.dos.users;
  *
  */
 public enum EmailVerificationStatus {
-    VERIFIED, NOT_VERIFIED, DELIVERY_FAILED, LOCKED;
+    VERIFIED, NOT_VERIFIED, DELIVERY_FAILED, AGE_RESTRICTED;
 }
