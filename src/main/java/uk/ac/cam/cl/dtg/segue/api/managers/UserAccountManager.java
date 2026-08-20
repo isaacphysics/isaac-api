@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -1134,6 +1135,11 @@ public class UserAccountManager implements IUserAccountManager {
         // null values are explicitly not mapped by `mergeMapper`.
         if (updatedUser.getDateOfBirth() == null) {
             userToSave.setDateOfBirth(null);
+        } else {
+            if (existingUser.getEmailVerificationStatus() == EmailVerificationStatus.AGE_RESTRICTED
+                    && updatedUser.getDateOfBirth().before(DateUtils.addYears(new Date(), -13))) {
+                userToSave.setEmailVerificationStatus(EmailVerificationStatus.DELIVERY_FAILED);
+            }
         }
 
         // Before save, we should validate the user for mandatory fields.
