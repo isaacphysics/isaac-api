@@ -28,7 +28,7 @@ services:
 #      - 9187:9187
 
   prometheus:
-    image: prom/prometheus
+    image: prom/prometheus:v3.14.0
     container_name: prometheus
     command:
       - --storage.tsdb.retention=7d
@@ -44,7 +44,7 @@ services:
       - 9090:9090
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:13.2.0
     container_name: grafana
     environment:
       - GF_SECURITY_ADMIN_USER=grafana
