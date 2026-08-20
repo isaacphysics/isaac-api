@@ -196,9 +196,6 @@ public class GameboardPersistenceManager {
             throw new SegueDatabaseException("Unable to process json while saving gameboard.", e);
         }
 
-        // add the gameboard to the users myboards list.
-        this.createOrUpdateUserLinkToGameboard(gameboardToSave.getOwnerUserId(), gameboardToSave.getId());
-
         // make sure that it is not still in temporary storage
         this.gameboardNonPersistentStorage.invalidate(gameboard.getId());
 
@@ -318,7 +315,7 @@ public class GameboardPersistenceManager {
     }
 
     /**
-     * Create a link between a user and a gameboard or update the last visited date.
+     * Create a link between a user and a gameboard.
      *
      * @param userId
      *            - userId to link
@@ -327,13 +324,11 @@ public class GameboardPersistenceManager {
      * @throws SegueDatabaseException
      *             - if there is a problem persisting the link in the database.
      */
-    public void createOrUpdateUserLinkToGameboard(final Long userId, final String gameboardId)
+    public void createUserLinkToGameboard(final Long userId, final String gameboardId)
         throws SegueDatabaseException {
 
-        // Connect user to gameboard, Postgres UPSERT syntax on insert conflict:
-        String query = "INSERT INTO user_gameboards(user_id, gameboard_id, created, last_visited) VALUES (?, ?, ?, ?)"
-                 + " ON CONFLICT ON CONSTRAINT user_gameboard_composite_key"
-                 + " DO UPDATE SET last_visited=EXCLUDED.last_visited;";
+        // Connect user to gameboard
+        String query = "INSERT INTO user_gameboards(user_id, gameboard_id, created, last_visited) VALUES (?, ?, ?, ?)";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
         ) {
@@ -343,9 +338,40 @@ public class GameboardPersistenceManager {
             pst.setTimestamp(4, new Timestamp(new Date().getTime()));
 
             log.debug("Saving gameboard to user relationship...");
+            if (pst.executeUpdate() == 0) {
+                throw new SQLException("Creating user link to gameboard failed, no rows changed");
+            }
+        } catch (SQLException e) {
+            throw new SegueDatabaseException("Postgres exception", e);
+        }
+    }
+
+    /**
+     * Update the last visited date for a gameboard saved to a user.
+     *
+     * @param userId
+     *            - user ID that visited the board
+     * @param gameboardId
+     *            - gameboard ID that was visited
+     * @throws SegueDatabaseException
+     *             - if there is a problem persisting the updated date in the database.
+     */
+    public void updateGameboardLastVisited(final Long userId, final String gameboardId)
+            throws SegueDatabaseException {
+
+        String query = "UPDATE user_gameboards SET last_visited = ? WHERE user_id = ? AND gameboard_id = ?";
+
+        try (Connection conn = database.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement(query);
+        ) {
+            pst.setTimestamp(1, new Timestamp(new Date().getTime()));
+            pst.setLong(2, userId);
+            pst.setString(3, gameboardId);
+
+            log.debug("Updating last visited date for gameboard");
             int affectedRows = pst.executeUpdate();
             if (affectedRows == 0) {
-                throw new SQLException("Creating/updating user link to gameboard failed, no rows changed");
+                log.warn("Updating gameboard last visited date failed, no rows changed");
             }
         } catch (SQLException e) {
             throw new SegueDatabaseException("Postgres exception", e);

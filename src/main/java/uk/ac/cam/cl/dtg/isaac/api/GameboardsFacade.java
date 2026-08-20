@@ -145,7 +145,6 @@ public class GameboardsFacade extends AbstractIsaacFacade {
 
         try {
             GameboardDTO gameboard;
-            boolean isLinked = false;
 
             AbstractSegueUserDTO randomUser = this.userManager.getCurrentUser(httpServletRequest);
 
@@ -160,9 +159,14 @@ public class GameboardsFacade extends AbstractIsaacFacade {
             if (randomUser instanceof AnonymousUserDTO) {
                 userQuestionAttempts = this.questionManager.getQuestionAttemptsByUser(randomUser);
             } else {
+                RegisteredUserDTO registeredUser = (RegisteredUserDTO) randomUser;
                 List<String> gameboardPageIds = gameboardWithoutAttemptInfo.getContents().stream().map(GameboardItem::getId).collect(Collectors.toList());
-                userQuestionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts((RegisteredUserDTO) randomUser, gameboardPageIds);
-                gameManager.augmentGameboardsWithLinkedToUserInformation((RegisteredUserDTO) randomUser, Collections.singletonList(gameboardWithoutAttemptInfo));
+                userQuestionAttempts = this.questionManager.getMatchingLightweightQuestionAttempts(registeredUser, gameboardPageIds);
+                gameManager.augmentGameboardsWithLinkedToUserInformation(registeredUser, Collections.singletonList(gameboardWithoutAttemptInfo));
+
+                if (gameboardWithoutAttemptInfo.isSavedToCurrentUser()) {
+                    gameManager.updateGameboardLastVisited(gameboardWithoutAttemptInfo.getId(), registeredUser.getId());
+                }
             }
 
             // Calculate the ETag

@@ -136,8 +136,27 @@ public class GameManager {
             this.permanentlyStoreGameboard(gameboardToLink);
         }
 
-        this.gameboardPersistenceManager.createOrUpdateUserLinkToGameboard(userToLinkTo.getId(),
-                gameboardToLink.getId());
+        // determine if we need to link the board to the user
+        augmentGameboardsWithLinkedToUserInformation(userToLinkTo, Collections.singletonList(gameboardToLink));
+        if (!gameboardToLink.isSavedToCurrentUser()) {
+            this.gameboardPersistenceManager.createUserLinkToGameboard(userToLinkTo.getId(),
+                    gameboardToLink.getId());
+        }
+    }
+
+    /**
+     * Update the last visited date for a gameboard saved to a user.
+     *
+     * @param gameboardId
+     *            - ID of gameboard that was visited
+     * @param userId
+     *            - ID of user that visited the board
+     * @throws SegueDatabaseException
+     *             - if there is a problem persisting the updated date in the database.
+     */
+    public void updateGameboardLastVisited(final String gameboardId, final Long userId)
+            throws SegueDatabaseException {
+        this.gameboardPersistenceManager.updateGameboardLastVisited(userId, gameboardId);
     }
 
     /**
@@ -554,6 +573,7 @@ public class GameManager {
         validateGameboard(gameboardDTO);
 
         this.permanentlyStoreGameboard(gameboardDTO);
+        this.linkUserToGameboard(gameboardDTO, owner);
 
         return gameboardDTO;
     }
