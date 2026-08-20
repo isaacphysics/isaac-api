@@ -1073,11 +1073,16 @@ public class ContentIndexer {
             }
             // Verify that significant figure bounds are correct
             if (!q.getDisregardSignificantFigures()) {
-                if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
-                    // Both bounds need to be present, or both not present
+                // If not 'exact answers only', s.f. bounds should be set
+                if (null == q.getSignificantFiguresMin() && null == q.getSignificantFiguresMax()) {
+                    this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has no "
+                            + "significant figure bounds set. If this question does not use significant figures then "
+                            + "'exact answers only' should be set.", indexProblemCache);
+                } else if (null == q.getSignificantFiguresMin() || null == q.getSignificantFiguresMax()) {
+                    // Both bounds need to be present
                     this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has only one "
                             + "significant figure bound, and may be unanswerable as a result. Please add both upper "
-                            + "and lower significant figure bounds, or omit both.", indexProblemCache);
+                            + "and lower significant figure bounds, or set 'exact answers only'.", indexProblemCache);
                 } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
                     // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
                     // (0 significant figures makes no sense for example)
@@ -1198,20 +1203,26 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacCoordinateQuestion q) {
-
-            if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
-                // Both bounds need to be present, or both not present
-                this.registerContentProblem(content, String.format("Coordinate Question: %s has only one significant figure bound."
-                        + " Sig figs will be ignored for this question; add both min and max to fix this.", q.getId()),
-                        indexProblemCache);
-            } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
-                // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
-                if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
-                        || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
-                    this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has broken "
-                            + "significant figure rules! The upper bound may be below the lower bound, or "
-                            + "either bound might be less than 1 - the question will be unanswerable unless "
-                            + "this is fixed.", indexProblemCache);
+            if (!q.getDisregardSignificantFigures()) {
+                // If not 'exact answers only', s.f. bounds should be set
+                if (null == q.getSignificantFiguresMin() && null == q.getSignificantFiguresMax()) {
+                    this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has no "
+                            + "significant figure bounds set. If this question does not use significant figures then "
+                            + "'exact answers only' should be set.", indexProblemCache);
+                } else if (null == q.getSignificantFiguresMin() || null == q.getSignificantFiguresMax()) {
+                    // Both bounds need to be present
+                    this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has only one "
+                            + "significant figure bound, and may be unanswerable as a result. Please add both upper "
+                            + "and lower significant figure bounds, or set 'exact answers only'.", indexProblemCache);
+                } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
+                    // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
+                    if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
+                            || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
+                        this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has broken "
+                                + "significant figure rules! The upper bound may be below the lower bound, or "
+                                + "either bound might be less than 1 - the question will be unanswerable unless "
+                                + "this is fixed.", indexProblemCache);
+                    }
                 }
             }
 
