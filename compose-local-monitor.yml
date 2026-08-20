@@ -3,10 +3,10 @@
 version: '2'
 services:
 #  elasticsearch-exporter:
-#    image: justwatch/elasticsearch_exporter:1.1.0
+#    image: prometheuscommunity/elasticsearch-exporter:v1.7.0
 #    container_name: elasticsearch-exporter
 #    command:
-#      - '--es.uri=http://elasticsearch:9200'
+#      - '--es.uri=http://elastic:elastic@elasticsearch:9200'
 #      - '--web.listen-address=:9108'
 #    network_mode: bridge
 #    links:
