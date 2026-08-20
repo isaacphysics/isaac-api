@@ -223,8 +223,8 @@ public final class Constants {
     public static final String MAILGUN_FROM_ADDRESS = "MAILGUN_FROM_ADDRESS";
     public static final String MAILGUN_DOMAIN = "MAILGUN_DOMAIN";
     public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
-    public static final String MAILGUN_EMAILS_BETA_OPT_IN = "MAILGUN_EMAILS_BETA_OPT_IN";
-
+    public static final Integer MAILGUN_EMAIL_BATCH_SIZE = 500;
+    public static final Integer LARGE_GROUP_SIZE = 50;
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
      * processing on (e.g. no stemming)

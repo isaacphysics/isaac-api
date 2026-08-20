@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
@@ -41,13 +40,11 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import jakarta.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
@@ -79,14 +76,6 @@ public class EmailService {
     }
 
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-
-    private boolean userInMailGunBetaList(final Long userId) {
-        String optInIds = properties.getProperty(MAILGUN_EMAILS_BETA_OPT_IN);
-        if (Strings.isNullOrEmpty(optInIds)) {
-            return false;
-        }
-        return Arrays.stream(optInIds.split(",")).anyMatch(id -> id.equals(userId.toString()));
-    }
 
     public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, String> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
         try {
@@ -131,9 +120,9 @@ public class EmailService {
                     .filter(user -> GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus()))
                     .collect(Collectors.toList());
 
-            // Send the email using MailGun if owner on list or if scheduled:
-            if (this.userInMailGunBetaList(assignment.getOwnerUserId()) || assignment.getScheduledStartDate() != null) {
-                Iterables.partition(usersToEmail, MAILGUN_BATCH_SIZE)
+            // Send the email using MailGun if large group or if assignment was scheduled:
+            if (usersToEmail.size() >= LARGE_GROUP_SIZE || assignment.getScheduledStartDate() != null) {
+                Iterables.partition(usersToEmail, MAILGUN_EMAIL_BATCH_SIZE)
                     .forEach(userBatch -> mailGunEmailManager.sendBatchEmails(
                         userBatch,
                         emailTemplate,

@@ -146,9 +146,6 @@ public final class Constants {
 
     public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
 
-    public static final Integer MAILGUN_BATCH_SIZE = 500;
-
-
     /**
      * Class to represent Isaac log types.
      */
