@@ -1066,6 +1066,16 @@ public class QuizFacade extends AbstractIsaacFacade {
                         continue;
                     }
 
+                    if (quizAssignmentDTO.getCompletionNotifications() != null
+                            && quizAssignmentDTO.getCompletionNotifications()
+                            && !isUserStaffOrEventLeader(userManager, currentlyLoggedInUser)) {
+                        quizStatuses.add(new AssignmentStatusDTO(
+                                quizAssignmentDTO.getGroupId(),
+                                "Only staff can opt-in to completion notifications."
+                        ));
+                        continue;
+                    }
+
                     IsaacQuizDTO quiz = quizMap.get(quizAssignmentDTO.getQuizId());
                     if (null == quiz) {
                         quiz = this.quizManager.findQuiz(quizAssignmentDTO.getQuizId());
