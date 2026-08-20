@@ -292,6 +292,7 @@ public class PgQuizAssignmentPersistenceManager implements IQuizAssignmentPersis
         return new QuizAssignmentDO(sqlResults.getLong("id"), sqlResults.getString("quiz_id"),
                 sqlResults.getLong("owner_user_id"), sqlResults.getLong("group_id"), preciseDate,
                 preciseDueDate, preciseScheduledStartDate,
-                QuizFeedbackMode.valueOf(sqlResults.getString("quiz_feedback_mode")));
+                QuizFeedbackMode.valueOf(sqlResults.getString("quiz_feedback_mode")),
+                sqlResults.getBoolean("completion_notifications"));
     }
 }

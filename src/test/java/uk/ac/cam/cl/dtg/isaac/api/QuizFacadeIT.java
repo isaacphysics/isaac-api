@@ -55,7 +55,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // get an instance of the facade to test
         this.quizFacade = new QuizFacade(properties, logManager, contentManager, quizManager, userAccountManager,
                 userAssociationManager, groupManager, quizAssignmentManager, assignmentService, quizAttemptManager,
-                quizQuestionManager);
+                quizQuestionManager, emailService);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         quizAssignmentDTOList.add(
                 new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
                         TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
-                        QuizFeedbackMode.DETAILED_FEEDBACK)
+                        QuizFeedbackMode.DETAILED_FEEDBACK, false)
         );
 
         // Act
@@ -99,7 +99,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         quizAssignmentDTOList.add(
                 new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
                 TEST_TUTOR_ID, TEST_TUTORS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
-                QuizFeedbackMode.DETAILED_FEEDBACK)
+                QuizFeedbackMode.DETAILED_FEEDBACK, false)
         );
 
         // Act

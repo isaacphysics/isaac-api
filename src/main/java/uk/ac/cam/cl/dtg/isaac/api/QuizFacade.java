@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
@@ -122,6 +123,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     private final AssignmentService assignmentService;
     private final QuizAttemptManager quizAttemptManager;
     private final QuizQuestionManager quizQuestionManager;
+    private final EmailService emailService;
 
     private static final Logger log = LoggerFactory.getLogger(QuizFacade.class);
 
@@ -139,6 +141,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @param assignmentService     - for general assignment-related services.
      * @param quizAttemptManager    - for managing attempts at quizzes.
      * @param quizQuestionManager   - for parsing, validating, and persisting quiz question answers.
+     * @param emailService          - for sending completion notifications.
      */
     @Inject
     public QuizFacade(final AbstractConfigLoader properties, final ILogManager logManager,
@@ -146,7 +149,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                       final UserAccountManager userManager, final UserAssociationManager associationManager,
                       final GroupManager groupManager, final QuizAssignmentManager quizAssignmentManager,
                       final AssignmentService assignmentService, final QuizAttemptManager quizAttemptManager,
-                      final QuizQuestionManager quizQuestionManager) {
+                      final QuizQuestionManager quizQuestionManager, final EmailService emailService) {
         super(properties, logManager);
 
         this.contentManager = contentManager;
@@ -158,6 +161,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         this.assignmentService = assignmentService;
         this.quizAttemptManager = quizAttemptManager;
         this.quizQuestionManager = quizQuestionManager;
+        this.emailService = emailService;
     }
 
     /**
@@ -681,23 +685,34 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAttemptDTO quizAttempt = getQuizAttempt(quizAttemptId);
 
             if (!quizAttempt.getUserId().equals(user.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot complete someone else's test.").toResponse();
+                return SegueErrorResponse.getForbiddenResponse("You cannot complete someone else's test.");
             }
 
             if ((quizAttempt.getCompletedDate() != null)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "That test is already complete.").toResponse();
+                return SegueErrorResponse.getForbiddenResponse("That test is already complete.");
+            }
+
+            // TODO (quiz-refactor): this email notification logic should likely live in a manager not a facade:
+            try {
+                QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
+                if (null != quizAssignment && quizAssignment.getCompletionNotifications() != null
+                        && quizAssignment.getCompletionNotifications()) {
+                    emailService.sendQuizCompletionNotification(quizAssignment);
+                }
+            } catch (final AssignmentCancelledException e) {
+                return SegueErrorResponse.getForbiddenResponse("This test assignment has been cancelled.");
             }
 
             quizAttempt = quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
 
             return Response.ok(quizAttempt).build();
-        } catch (NoUserLoggedInException e) {
+        } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst marking test attempt complete";
+        } catch (final SegueDatabaseException e) {
+            String message = "A database error occurred whilst marking test attempt complete.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ErrorResponseWrapper responseWrapper) {
+        } catch (final ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
     }
