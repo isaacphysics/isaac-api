@@ -438,5 +438,46 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         assertEquals(quizAttemptId, completedAttempt.getId());
         assertTrue(completedAttempt.getCompletedDate() != null);
     }
-}
 
+    @Test
+    public void completeQuizAttemptEndpoint_completeCancelledTest_fails() throws Exception {
+        // Arrange
+        // the teacher sets the assignment
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest teacherRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(teacherRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, false)
+        );
+
+        Response createQuizResponse = quizFacade.createQuizAssignments(teacherRequest, quizAssignmentDTOList);
+        List<?> assignmentStatuses = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO assignmentStatus = (AssignmentStatusDTO) assignmentStatuses.getFirst();
+        Long quizAssignmentId = assignmentStatus.getAssignmentId();
+
+        // the student starts the attempt
+        LoginResult studentLogin = loginAs(httpSession, ALICE_STUDENT_EMAIL, ALICE_STUDENT_PASSWORD);
+        HttpServletRequest studentRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(studentRequest);
+
+        Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class), studentRequest, quizAssignmentId);
+        QuizAttemptDTO startedAttempt = (QuizAttemptDTO) startQuizAttemptResponse.getEntity();
+        Long quizAttemptId = startedAttempt.getId();
+
+        // the teacher cancels the assignment
+        quizFacade.cancelQuizAssignment(teacherRequest, quizAssignmentId);
+
+        // Act
+        // the student tries to complete the now-cancelled attempt
+        Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(studentRequest, quizAttemptId);
+
+        // Assert
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), completeQuizAttemptResponse.getStatus());
+        SegueErrorResponse responseBody = (SegueErrorResponse) completeQuizAttemptResponse.getEntity();
+        assertEquals("This test assignment has been cancelled.", responseBody.getErrorMessage());
+    }
+}
