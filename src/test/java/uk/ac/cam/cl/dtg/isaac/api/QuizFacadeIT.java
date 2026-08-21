@@ -17,6 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,6 +36,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,6 +62,16 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         this.quizFacade = new QuizFacade(properties, logManager, contentManager, quizManager, userAccountManager,
                 userAssociationManager, groupManager, quizAssignmentManager, assignmentService, quizAttemptManager,
                 quizQuestionManager, emailService);
+    }
+
+    @AfterEach
+    public void tearDown() throws SQLException {
+        // reset assignments in DB, so the same quiz/group pair can be re-used across tests
+        try (Connection conn = postgresSqlDb.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("DELETE FROM quiz_assignments WHERE quiz_id = ?;")) {
+            pst.setString(1, QUIZ_TEST_QUIZ_ID);
+            pst.executeUpdate();
+        }
     }
 
     @Test
