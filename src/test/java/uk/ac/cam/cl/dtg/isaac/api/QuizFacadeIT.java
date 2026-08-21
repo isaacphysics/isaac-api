@@ -42,6 +42,7 @@ import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
@@ -85,6 +86,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         List<?> responseBody = (List<?>) createQuizResponse.getEntity();
         AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
         assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertNull(status.getErrorMessage());
     }
 
     @Test
@@ -113,6 +115,68 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) createQuizResponse.getEntity();
         assertEquals("You do not have the permissions to complete this action.", responseBody.getErrorMessage());
+    }
+
+    @Test
+    public void createQuizAssignmentEndpoint_requestEmailAsEventLeader_succeeds() throws Exception {
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult eventLeaderLogin = loginAs(httpSession, TEST_EVENTLEADER_EMAIL, TEST_EVENTLEADER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{eventLeaderLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_EVENTLEADER_ID, TEST_EVENT_LEADERS_OPEN_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, true)
+        );
+
+        // Act
+        // make request
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+
+        // check an error message was returned
+        createQuizResponse.getEntity();
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
+        assertEquals(TEST_EVENT_LEADERS_OPEN_GROUP_ID, (long) status.getGroupId());
+        assertNull(status.getErrorMessage());
+    }
+
+    @Test
+    public void createQuizAssignmentEndpoint_requestEmailAsTeacher_fails() throws Exception {
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, true)
+        );
+
+        // Act
+        // make request
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+
+        // check an error message was returned
+        createQuizResponse.getEntity();
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertEquals("Only staff can opt-in to completion notifications.", status.getErrorMessage());
     }
 
     @Test
