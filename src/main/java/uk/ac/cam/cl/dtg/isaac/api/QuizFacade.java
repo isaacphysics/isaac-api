@@ -1115,6 +1115,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     eventDetails.put(QUIZ_ASSIGNMENT_FK, assignmentWithID.getId());
                     eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate());
                     eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
+                    eventDetails.put(COMPLETION_NOTIFICATIONS_LOG_FIELDNAME, assignmentWithID.getCompletionNotifications() != null && assignmentWithID.getCompletionNotifications());
 
                     this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
 
