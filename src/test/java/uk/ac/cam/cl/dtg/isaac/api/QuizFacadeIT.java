@@ -17,6 +17,7 @@
 package uk.ac.cam.cl.dtg.isaac.api;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -25,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
@@ -34,6 +36,9 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,6 +47,7 @@ import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static uk.ac.cam.cl.dtg.isaac.api.ITConstants.*;
 
@@ -55,7 +61,17 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // get an instance of the facade to test
         this.quizFacade = new QuizFacade(properties, logManager, contentManager, quizManager, userAccountManager,
                 userAssociationManager, groupManager, quizAssignmentManager, assignmentService, quizAttemptManager,
-                quizQuestionManager);
+                quizQuestionManager, emailService);
+    }
+
+    @AfterEach
+    public void tearDown() throws SQLException {
+        // reset assignments in DB, so the same quiz/group pair can be re-used across tests
+        try (Connection conn = postgresSqlDb.getDatabaseConnection();
+             PreparedStatement pst = conn.prepareStatement("DELETE FROM quiz_assignments WHERE quiz_id = ?;")) {
+            pst.setString(1, QUIZ_TEST_QUIZ_ID);
+            pst.executeUpdate();
+        }
     }
 
     @Test
@@ -70,7 +86,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         quizAssignmentDTOList.add(
                 new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
                         TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
-                        QuizFeedbackMode.DETAILED_FEEDBACK)
+                        QuizFeedbackMode.DETAILED_FEEDBACK, false)
         );
 
         // Act
@@ -85,6 +101,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         List<?> responseBody = (List<?>) createQuizResponse.getEntity();
         AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
         assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertNull(status.getErrorMessage());
     }
 
     @Test
@@ -99,7 +116,7 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         quizAssignmentDTOList.add(
                 new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
                 TEST_TUTOR_ID, TEST_TUTORS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
-                QuizFeedbackMode.DETAILED_FEEDBACK)
+                QuizFeedbackMode.DETAILED_FEEDBACK, false)
         );
 
         // Act
@@ -113,6 +130,68 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) createQuizResponse.getEntity();
         assertEquals("You do not have the permissions to complete this action.", responseBody.getErrorMessage());
+    }
+
+    @Test
+    public void createQuizAssignmentEndpoint_requestEmailAsEventLeader_succeeds() throws Exception {
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult eventLeaderLogin = loginAs(httpSession, TEST_EVENTLEADER_EMAIL, TEST_EVENTLEADER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{eventLeaderLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_EVENTLEADER_ID, TEST_EVENT_LEADERS_OPEN_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, true)
+        );
+
+        // Act
+        // make request
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+
+        // check an error message was returned
+        createQuizResponse.getEntity();
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
+        assertEquals(TEST_EVENT_LEADERS_OPEN_GROUP_ID, (long) status.getGroupId());
+        assertNull(status.getErrorMessage());
+    }
+
+    @Test
+    public void createQuizAssignmentEndpoint_requestEmailAsTeacher_fails() throws Exception {
+        // Arrange
+        // log in as Teacher, create request
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, true)
+        );
+
+        // Act
+        // make request
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+
+        // Assert
+        // check status code is OK
+        assertEquals(Response.Status.OK.getStatusCode(), createQuizResponse.getStatus());
+
+        // check an error message was returned
+        createQuizResponse.getEntity();
+        List<?> responseBody = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO status = (AssignmentStatusDTO) responseBody.getFirst();
+        assertEquals(TEST_TEACHERS_AB_GROUP_ID, (long) status.getGroupId());
+        assertEquals("Only staff can opt-in to completion notifications.", status.getErrorMessage());
     }
 
     @Test
@@ -333,5 +412,86 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         SegueErrorResponse responseBody = (SegueErrorResponse) viewQuizRubricResponse.getEntity();
         assertEquals("This test cannot be attempted freely, so no preview is available.", responseBody.getErrorMessage());
     }
-}
 
+    @Test
+    public void completeQuizAttemptEndpoint_completeSetTest_succeeds() throws Exception {
+        // Arrange
+        // the teacher sets the assignment
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, false)
+        );
+
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+        List<?> assignmentStatuses = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO assignmentStatus = (AssignmentStatusDTO) assignmentStatuses.getFirst();
+        Long quizAssignmentId = assignmentStatus.getAssignmentId();
+
+        // the student starts the attempt
+        LoginResult studentLogin = loginAs(httpSession, ALICE_STUDENT_EMAIL, ALICE_STUDENT_PASSWORD);
+        HttpServletRequest studentRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(studentRequest);
+
+        Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class), studentRequest, quizAssignmentId);
+        QuizAttemptDTO startedAttempt = (QuizAttemptDTO) startQuizAttemptResponse.getEntity();
+        Long quizAttemptId = startedAttempt.getId();
+
+        // Act
+        // the student immediately completes the attempt
+        Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(studentRequest, quizAttemptId);
+
+        // Assert
+        assertEquals(Response.Status.OK.getStatusCode(), completeQuizAttemptResponse.getStatus());
+        QuizAttemptDTO completedAttempt = (QuizAttemptDTO) completeQuizAttemptResponse.getEntity();
+        assertEquals(quizAttemptId, completedAttempt.getId());
+        assertTrue(completedAttempt.getCompletedDate() != null);
+    }
+
+    @Test
+    public void completeQuizAttemptEndpoint_completeCancelledTest_fails() throws Exception {
+        // Arrange
+        // the teacher sets the assignment
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest teacherRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(teacherRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, false)
+        );
+
+        Response createQuizResponse = quizFacade.createQuizAssignments(teacherRequest, quizAssignmentDTOList);
+        List<?> assignmentStatuses = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO assignmentStatus = (AssignmentStatusDTO) assignmentStatuses.getFirst();
+        Long quizAssignmentId = assignmentStatus.getAssignmentId();
+
+        // the student starts the attempt
+        LoginResult studentLogin = loginAs(httpSession, ALICE_STUDENT_EMAIL, ALICE_STUDENT_PASSWORD);
+        HttpServletRequest studentRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(studentRequest);
+
+        Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class), studentRequest, quizAssignmentId);
+        QuizAttemptDTO startedAttempt = (QuizAttemptDTO) startQuizAttemptResponse.getEntity();
+        Long quizAttemptId = startedAttempt.getId();
+
+        // the teacher cancels the assignment
+        quizFacade.cancelQuizAssignment(teacherRequest, quizAssignmentId);
+
+        // Act
+        // the student tries to complete the now-cancelled attempt
+        Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(studentRequest, quizAttemptId);
+
+        // Assert
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), completeQuizAttemptResponse.getStatus());
+        SegueErrorResponse responseBody = (SegueErrorResponse) completeQuizAttemptResponse.getEntity();
+        assertEquals("This test assignment has been cancelled.", responseBody.getErrorMessage());
+    }
+}

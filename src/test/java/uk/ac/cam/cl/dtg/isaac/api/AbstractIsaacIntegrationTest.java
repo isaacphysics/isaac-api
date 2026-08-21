@@ -163,6 +163,7 @@ public class AbstractIsaacIntegrationTest {
 
     // Services
     protected static AssignmentService assignmentService;
+    protected static EmailService emailService;
 
     protected static AbstractUserPreferenceManager userPreferenceManager;
 
@@ -302,12 +303,13 @@ public class AbstractIsaacIntegrationTest {
         PgTransactionManager pgTransactionManager = new PgTransactionManager(postgresSqlDb);
         eventBookingManager = new EventBookingManager(bookingPersistanceManager, emailManager, userAssociationManager, properties, groupManager, userAccountManager, pgTransactionManager);
         eventsManager = new EventsManager(eventBookingManager, contentManager, mainMapper);
-        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), gameManager, properties);
+        emailService = new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager);
+        assignmentManager = new AssignmentManager(assignmentPersistenceManager, groupManager, emailService, gameManager, properties);
         schoolListReader = createNiceMock(SchoolListReader.class);
 
         quizManager = new QuizManager(properties, contentManager, new ContentSummarizerService(mainMapper, new URIManager(properties)));
         quizAssignmentPersistenceManager =  new PgQuizAssignmentPersistenceManager(postgresSqlDb, mainMapper);
-        quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, new EmailService(properties, emailManager, groupManager, userAccountManager, mailGunEmailManager), quizManager, groupManager, properties);
+        quizAssignmentManager = new QuizAssignmentManager(quizAssignmentPersistenceManager, emailService, quizManager, groupManager, properties);
         assignmentService = new AssignmentService(userAccountManager);
         quizAttemptPersistenceManager = new PgQuizAttemptPersistenceManager(postgresSqlDb, mainMapper);
         quizAttemptManager = new QuizAttemptManager(quizAttemptPersistenceManager);
