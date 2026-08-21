@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAttemptDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.DetailedQuizSummaryDTO;
@@ -396,6 +397,46 @@ public class QuizFacadeIT extends IsaacIntegrationTest {
         // check an error message was returned
         SegueErrorResponse responseBody = (SegueErrorResponse) viewQuizRubricResponse.getEntity();
         assertEquals("This test cannot be attempted freely, so no preview is available.", responseBody.getErrorMessage());
+    }
+
+    @Test
+    public void completeQuizAttemptEndpoint_completeSetTest_succeeds() throws Exception {
+        // Arrange
+        // the teacher sets the assignment
+        LoginResult teacherLogin = loginAs(httpSession, TEST_TEACHER_EMAIL, TEST_TEACHER_PASSWORD);
+        HttpServletRequest assignQuizRequest = createRequestWithCookies(new Cookie[]{teacherLogin.cookie});
+        replay(assignQuizRequest);
+
+        List<QuizAssignmentDTO> quizAssignmentDTOList = new LinkedList<>();
+        quizAssignmentDTOList.add(
+                new QuizAssignmentDTO(null, QUIZ_TEST_QUIZ_ID,
+                        TEST_TEACHER_ID, TEST_TEACHERS_AB_GROUP_ID, new Date(), DateUtils.addDays(new Date(), 5), null,
+                        QuizFeedbackMode.DETAILED_FEEDBACK, false)
+        );
+
+        Response createQuizResponse = quizFacade.createQuizAssignments(assignQuizRequest, quizAssignmentDTOList);
+        List<?> assignmentStatuses = (List<?>) createQuizResponse.getEntity();
+        AssignmentStatusDTO assignmentStatus = (AssignmentStatusDTO) assignmentStatuses.getFirst();
+        Long quizAssignmentId = assignmentStatus.getAssignmentId();
+
+        // the student starts the attempt
+        LoginResult studentLogin = loginAs(httpSession, ALICE_STUDENT_EMAIL, ALICE_STUDENT_PASSWORD);
+        HttpServletRequest studentRequest = createRequestWithCookies(new Cookie[]{studentLogin.cookie});
+        replay(studentRequest);
+
+        Response startQuizAttemptResponse = quizFacade.startQuizAttempt(createNiceMock(Request.class), studentRequest, quizAssignmentId);
+        QuizAttemptDTO startedAttempt = (QuizAttemptDTO) startQuizAttemptResponse.getEntity();
+        Long quizAttemptId = startedAttempt.getId();
+
+        // Act
+        // the student immediately completes the attempt
+        Response completeQuizAttemptResponse = quizFacade.completeQuizAttempt(studentRequest, quizAttemptId);
+
+        // Assert
+        assertEquals(Response.Status.OK.getStatusCode(), completeQuizAttemptResponse.getStatus());
+        QuizAttemptDTO completedAttempt = (QuizAttemptDTO) completeQuizAttemptResponse.getEntity();
+        assertEquals(quizAttemptId, completedAttempt.getId());
+        assertTrue(completedAttempt.getCompletedDate() != null);
     }
 }
 
