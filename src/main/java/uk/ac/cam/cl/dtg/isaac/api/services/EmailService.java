@@ -194,7 +194,7 @@ public class EmailService {
         } catch (final NoUserException e) {
             log.error("Could not send quiz completion email because owner did not exist.");
         } catch (final SegueDatabaseException e) {
-            throw new RuntimeException(e);
+            log.error("Database error whilst emailing quiz completion notification.", e);
         } catch (final ContentManagerException e) {
             log.error("Could not send quiz completion email because of content error.", e);
         }
