@@ -169,7 +169,8 @@ public class EmailService {
      * @param quizAssignment the assignment the attempt belongs to.
      */
     public void sendQuizCompletionNotification(final QuizAssignmentDTO quizAssignment) {
-        if (null == quizAssignment || !quizAssignment.getCompletionNotifications()) {
+        if (null == quizAssignment || quizAssignment.getCompletionNotifications() == null
+                || !quizAssignment.getCompletionNotifications()) {
             return;
         }
 
