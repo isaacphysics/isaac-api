@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.validator.routines.EmailValidator;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -51,25 +52,7 @@ import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.ISecondFactorAuthenticator;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationCodeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticationProviderMappingException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.AuthenticatorSecurityException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CodeExchangeException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.CrossSiteRequestForgeryException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.DuplicateAccountException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.FailedToHashPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.IncorrectCredentialsProvidedException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidNameException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidPasswordException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidSessionException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.InvalidTokenException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MFARequiredButNotConfiguredException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.MissingRequiredFieldException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoCredentialsAvailableException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.NoUserLoggedInException;
-import uk.ac.cam.cl.dtg.segue.auth.exceptions.UnknownCountryCodeException;
+import uk.ac.cam.cl.dtg.segue.auth.exceptions.*;
 import uk.ac.cam.cl.dtg.segue.comm.CommunicationException;
 import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailMustBeVerifiedException;
@@ -641,6 +624,9 @@ public class UserAccountManager implements IUserAccountManager {
         } catch (UnknownCountryCodeException e) {
             log.warn("Unknown country code provided during user update.");
             return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
+        } catch (AgeRestrictedException e) {
+            log.warn("User update failed due to age restriction.");
+            return new SegueErrorResponse(Response.Status.BAD_REQUEST, e.getMessage()).toResponse();
         }
     }
 
@@ -1085,7 +1071,7 @@ public class UserAccountManager implements IUserAccountManager {
      */
     public RegisteredUserDTO updateUserObject(final RegisteredUser updatedUser, final String newPassword)
             throws InvalidPasswordException, MissingRequiredFieldException, SegueDatabaseException,
-            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException {
+            InvalidKeySpecException, NoSuchAlgorithmException, InvalidNameException, UnknownCountryCodeException, AgeRestrictedException {
         Objects.requireNonNull(updatedUser.getId());
 
         // We want to map to DTO first to make sure that the user cannot
@@ -1149,14 +1135,30 @@ public class UserAccountManager implements IUserAccountManager {
         // null values are explicitly not mapped by `mergeMapper`.
         if (updatedUser.getDateOfBirth() == null) {
             userToSave.setDateOfBirth(null);
+        } else {
+            if (existingUser.getEmailVerificationStatus() == EmailVerificationStatus.AGE_RESTRICTED
+                    && updatedUser.getDateOfBirth().before(DateUtils.addYears(new Date(), -13))) {
+                userToSave.setEmailVerificationStatus(EmailVerificationStatus.DELIVERY_FAILED);
+            }
         }
 
-        // Before save we should validate the user for mandatory fields.
+        // Before save, we should validate the user for mandatory fields.
+
+        // First, validate the user's email if their account is not age restricted.
         // Doing this before the email change code is necessary to ensure that (a) users cannot try and change to an
         // invalid email, and (b) that users with an invalid email can change their email to a valid one!
-        if (!isUserEmailValid(userToSave.getEmail())) {
-            throw new MissingRequiredFieldException("The email address provided is invalid.");
+
+        if (existingUser.getEmailVerificationStatus() != EmailVerificationStatus.AGE_RESTRICTED) {
+            if (!isUserEmailValid(userToSave.getEmail())) {
+                throw new MissingRequiredFieldException("The email address provided is invalid.");
+            }
+        } else {
+            // If the user is age restricted, do not allow changing the email.
+            if (!existingUser.getEmail().equals(userToSave.getEmail())) {
+                throw new AgeRestrictedException("Your account email cannot be set while your account is age restricted.");
+            }
         }
+
 
         // Make sure the email address is preserved (can't be changed until new email is verified)
         // Send a new verification email if the user has changed their email
@@ -1829,7 +1831,8 @@ public class UserAccountManager implements IUserAccountManager {
 
         // since the federated providers didn't always provide email addresses - we have to check and update accordingly.
         if (!localUserInformation.getEmail().contains("@")
-                && !EmailVerificationStatus.DELIVERY_FAILED.equals(localUserInformation.getEmailVerificationStatus())) {
+                && !EmailVerificationStatus.DELIVERY_FAILED.equals(localUserInformation.getEmailVerificationStatus())
+                && !EmailVerificationStatus.AGE_RESTRICTED.equals(localUserInformation.getEmailVerificationStatus())) {
             this.updateUserEmailVerificationStatus(localUserInformation.getEmail(),
                     EmailVerificationStatus.DELIVERY_FAILED);
         }
