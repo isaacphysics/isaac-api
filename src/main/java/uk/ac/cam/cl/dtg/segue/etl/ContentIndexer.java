@@ -554,6 +554,15 @@ public class ContentIndexer {
                 setOfContentObjects.addAll(flattenContentObjects((Content) child));
             }
 
+            if (content instanceof IsaacQuestionBase question) {
+                List<ContentBase> hints = question.getHints();
+                if (hints != null) {
+                    for (ContentBase hint : hints) {
+                        setOfContentObjects.addAll(flattenContentObjects((Content) hint));
+                    }
+                }
+            }
+
             if (content instanceof InlineRegion) {
                 for (IsaacQuestionBase child : ((InlineRegion) content).getInlineQuestions()) {
                     setOfContentObjects.addAll(flattenContentObjects(child));
