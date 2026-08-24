@@ -386,6 +386,7 @@ CREATE TABLE public.quiz_assignments (
     due_date timestamp with time zone,
     scheduled_start_date timestamp with time zone,
     quiz_feedback_mode text NOT NULL,
+    completion_notifications boolean DEFAULT false NOT NULL,
     deleted boolean DEFAULT false NOT NULL
 );
 

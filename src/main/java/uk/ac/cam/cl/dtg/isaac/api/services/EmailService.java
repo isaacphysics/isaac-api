@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
@@ -147,5 +148,45 @@ public class EmailService {
         } catch (IndexOutOfBoundsException e) {
             log.error("Could not send assignment email because group did not exist.", e);
         }
+    }
+
+    /**
+     *  Send a notification to a quiz assigner that a user has submitted an attempt.
+     *
+     *  For privacy reasons, we do not wish to include any details about the submitting user.
+     *
+     * @param quizAssignment the assignment the attempt belongs to.
+     */
+    public void sendQuizCompletionNotification(final QuizAssignmentDTO quizAssignment) {
+        if (null == quizAssignment || quizAssignment.getCompletionNotifications() == null
+                || !quizAssignment.getCompletionNotifications()) {
+            return;
+        }
+
+        try {
+            RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(quizAssignment.getOwnerUserId());
+            String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
+            UserGroupDTO userGroupDTO = groupManager.getGroupsByIds(Collections.singletonList(quizAssignment.getGroupId()), false).getFirst();
+            String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
+
+
+            final Map<String, Object> variables = Map.of(
+                "groupName", groupName,
+                "assignmentOwner", assignmentOwner,
+                "quizAssignmentId", quizAssignment.getId()
+            );
+
+            EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO("email-template-quiz-completed");
+
+            emailManager.sendTemplatedEmailToUser(assignmentOwnerDTO, emailTemplate, variables, EmailType.ADMIN);
+
+        } catch (final NoUserException e) {
+            log.error("Could not send quiz completion email because owner did not exist.");
+        } catch (final SegueDatabaseException e) {
+            log.error("Database error whilst emailing quiz completion notification.", e);
+        } catch (final ContentManagerException e) {
+            log.error("Could not send quiz completion email because of content error.", e);
+        }
+
     }
 }

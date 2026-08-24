@@ -592,6 +592,8 @@ public final class Constants {
     public static final String QUIZ_OLD_DUEDATE = "oldDueDate";
     public static final String QUIZ_OLD_FEEDBACK_MODE = "oldQuizFeedbackMode";
 
+    public static final String COMPLETION_NOTIFICATIONS_LOG_FIELDNAME = "completionNotifications";
+
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";
 
