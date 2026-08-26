@@ -554,9 +554,28 @@ public class ContentIndexer {
                 setOfContentObjects.addAll(flattenContentObjects((Content) child));
             }
 
-            if (content instanceof InlineRegion) {
-                for (IsaacQuestionBase child : ((InlineRegion) content).getInlineQuestions()) {
-                    setOfContentObjects.addAll(flattenContentObjects(child));
+            if (content instanceof IsaacQuestionBase question) {
+                List<ContentBase> hints = question.getHints();
+                if (hints != null) {
+                    for (ContentBase hint : hints) {
+                        setOfContentObjects.addAll(flattenContentObjects((Content) hint));
+                    }
+                }
+            }
+
+            if (content instanceof InlineRegion region) {
+                List<IsaacQuestionBase> inlineQuestions = region.getInlineQuestions();
+                if (inlineQuestions != null) {
+                    for (IsaacQuestionBase child : inlineQuestions) {
+                        setOfContentObjects.addAll(flattenContentObjects(child));
+                    }
+                }
+
+                List<ContentBase> hints = region.getHints();
+                if (hints != null) {
+                    for (ContentBase hint : hints) {
+                        setOfContentObjects.addAll(flattenContentObjects((Content) hint));
+                    }
                 }
             }
         }
