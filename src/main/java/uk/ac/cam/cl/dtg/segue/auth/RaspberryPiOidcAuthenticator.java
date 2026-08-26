@@ -187,7 +187,7 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
                         sub,
                         null,
                         username,
-                        "rpf-" + username,
+                        username + "-rpf",
                         EmailVerificationStatus.AGE_RESTRICTED,
                         null,
                         null,
