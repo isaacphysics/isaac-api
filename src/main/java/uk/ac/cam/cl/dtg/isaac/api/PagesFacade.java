@@ -1009,13 +1009,6 @@ public class PagesFacade extends AbstractIsaacFacade {
                                               @Context final HttpServletRequest httpServletRequest,
                                               @PathParam("book_page_id") final String bookPageId) {
 
-        // Calculate the ETag on current live version of the content
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + bookPageId.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
         try {
             // Load the summary page:
             Content contentDOById = this.contentManager.getContentDOById(bookPageId, true);
@@ -1072,7 +1065,7 @@ public class PagesFacade extends AbstractIsaacFacade {
 
 
             return Response.status(Status.OK).entity(bookPageDTO)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
             log.error(error.getErrorMessage(), e);
@@ -1102,13 +1095,6 @@ public class PagesFacade extends AbstractIsaacFacade {
                                             @Context final HttpServletRequest httpServletRequest,
                                             @PathParam("revision_page_id") final String revisionPageId) {
 
-        // Calculate the ETag on current live version of the content
-        EntityTag etag = new EntityTag(this.contentManager.getCurrentContentSHA().hashCode() + revisionPageId.hashCode() + "");
-        Response cachedResponse = generateCachedResponse(request, etag);
-        if (cachedResponse != null) {
-            return cachedResponse;
-        }
-
         try {
             // Load the summary page:
             Content contentDOById = this.contentManager.getContentDOById(revisionPageId, true);
@@ -1131,7 +1117,12 @@ public class PagesFacade extends AbstractIsaacFacade {
             // Augment linked gameboards using the list in the DO:
             // FIXME: this requires both the DO and DTO separately, since augmenting things is hard right now.
             List<String> gameboardIds = Objects.requireNonNullElse(revisionPage.getGameboards(), Collections.emptyList());
-            List<GameboardDTO> linkedGameboards = gameManager.getGameboards(gameboardIds);
+            List<GameboardDTO> linkedGameboards;
+            if (user instanceof RegisteredUserDTO registeredUser) {
+                linkedGameboards = gameManager.getGameboardsWithUserSavedInformation(gameboardIds, registeredUser);
+            } else {
+                linkedGameboards = gameManager.getGameboards(gameboardIds);
+            }
             revisionPageDTO.setGameboards(linkedGameboards);
 
             // Log the request:
@@ -1140,9 +1131,8 @@ public class PagesFacade extends AbstractIsaacFacade {
                     .put(CONTENT_VERSION_FIELDNAME, this.contentManager.getCurrentContentSHA()).build();
             getLogManager().logEvent(user, httpServletRequest, IsaacServerLogType.VIEW_REVISION_DETAIL_PAGE, logEntry);
 
-
             return Response.status(Status.OK).entity(revisionPageDTO)
-                    .cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).tag(etag).build();
+                    .cacheControl(getCacheControl(NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
         } catch (SegueDatabaseException e) {
             SegueErrorResponse error = new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, "Database error while looking up user information.", e);
             log.error(error.getErrorMessage(), e);
