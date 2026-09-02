@@ -1204,7 +1204,7 @@ public class ContentIndexer {
         if (content instanceof IsaacReorderQuestion q) {
             if (null != q.getUseSingleList() && q.getUseSingleList()) {
                 if (q.getChoices().stream().map(ItemChoice.class::cast).filter(c -> null == c.isAllowSubsetMatch() || !c.isAllowSubsetMatch())
-                        .allMatch(choice -> choice.getItems().size() == q.getItems().size())) {
+                        .allMatch(choice -> choice.getItems().size() != q.getItems().size())) {
                     this.registerContentProblem(content, "Reorder Question: " + q.getId() + " has useSingleList"
                             + " and contains a non wildcard-matched answer with missing items.", indexProblemCache);
                 }
@@ -1214,7 +1214,7 @@ public class ContentIndexer {
         if (content instanceof IsaacParsonsQuestion q) {
             if (null != q.getUseSingleList() && q.getUseSingleList()) {
                 if (q.getChoices().stream().map(ItemChoice.class::cast)
-                        .allMatch(choice -> choice.getItems().size() == q.getItems().size())) {
+                        .allMatch(choice -> choice.getItems().size() != q.getItems().size())) {
                     this.registerContentProblem(content, "Parsons Question: " + q.getId() + " has useSingleList"
                             + " and contains an answer with missing items.", indexProblemCache);
                 }
