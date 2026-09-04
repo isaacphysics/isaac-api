@@ -26,3 +26,8 @@ scrape_configs:
     metrics_path: '/metrics'
     static_configs:
       - targets: [ 'host.docker.internal:9113' ]
+
+  - job_name: 'haproxy_exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: [ 'host.docker.internal:8405' ]
