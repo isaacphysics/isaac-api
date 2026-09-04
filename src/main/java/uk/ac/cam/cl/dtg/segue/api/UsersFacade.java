@@ -139,7 +139,56 @@ public class UsersFacade extends AbstractSegueFacade {
     }
 
     /**
-     * Get the details of the currently logged in user.
+     * Get a summary of the currently logged-in user.
+     *
+     * @param request
+     *            - request information used for caching.
+     * @param httpServletRequest
+     *            - the request which may contain session information.
+     * @param response
+     *            - the response to set session expiry information headers on.
+     * @return Returns the current user summary DTO if we can get it or null response if we can't. It will be a 204 No Content
+     */
+    @GET
+    @Path("users/current_user")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Get summary information about the current user.")
+    public Response getCurrentUserEndpoint(@Context final Request request,
+                                           @Context final HttpServletRequest httpServletRequest,
+                                           @Context final HttpServletResponse response) {
+        try {
+            UserSummaryDTO currentUser;
+
+            if (Boolean.parseBoolean(getProperties().getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))) {
+                // allow users who are required to verify but haven't yet done so to use this endpoint
+                currentUser = userManager.getCurrentPartiallyIdentifiedUserSummaryDTO(httpServletRequest, Set.of(AuthenticationCaveat.INCOMPLETE_MANDATORY_EMAIL_VERIFICATION));
+            } else {
+                currentUser = userManager.getCurrentRegisteredUserSummaryDTO(httpServletRequest);
+            }
+
+            Date sessionExpiry = userManager.getSessionExpiry(httpServletRequest);
+            int sessionExpiryHashCode = 0;
+            if (null != sessionExpiry) {
+                sessionExpiryHashCode = sessionExpiry.hashCode();
+                response.setDateHeader("X-Session-Expires", sessionExpiry.getTime());
+            }
+
+            // Calculate the ETag based on the user we just retrieved and the session expiry:
+            EntityTag etag = new EntityTag(currentUser.toString().hashCode() + sessionExpiryHashCode + "");
+            Response cachedResponse = generateCachedResponse(request, etag, Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK);
+            if (cachedResponse != null) {
+                return cachedResponse;
+            }
+
+            return Response.ok(currentUser).tag(etag)
+                    .cacheControl(getCacheControl(Constants.NEVER_CACHE_WITHOUT_ETAG_CHECK, false)).build();
+        } catch (NoUserLoggedInException e) {
+            return SegueErrorResponse.getNotLoggedInResponse();
+        }
+    }
+
+    /**
+     * Get detailed information about the currently logged-in user.
      *
      * @param request
      *            - request information used for caching.
@@ -150,10 +199,10 @@ public class UsersFacade extends AbstractSegueFacade {
      * @return Returns the current user DTO if we can get it or null response if we can't. It will be a 204 No Content
      */
     @GET
-    @Path("users/current_user")
+    @Path("users/current_user/details")
     @Produces(MediaType.APPLICATION_JSON)
-    @Operation(summary = "Get information about the current user.")
-    public Response getCurrentUserEndpoint(@Context final Request request,
+    @Operation(summary = "Get detailed information about the current user.")
+    public Response getCurrentUserDetailsEndpoint(@Context final Request request,
                                            @Context final HttpServletRequest httpServletRequest,
                                            @Context final HttpServletResponse response) {
         try {
