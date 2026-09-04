@@ -28,6 +28,18 @@ services:
 #    ports:
 #      - 9187:9187
 
+#  nginx-exporter:
+#    image: nginx/nginx-prometheus-exporter:1.5.3
+#    container_name: nginx-exporter
+#    command:
+#      - '--nginx.scrape-uri=http://nginx:8080/stub_status' # this needs to be exposed in the nginx conf
+#      - '--web.listen-address=:9113'
+#    network_mode: bridge
+#    links:
+#      - router:router
+#    ports:
+#      - 9113:9113
+
   prometheus:
     image: prom/prometheus:v3.14.0
     container_name: prometheus
@@ -41,6 +53,7 @@ services:
 #    links:
 #      - postgres-exporter:postgres-exporter
 #      - elasticsearch-exporter:elasticsearch-exporter
+#      - nginx-exporter:nginx-exporter
     ports:
       - 9090:9090
 
