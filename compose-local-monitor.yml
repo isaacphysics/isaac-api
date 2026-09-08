@@ -17,7 +17,7 @@ services:
 #  postgres-exporter:
 #    # if this isn't working run ./initialise_local_environment.sh
 #    network_mode: bridge
-#    image: wrouesnel/postgres_exporter
+#    image: prometheuscommunity/postgres-exporter:v0.20.1
 #    container_name: postgres-exporter
 #    environment:
 #      - DATA_SOURCE_URI=postgres:5432/rutherford?sslmode=disable
