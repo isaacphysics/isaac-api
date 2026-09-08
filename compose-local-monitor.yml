@@ -32,7 +32,7 @@ services:
 #    image: nginx/nginx-prometheus-exporter:1.5.3
 #    container_name: nginx-exporter
 #    command:
-#      - '--nginx.scrape-uri=http://nginx:8080/stub_status' # this needs to be exposed in the nginx conf
+#      - '--nginx.scrape-uri=http://isaac-router:80/nginx-status-page'
 #      - '--web.listen-address=:9113'
 #    network_mode: bridge
 #    links:
