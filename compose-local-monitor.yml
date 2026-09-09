@@ -3,7 +3,7 @@
 version: '2'
 services:
 #  elasticsearch-exporter:
-#    image: prometheuscommunity/elasticsearch-exporter:v1.7.0
+#    image: prometheuscommunity/elasticsearch-exporter
 #    container_name: elasticsearch-exporter
 #    command:
 #      - '--es.uri=http://elastic:elastic@elasticsearch:9200'
@@ -17,7 +17,7 @@ services:
 #  postgres-exporter:
 #    # if this isn't working run ./initialise_local_environment.sh
 #    network_mode: bridge
-#    image: prometheuscommunity/postgres-exporter:v0.20.1
+#    image: prometheuscommunity/postgres-exporter
 #    container_name: postgres-exporter
 #    environment:
 #      - DATA_SOURCE_URI=postgres:5432/rutherford
@@ -29,7 +29,7 @@ services:
 #      - "9187:9187"
 
 #  nginx-exporter:
-#    image: nginx/nginx-prometheus-exporter:1.5.3
+#    image: nginx/nginx-prometheus-exporter
 #    container_name: nginx-exporter
 #    command:
 #      - '--nginx.scrape-uri=http://isaac-router:8080/nginx-status-page'
