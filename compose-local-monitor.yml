@@ -7,12 +7,12 @@ services:
 #    container_name: elasticsearch-exporter
 #    command:
 #      - '--es.uri=http://elastic:elastic@elasticsearch:9200'
-#      - '--web.listen-address=:9108'
+#      - '--web.listen-address=:9114'
 #    network_mode: bridge
 #    links:
 #      - elasticsearch:elasticsearch
 #    ports:
-#      - "9108:9108"
+#      - "9114:9114"
 
 #  postgres-exporter:
 #    # if this isn't working run ./initialise_local_environment.sh
