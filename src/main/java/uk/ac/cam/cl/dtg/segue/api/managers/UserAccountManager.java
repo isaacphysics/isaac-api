@@ -768,12 +768,12 @@ public class UserAccountManager implements IUserAccountManager {
     }
 
     /**
-     * Get the details of the currently logged in registered user.
+     * Get the details of the currently logged-in registered user.
      *
      * <p>This method will validate the session and will throw a NoUserLoggedInException if invalid.
      *
      * @param request - to retrieve session information from
-     * @return Returns the current UserDTO if we can get it or null if user is not currently logged in
+     * @return Returns the current RegisteredUserDTO if we can get it or null if user is not currently logged in
      * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
      */
     public RegisteredUserDTO getCurrentRegisteredUser(final HttpServletRequest request)
@@ -793,6 +793,18 @@ public class UserAccountManager implements IUserAccountManager {
         }
 
         return this.convertUserDOToUserDTO(user);
+    }
+
+    /**
+     * Get a summary DTO representing the currently logged-in registered user.
+     *
+     * @param request - to retrieve session information from
+     * @return Returns the current UserSummaryDTO if we can get it or null if user is not currently logged in
+     * @throws NoUserLoggedInException - When the session has expired or there is no user currently logged in.
+     */
+    public UserSummaryDTO getCurrentRegisteredUserSummaryDTO(final HttpServletRequest request) throws NoUserLoggedInException {
+        RegisteredUserDTO fullUser = getCurrentRegisteredUser(request);
+        return dtoMapper.mapToUserSummaryDTO(fullUser);
     }
 
     /**
@@ -1569,15 +1581,29 @@ public class UserAccountManager implements IUserAccountManager {
      * specific purposes, e.g. responding to MFA challenge after a correct email/password login.
      *
      * @param request to pull back the user
-     * @return UserSummaryDTO of the partially logged-in user or will throw an exception if not found or the session has unacceptable caveats.
+     * @return RegisteredUserDTO of the partially logged-in user or will throw an exception if not found or the session has unacceptable caveats.
      * @throws NoUserLoggedInException if they haven't started the flow.
      */
-    public RegisteredUserDTO getCurrentPartiallyIdentifiedUser(HttpServletRequest request, Set<AuthenticationCaveat> acceptableCaveats) throws NoUserLoggedInException {
+    public RegisteredUserDTO getCurrentPartiallyIdentifiedUser(final HttpServletRequest request, final Set<AuthenticationCaveat> acceptableCaveats) throws NoUserLoggedInException {
         RegisteredUser registeredUser = this.retrieveCaveatLogin(request, acceptableCaveats);
         if (null == registeredUser) {
             throw new NoUserLoggedInException();
         }
         return this.convertUserDOToUserDTO(registeredUser);
+    }
+
+    /**
+     * Get a summary DTO representing the user from the session cookie, overlooking the specified caveats if present (but not others).
+     *
+     * @see #getCurrentPartiallyIdentifiedUser(HttpServletRequest, Set) for restrictions on when this should be used.
+     *
+     * @param request to pull back the user
+     * @return UserSummaryDTO of the partially logged-in user or will throw an exception if not found or the session has unacceptable caveats.
+     * @throws NoUserLoggedInException if they haven't started the flow.
+     */
+    public UserSummaryDTO getCurrentPartiallyIdentifiedUserSummaryDTO(final HttpServletRequest request, final Set<AuthenticationCaveat> acceptableCaveats) throws NoUserLoggedInException {
+        RegisteredUserDTO fullUser = getCurrentPartiallyIdentifiedUser(request, acceptableCaveats);
+        return dtoMapper.mapToUserSummaryDTO(fullUser);
     }
 
     /**
