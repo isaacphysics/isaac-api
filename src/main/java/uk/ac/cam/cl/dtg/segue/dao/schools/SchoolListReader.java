@@ -28,6 +28,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MultiMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
 import jakarta.annotation.Nullable;
@@ -45,6 +46,17 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
  */
 public class SchoolListReader {
     private static final Logger log = LoggerFactory.getLogger(SchoolListReader.class);
+
+    private static final Long ID_BOOST = 100L;
+    private static final Long NAME_EXACT_BOOST = 20L;
+    private static final Long NAME_FUZZY_BOOST = 5L;
+    private static final Long NAME_MULTIMATCH_BOOST = 30L;
+    private static final Long TOWN_EXACT_BOOST = 10L;
+    private static final Long TOWN_FUZZY_BOOST = 3L;
+    private static final Long TOWN_MULTIMATCH_BOOST = 10L;
+    private static final Long POSTCODE_EXACT_BOOST = 40L;
+    private static final Long POSTCODE_FUZZY_BOOST = 5L;
+    private static final Long POSTCODE_MULTIMATCH_BOOST = 20L;
 
     private final ISearchProvider searchProvider;
 
@@ -106,10 +118,35 @@ public class SchoolListReader {
             matchInstruction.must(new MatchInstruction(SCHOOL_COUNTRY_CODE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX,
                     countryCode, null, false));
         }
-        // Attempt to match on school ID, name & postcode
-        matchInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, null, false));
-        matchInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, null, true));
-        matchInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, null, true));
+
+        // Attempt to match search query against ID, school name, town & postcode
+        BooleanInstruction searchCriteriaInstruction = new BooleanInstruction(1);
+
+        // School ID
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, ID_BOOST, false));
+
+        // School name
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_EXACT_BOOST, false));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_FUZZY_BOOST, true));
+        if (searchQuery.length() >= 2) {
+            searchCriteriaInstruction.should(new MultiMatchInstruction(searchQuery, new String[]{SCHOOL_NAME_FIELDNAME}, NAME_MULTIMATCH_BOOST));
+        }
+
+        // Town
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_EXACT_BOOST, false));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_FUZZY_BOOST, true));
+        if (searchQuery.length() >= 2) {
+            searchCriteriaInstruction.should(new MultiMatchInstruction(searchQuery, new String[]{SCHOOL_TOWN_FIELDNAME}, TOWN_MULTIMATCH_BOOST));
+        }
+
+        // Postcode
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, POSTCODE_EXACT_BOOST, false));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, POSTCODE_FUZZY_BOOST, true));
+        if (searchQuery.length() >= 2) {
+            searchCriteriaInstruction.should(new MultiMatchInstruction(searchQuery, new String[]{SCHOOL_POSTCODE_FIELDNAME}, POSTCODE_MULTIMATCH_BOOST));
+        }
+
+        matchInstruction.must(searchCriteriaInstruction);
 
         List<String> schoolSearchResults = searchProvider.nestedMatchSearch(SCHOOLS_INDEX_BASE,
                 SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, queryLimit, matchInstruction, null, null).getResults();
