@@ -34,6 +34,8 @@ import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -57,6 +59,8 @@ public class SchoolListReader {
     private static final Long POSTCODE_EXACT_BOOST = 40L;
     private static final Long POSTCODE_FUZZY_BOOST = 5L;
     private static final Long POSTCODE_MULTIMATCH_BOOST = 20L;
+
+    private static final Pattern UK_POSTCODE_REGEX = Pattern.compile(("^([Gg][Ii][Rr] ?0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) ?[0-9][A-Za-z]{2})$"));
 
     private final ISearchProvider searchProvider;
 
@@ -140,7 +144,16 @@ public class SchoolListReader {
         }
 
         // Postcode
-        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, POSTCODE_EXACT_BOOST, false));
+        // If the query contains a valid UK postcode (including with a missing space), insert the space in the correct
+        // place and add a boosted exact match for the normalised postcode.
+        Matcher postcodeMatcher = UK_POSTCODE_REGEX.matcher(searchQuery);
+        while (postcodeMatcher.find()) {
+            String postcodeWithoutSpaces = postcodeMatcher.group().replaceAll("\\s+", "");
+            int splitIdx = postcodeWithoutSpaces.length() - 3;
+            String normalisedPostcode = postcodeWithoutSpaces.substring(0, splitIdx) + " " + postcodeWithoutSpaces.substring(splitIdx);
+            searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, normalisedPostcode, POSTCODE_EXACT_BOOST, false));
+        }
+        // Also add fuzzy & multi-match instructions for partial/misspelled postcodes
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, POSTCODE_FUZZY_BOOST, true));
         if (searchQuery.length() >= 2) {
             searchCriteriaInstruction.should(new MultiMatchInstruction(searchQuery, new String[]{SCHOOL_POSTCODE_FIELDNAME}, POSTCODE_MULTIMATCH_BOOST));
