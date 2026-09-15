@@ -159,7 +159,7 @@ public class SchoolListReader {
         matchInstruction.must(searchCriteriaInstruction);
 
         List<String> schoolSearchResults = searchProvider.nestedMatchSearch(SCHOOLS_INDEX_BASE,
-                SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, queryLimit, matchInstruction, null, null).getResults();
+                SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, queryLimit, matchInstruction, null, null, SCHOOL_SEARCH_RELEVANCE_THRESHOLD).getResults();
 
         List<School> resultList = Lists.newArrayList();
         for (String schoolString : schoolSearchResults) {
@@ -200,8 +200,8 @@ public class SchoolListReader {
         MatchInstruction searchInstruction = new MatchInstruction(SCHOOL_ID_FIELDNAME, schoolId);
 
         List<String> matchingSchoolList = searchProvider.nestedMatchSearch(SCHOOLS_INDEX_BASE,
-                SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, DEFAULT_RESULTS_LIMIT, searchInstruction, null, null
-        ).getResults();
+                SCHOOLS_INDEX_TYPE.SCHOOL_SEARCH.toString(), 0, DEFAULT_RESULTS_LIMIT, searchInstruction,
+                null, null, null).getResults();
 
         if (matchingSchoolList.isEmpty()) {
             return null;

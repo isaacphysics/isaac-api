@@ -120,7 +120,8 @@ public class ElasticSearchProvider implements ISearchProvider {
                                                     final Integer startIndex, final Integer limit,
                                                     @NotNull final BooleanInstruction matchInstruction,
                                                     @Nullable final Long randomSeed,
-                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder
+                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder,
+                                                    @Nullable final Double relevanceThreshold
     ) throws SegueSearchException {
 
         if (null == indexBase || null == indexType) {
@@ -144,7 +145,7 @@ public class ElasticSearchProvider implements ISearchProvider {
             )._toQuery();
         }
 
-        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder);
+        return this.executeBasicQuery(indexBase, indexType, query, startIndex, limit, sortOrder, relevanceThreshold);
     }
 
     @Override
@@ -152,11 +153,13 @@ public class ElasticSearchProvider implements ISearchProvider {
                                                     final Integer startIndex, final Integer limit,
                                                     @NotNull final MatchInstruction matchInstruction,
                                                     @Nullable final Long randomSeed,
-                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder
+                                                    @Nullable final Map<String, Constants.SortOrder> sortOrder,
+                                                    @Nullable final Double relevanceThreshold
     ) throws SegueSearchException {
         BooleanInstruction booleanInstruction = new BooleanInstruction();
         booleanInstruction.must(matchInstruction);
-        return nestedMatchSearch(indexBase, indexType, startIndex, limit, booleanInstruction, randomSeed, sortOrder);
+        return nestedMatchSearch(indexBase, indexType, startIndex, limit, booleanInstruction, randomSeed, sortOrder,
+                relevanceThreshold);
     }
 
     /**
@@ -250,8 +253,7 @@ public class ElasticSearchProvider implements ISearchProvider {
     /**
      * Provides default search execution using the fields specified.
      *
-     * This method does not provide any way of controlling sort order or limiting information returned. It is most
-     * useful for doing simple searches with fewer results e.g. by id.
+     * This method does not provide any way of controlling sort order returned.
      *
      * @param indexBase
      *            - search index base string to execute the query against.
@@ -263,11 +265,15 @@ public class ElasticSearchProvider implements ISearchProvider {
      *            - start index for results
      * @param limit
      *            - the maximum number of results to return -1 will attempt to return all results.
+     * @param relevanceThreshold
+     *            - how close a result's score must be to the best match's score to be included in the results. If null,
+     *              no such filtering applies.
      * @return list of the search results
      */
     private ResultsWrapper<String> executeBasicQuery(final String indexBase, final String indexType,
                                                      final Query query, final int startIndex, final int limit,
-                                                     @Nullable final Map<String, Constants.SortOrder> sortInstructions) throws SegueSearchException {
+                                                     @Nullable final Map<String, Constants.SortOrder> sortInstructions,
+                                                     @Nullable final Double relevanceThreshold) throws SegueSearchException {
         int newLimit = limit;
         String typedIndex = ElasticSearchProvider.produceTypedIndexName(indexBase, indexType);
         boolean isUnlimitedSearch = limit == -1;
@@ -287,7 +293,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         }
 
         log.debug("Building Query: {}", requestBuilder);
-        ResultsWrapper<String> results = executeQuery(requestBuilder.build());
+        ResultsWrapper<String> results = executeQuery(requestBuilder.build(), relevanceThreshold);
 
         // execute another query to get all results as this is an unlimited
         // query.
@@ -305,7 +311,7 @@ public class ElasticSearchProvider implements ISearchProvider {
                     .from(startIndex)
                     .build();
 
-            results = executeQuery(secondRequest);
+            results = executeQuery(secondRequest, relevanceThreshold);
 
             log.debug("Unlimited Search - had to make a second round trip to elasticsearch.");
         }
@@ -317,12 +323,15 @@ public class ElasticSearchProvider implements ISearchProvider {
      * A general method for getting the results of a search.
      * @param searchRequest
      *            - the search request to send to the cluster.
+     * @param relevanceThreshold
+     *            - how close a result's score must be to the best match's score to be included in the results. If null,
+     *              no such filtering applies.
      * @return List of the search results.
      */
-    private ResultsWrapper<String> executeQuery(final SearchRequest searchRequest) throws SegueSearchException {
+    private ResultsWrapper<String> executeQuery(final SearchRequest searchRequest, @Nullable final Double relevanceThreshold)
+            throws SegueSearchException {
         try {
             SearchResponse<ObjectNode> response = client.search(searchRequest, ObjectNode.class);
-
             List<Hit<ObjectNode>> hits = response.hits().hits();
             List<String> resultList = new ArrayList<>();
 
@@ -330,9 +339,14 @@ public class ElasticSearchProvider implements ISearchProvider {
                     ? response.hits().total().value()
                     : 0;
 
+            Double bestScore = hits.getFirst().score();
+
             for (Hit<ObjectNode> hit : hits) {
-                ObjectNode src = hit.source();
-                resultList.add(null != src ? src.toString() : "{}");
+                Double score = hit.score();
+                if (null == relevanceThreshold || null == bestScore || null == score || bestScore * relevanceThreshold <= score) {
+                    ObjectNode src = hit.source();
+                    resultList.add(null != src ? src.toString() : "{}");
+                }
             }
 
             return new ResultsWrapper<>(resultList, totalHits);
