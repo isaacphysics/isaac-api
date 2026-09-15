@@ -28,7 +28,6 @@ import uk.ac.cam.cl.dtg.isaac.dos.users.School;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.ISearchProvider;
 import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
-import uk.ac.cam.cl.dtg.segue.search.MultiMatchInstruction;
 import uk.ac.cam.cl.dtg.segue.search.PrefixInstruction;
 import uk.ac.cam.cl.dtg.segue.search.SegueSearchException;
 
@@ -50,16 +49,16 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class SchoolListReader {
     private static final Logger log = LoggerFactory.getLogger(SchoolListReader.class);
 
-    private static final Long ID_BOOST = 100L;
+    private static final Long ID_BOOST = 50L;
     private static final Long NAME_EXACT_BOOST = 20L;
     private static final Long NAME_FUZZY_BOOST = 5L;
-    private static final Long NAME_PREFIX_BOOST = 30L;
+    private static final Long NAME_PREFIX_BOOST = 10L;
     private static final Long TOWN_EXACT_BOOST = 10L;
     private static final Long TOWN_FUZZY_BOOST = 3L;
-    private static final Long TOWN_PREFIX_BOOST = 10L;
-    private static final Long POSTCODE_EXACT_BOOST = 40L;
+    private static final Long TOWN_PREFIX_BOOST = 5L;
+    private static final Long POSTCODE_EXACT_BOOST = 20L;
     private static final Long POSTCODE_FUZZY_BOOST = 5L;
-    private static final Long POSTCODE_PREFIX_BOOST = 20L;
+    private static final Long POSTCODE_PREFIX_BOOST = 10L;
 
     private static final Pattern UK_POSTCODE_REGEX = Pattern.compile(("^([Gg][Ii][Rr] ?0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) ?[0-9][A-Za-z]{2})$"));
 
