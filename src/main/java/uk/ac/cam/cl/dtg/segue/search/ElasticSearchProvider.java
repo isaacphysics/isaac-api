@@ -26,6 +26,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.MultiMatchQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.NestedQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.PrefixQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.RandomScoreFunction;
 import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
@@ -430,9 +431,15 @@ public class ElasticSearchProvider implements ISearchProvider {
                 .type(TextQueryType.PhrasePrefix)
                 .prefixLength(2)
             )._toQuery();
-        } else if (matchInstruction instanceof ExistsInstruction) {
+        } else if (matchInstruction instanceof ExistsInstruction existsMatch) {
             return ExistsQuery.of(eq -> eq
-                .field(((ExistsInstruction) matchInstruction).getField()))
+                .field(existsMatch.getField()))
+                ._toQuery();
+        } else if (matchInstruction instanceof PrefixInstruction prefixMatch) {
+            return PrefixQuery.of(pq -> pq
+                .field(prefixMatch.getField())
+                .value(prefixMatch.getValue())
+                .boost(prefixMatch.getBoost().floatValue()))
                 ._toQuery();
         } else {
             throw new SegueSearchException(
