@@ -47,6 +47,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.users.UserAuthenticationSettingsDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.UserSummaryWithEmailAddressDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
 import uk.ac.cam.cl.dtg.segue.auth.IAuthenticator;
 import uk.ac.cam.cl.dtg.segue.auth.IPasswordAuthenticator;
@@ -1302,7 +1303,7 @@ public class UserAccountManager implements IUserAccountManager {
         if (null == user) {
             throw new NoUserException("No user found with this email!");
         }
-
+        SegueMetrics.PASSWORD_RESET_REQUESTS.inc();
         RegisteredUserDTO userDTO = this.convertUserDOToUserDTO(user);
         this.userAuthenticationManager.resetPasswordRequest(user, userDTO);
     }
