@@ -60,8 +60,6 @@ public class SchoolListReader {
     private static final Long POSTCODE_FUZZY_BOOST = 5L;
     private static final Long POSTCODE_PREFIX_BOOST = 10L;
 
-    private static final Pattern UK_POSTCODE_REGEX = Pattern.compile(("^([Gg][Ii][Rr] ?0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) ?[0-9][A-Za-z]{2})$"));
-
     private final ISearchProvider searchProvider;
 
     private final ObjectMapper mapper = new ObjectMapper();
