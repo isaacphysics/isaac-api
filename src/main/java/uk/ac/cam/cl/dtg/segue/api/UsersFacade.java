@@ -385,7 +385,6 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             misuseMonitor.notifyEvent(currentUser.getEmail(), TeacherPasswordResetMisuseHandler.class.getSimpleName());
-            SegueMetrics.PASSWORD_RESET.inc();
             userManager.resetPasswordRequest(userOfInterest);
 
             this.getLogManager()
