@@ -35,7 +35,6 @@ import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
@@ -50,12 +49,12 @@ public class SchoolListReader {
     private static final Logger log = LoggerFactory.getLogger(SchoolListReader.class);
 
     private static final Long ID_BOOST = 50L;
-    private static final Long NAME_EXACT_BOOST = 20L;
+    private static final Long NAME_EXACT_BOOST = 30L;
     private static final Long NAME_FUZZY_BOOST = 5L;
-    private static final Long NAME_PREFIX_BOOST = 10L;
+    private static final Long NAME_PREFIX_BOOST = 20L;
     private static final Long TOWN_EXACT_BOOST = 10L;
     private static final Long TOWN_FUZZY_BOOST = 3L;
-    private static final Long TOWN_PREFIX_BOOST = 5L;
+    private static final Long TOWN_PREFIX_BOOST = 7L;
     private static final Long POSTCODE_EXACT_BOOST = 20L;
     private static final Long POSTCODE_FUZZY_BOOST = 5L;
     private static final Long POSTCODE_PREFIX_BOOST = 10L;
@@ -130,12 +129,16 @@ public class SchoolListReader {
         // School name
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_EXACT_BOOST, false));
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_FUZZY_BOOST, true));
-        searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_PREFIX_BOOST));
+        if (searchQuery.length() > 2) {
+            searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_PREFIX_BOOST));
+        }
 
         // Town
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_EXACT_BOOST, false));
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_FUZZY_BOOST, true));
-        searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_PREFIX_BOOST));
+        if (searchQuery.length() > 2) {
+            searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_PREFIX_BOOST));
+        }
 
         // Postcode
         // If the query contains a valid UK postcode (including with a missing space), insert the space in the correct
@@ -149,7 +152,9 @@ public class SchoolListReader {
         }
         // Also add fuzzy & multi-match instructions for partial/misspelled postcodes
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, POSTCODE_FUZZY_BOOST, true));
-        searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, POSTCODE_PREFIX_BOOST));
+        if (searchQuery.length() > 2) {
+            searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_POSTCODE_FIELDNAME, searchQuery, POSTCODE_PREFIX_BOOST));
+        }
 
         matchInstruction.must(searchCriteriaInstruction);
 
