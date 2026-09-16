@@ -472,8 +472,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
+            String message = "Please try again later.";
             log.error("Password reset request blocked for email: ({})!", userObject.getEmail());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
