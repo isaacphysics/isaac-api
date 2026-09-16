@@ -9,27 +9,29 @@ import uk.ac.cam.cl.dtg.segue.comm.EmailManager;
 import uk.ac.cam.cl.dtg.segue.comm.EmailType;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
-import static uk.ac.cam.cl.dtg.segue.api.Constants.NUMBER_SECONDS_IN_ONE_DAY;
-
 /**
- * Handler to manage suspiciously large numbers of password reset requests at a whole-site level.
+ * Handler to manage suspiciously large numbers of login attempts at a whole-site level.
  */
-public class PasswordResetSitewideMisuseHandler implements IMisuseHandler {
+public class SegueLoginSitewideMisuseHandler implements IMisuseHandler {
+    private static final Logger log = LoggerFactory.getLogger(SegueLoginSitewideMisuseHandler.class);
 
-    private static final Logger log = LoggerFactory.getLogger(PasswordResetSitewideMisuseHandler.class);
-
-    private static final Integer SOFT_THRESHOLD = 500;
-    private static final Integer HARD_THRESHOLD = 2500;
-    private static final Integer ACCOUNTING_INTERVAL = NUMBER_SECONDS_IN_ONE_DAY;
+    public static final Integer SOFT_THRESHOLD = 10000;
+    public static final Integer HARD_THRESHOLD = 50000;
+    public static final Integer ACCOUNTING_INTERVAL = Constants.NUMBER_SECONDS_IN_ONE_DAY;
 
     private final AbstractConfigLoader properties;
     private final EmailManager emailManager;
 
     /**
-     *  Constructor for Guice injection.
+     * Constructor for Guice injection.
+     *
+     * @param emailManager
+     *            - so we can send emails if the threshold limits have been reached.
+     * @param properties
+     *            - so that we can look up properties set.
      */
     @Inject
-    public PasswordResetSitewideMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
+    public SegueLoginSitewideMisuseHandler(final EmailManager emailManager, final AbstractConfigLoader properties) {
         this.properties = properties;
         this.emailManager = emailManager;
     }
@@ -51,7 +53,7 @@ public class PasswordResetSitewideMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeSoftThresholdAction(final String message) {
-        final String subject = "Sitewide Soft Threshold limit reached for Password Reset endpoint";
+        final String subject = "Sitewide Soft Threshold limit reached for Segue login attempts";
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
@@ -60,7 +62,7 @@ public class PasswordResetSitewideMisuseHandler implements IMisuseHandler {
 
     @Override
     public void executeHardThresholdAction(final String message) {
-        final String subject = "Sitewide HARD Threshold limit reached for Sitewide Password Reset endpoint";
+        final String subject = "Sitewide HARD Threshold limit reached for Segue login attempts";
         EmailCommunicationMessage e = new EmailCommunicationMessage(properties.getProperty(Constants.SERVER_ADMIN_ADDRESS),
                 subject, message, message, EmailType.ADMIN);
         emailManager.addSystemEmailToQueue(e);
