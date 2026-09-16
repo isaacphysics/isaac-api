@@ -959,6 +959,9 @@ public class SegueGuiceConfigurationModule extends AbstractModule implements Ser
             misuseMonitor.registerHandler(PasswordResetByIPMisuseHandler.class.getSimpleName(),
                     new PasswordResetByIPMisuseHandler(emailManager, properties));
 
+            misuseMonitor.registerHandler(PasswordResetSitewideMisuseHandler.class.getSimpleName(),
+                    new PasswordResetSitewideMisuseHandler(emailManager, properties));
+
             misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(),
                     new TeacherPasswordResetMisuseHandler());
 
