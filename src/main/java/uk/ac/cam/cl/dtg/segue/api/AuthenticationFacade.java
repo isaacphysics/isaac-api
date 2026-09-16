@@ -391,7 +391,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
         // Stop users logging in who have already locked their account.
         if (misuseMonitor.hasMisused(email.toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName())) {
-            log.error("Login Blocked for ({}). Rate limited - too many logins!", email);
+            log.error("Login Blocked for ({}). Rate limited - too many login attempts for this email!", email);
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
         }
 
@@ -400,6 +400,7 @@ public class AuthenticationFacade extends AbstractSegueFacade {
         try {
             misuseMonitor.notifyEvent(SITEWIDE_MISUSE, SegueLoginSitewideMisuseHandler.class.getSimpleName());
         } catch (SegueResourceMisuseException e) {
+            log.error("Login Blocked for ({}) due to sitewide rate limiting.", email);
             String message = "Please try again later.";
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
