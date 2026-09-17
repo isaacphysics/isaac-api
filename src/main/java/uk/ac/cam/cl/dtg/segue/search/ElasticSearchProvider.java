@@ -339,7 +339,10 @@ public class ElasticSearchProvider implements ISearchProvider {
                     ? response.hits().total().value()
                     : 0;
 
-            Double bestScore = hits.getFirst().score();
+            Double bestScore = null;
+            if (!hits.isEmpty()) {
+                bestScore = hits.getFirst().score();
+            }
 
             for (Hit<ObjectNode> hit : hits) {
                 Double score = hit.score();
