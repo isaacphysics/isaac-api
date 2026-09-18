@@ -121,7 +121,7 @@ public class SchoolListReader {
         }
 
         // Attempt to match search query against ID, school name, town & postcode
-        BooleanInstruction searchCriteriaInstruction = new BooleanInstruction(1);
+        BooleanInstruction searchCriteriaInstruction = new BooleanInstruction();
 
         // School ID
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, ID_BOOST, false));
