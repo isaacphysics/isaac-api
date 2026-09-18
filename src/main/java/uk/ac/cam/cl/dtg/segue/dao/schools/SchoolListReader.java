@@ -48,7 +48,7 @@ import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 public class SchoolListReader {
     private static final Logger log = LoggerFactory.getLogger(SchoolListReader.class);
 
-    private static final Long ID_BOOST = 50L;
+    private static final Long ID_EXACT_BOOST = 50L;
     private static final Long NAME_EXACT_BOOST = 30L;
     private static final Long NAME_FUZZY_BOOST = 5L;
     private static final Long NAME_PREFIX_BOOST = 20L;
@@ -124,7 +124,7 @@ public class SchoolListReader {
         BooleanInstruction searchCriteriaInstruction = new BooleanInstruction();
 
         // School ID
-        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, ID_BOOST, false));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, ID_EXACT_BOOST, false));
 
         // School name
         searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_EXACT_BOOST, false));
