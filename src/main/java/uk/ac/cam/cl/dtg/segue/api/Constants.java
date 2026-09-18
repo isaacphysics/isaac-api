@@ -428,6 +428,8 @@ public final class Constants {
     // Quartz
     public static final String DISABLE_QUARTZ_AUTOSTART = "DISABLE_QUARTZ_AUTOSTART";
 
+    // Sitewide misuse monitors
+    public static final String SITEWIDE_MISUSE =  "SITEWIDE_MISUSE";
 
     /*
      * Default values.
