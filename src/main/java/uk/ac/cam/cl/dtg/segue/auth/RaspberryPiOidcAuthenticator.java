@@ -160,12 +160,14 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
             throw new AuthenticatorSecurityException("ID token is invalid - possible indication of tampering.");
         }
 
+        boolean isUnder13 = idToken.getPayload().get("email").equals("dummy@example.com");
+
         // Read claims from the ID token - no need to go to the UserInfo endpoint, as everything is here
+        // Names are obtained differently across u13 and o13 users, so handled separately below
         String sub = (String) idToken.getPayload().get("sub");
-        String fullName = (String) idToken.getPayload().get("name");
-        String nickname = (String) idToken.getPayload().get("nickname");
         String email = (String) idToken.getPayload().get("email");
         String country = (String) idToken.getPayload().get("country_code");
+
         boolean emailVerified = (Boolean) idToken.getPayload().getOrDefault("email_verified", false);
 
         if (null != country && !CountryLookupManager.isKnownCountryCode(country)) {
@@ -173,28 +175,53 @@ public class RaspberryPiOidcAuthenticator implements IOAuth2AuthenticatorWithSig
             country = null;
         }
 
-        if (null == nickname || null == fullName || null == email || null == sub) {
-            throw new NoUserException("Required field missing from identity provider's response.");
-        }
-        else {
-            // Build a given name/family name based on the nickname and full name fields available. This makes
-            // unreasonable assumptions about the structure of names, but it's the best we can do.
-            List<String> givenNameFamilyName = getGivenNameFamilyName(nickname, fullName);
+        if (isUnder13) {
+            String username = (String) idToken.getPayload().get("username");
 
-            EmailVerificationStatus emailStatus = emailVerified ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED;
+            if (null == username || null == email || null == sub) {
+                throw new NoUserException("Required field missing from identity provider's response for under-13 user.");
+            } else {
+                // We cannot reasonably infer any part of a name from their username. Instead, use a blank given
+                // name and the username as the family name. The user is expected to change this in the signup flow.
+                return new UserFromAuthProvider(
+                        sub,
+                        null,
+                        username,
+                        username + "-rpf",
+                        EmailVerificationStatus.AGE_RESTRICTED,
+                        null,
+                        null,
+                        null,
+                        country,
+                        false
+                );
+            }
+        } else {
+            String fullName = (String) idToken.getPayload().get("name");
+            String nickname = (String) idToken.getPayload().get("nickname");
 
-            // Use the IdP's unique ID for the user ('sub') as the unique (per identity provider) user ID.
-            return new UserFromAuthProvider(
-                    sub,
-                    givenNameFamilyName.get(0),
-                    givenNameFamilyName.get(1),
-                    email,
-                    emailStatus,
-                    null,
-                    null,
-                    null,
-                    country,
-                    false);
+            if (null == nickname || null == fullName || null == email || null == sub) {
+                throw new NoUserException("Required field missing from identity provider's response.");
+            } else {
+                // Build a given name/family name based on the nickname and full name fields available. This makes
+                // unreasonable assumptions about the structure of names, but it's the best we can do.
+                List<String> givenNameFamilyName = getGivenNameFamilyName(nickname, fullName);
+
+                EmailVerificationStatus emailStatus = emailVerified ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.NOT_VERIFIED;
+
+                // Use the IdP's unique ID for the user ('sub') as the unique (per identity provider) user ID.
+                return new UserFromAuthProvider(
+                        sub,
+                        givenNameFamilyName.get(0),
+                        givenNameFamilyName.get(1),
+                        email,
+                        emailStatus,
+                        null,
+                        null,
+                        null,
+                        country,
+                        false);
+            }
         }
     }
 
