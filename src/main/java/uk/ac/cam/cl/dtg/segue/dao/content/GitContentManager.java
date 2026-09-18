@@ -252,7 +252,7 @@ public class GitContentManager {
                 searchInstruction.must(new MatchInstruction(Constants.ID_FIELDNAME + "." + Constants.UNPROCESSED_SEARCH_FIELD_SUFFIX, id));
 
                 ResultsWrapper<String> rawResults = searchProvider.nestedMatchSearch(contentIndex,
-                        CONTENT_INDEX_TYPE.CONTENT.toString(), 0, 1, searchInstruction, null, null);
+                        CONTENT_INDEX_TYPE.CONTENT.toString(), 0, 1, searchInstruction, null, null, null);
                 List<Content> searchResults = contentSubclassMapper
                         .mapFromStringListToContentList(rawResults.getResults());
 
@@ -304,7 +304,7 @@ public class GitContentManager {
                 searchInstruction.must(idsInstruction);
 
                 ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
-                        CONTENT_INDEX_TYPE.CONTENT.toString(), startIndex, limit, searchInstruction, null, null
+                        CONTENT_INDEX_TYPE.CONTENT.toString(), startIndex, limit, searchInstruction, null, null, null
                 );
 
                 List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
@@ -395,7 +395,8 @@ public class GitContentManager {
                 limit,
                 searchInstructionBuilder.build(),
                 null,
-                sortOrder
+                sortOrder,
+                null
         );
 
         List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
@@ -524,7 +525,8 @@ public class GitContentManager {
                 limit,
                 searchInstructionBuilder.build(),
                 randomSeed,
-                sortOrder
+                sortOrder,
+                null
         );
 
         List<Content> searchResults = contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
@@ -737,7 +739,7 @@ public class GitContentManager {
                                                         final Map<String, Constants. SortOrder> sortInstructions)
             throws ContentManagerException {
         ResultsWrapper<String> searchHits = this.searchProvider.nestedMatchSearch(contentIndex,
-                CONTENT_INDEX_TYPE.CONTENT.toString(), startIndex, limit, instruction, randomSeed, sortInstructions);
+                CONTENT_INDEX_TYPE.CONTENT.toString(), startIndex, limit, instruction, randomSeed, sortInstructions, null);
         List<Content> searchResults = this.contentSubclassMapper.mapFromStringListToContentList(searchHits.getResults());
         List<ContentDTO> dtoResults = this.contentSubclassMapper.getDTOByDOList(searchResults);
         return new ResultsWrapper<>(dtoResults, searchHits.getTotalResults());

@@ -51,13 +51,13 @@ public interface ISearchProvider {
     ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
             @NotNull final BooleanInstruction matchInstruction, @Nullable Long randomSeed,
-            @Nullable final Map<String, Constants.SortOrder> sortOrder
+            @Nullable final Map<String, Constants.SortOrder> sortOrder, @Nullable final Double relevanceThreshold
     ) throws SegueSearchException;
 
     ResultsWrapper<String> nestedMatchSearch(
             final String indexBase, final String indexType, final Integer startIndex, final Integer limit,
             @NotNull final MatchInstruction matchInstruction, @Nullable Long randomSeed,
-            @Nullable final Map<String, Constants.SortOrder> sortOrder
+            @Nullable final Map<String, Constants.SortOrder> sortOrder, @Nullable final Double relevanceThreshold
     ) throws SegueSearchException;
 
     /*

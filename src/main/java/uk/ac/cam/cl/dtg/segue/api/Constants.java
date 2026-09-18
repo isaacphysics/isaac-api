@@ -20,6 +20,7 @@ import org.postgresql.util.PGInterval;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -522,6 +523,10 @@ public final class Constants {
     public static final String SCHOOL_EXCLUDED_FIELDNAME = "excluded";
     public static final String SCHOOL_CLOSED_FIELDNAME = "closed";
     public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "dataSource";
+
+    public static final Double SCHOOL_SEARCH_RELEVANCE_THRESHOLD = 0.8;
+
+    public static final Pattern UK_POSTCODE_REGEX = Pattern.compile(("^([Gg][Ii][Rr] ?0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) ?[0-9][A-Za-z]{2})$"));
 
     // User School Reporting
 
