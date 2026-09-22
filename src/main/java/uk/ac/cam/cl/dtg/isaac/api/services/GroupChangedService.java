@@ -42,6 +42,7 @@ import uk.ac.cam.cl.dtg.util.NameFormatter;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -115,15 +116,22 @@ public class GroupChangedService implements IGroupObserver {
         Objects.requireNonNull(userDTO);
 
         UserSummaryWithEmailAddressDTO groupOwner = userGroup.getOwnerSummary();
-        String groupOwnerName = getTeacherNameFromUser(groupOwner);
+
+        List<String> teacherNames = new ArrayList<>(userGroup.getAdditionalManagers().stream().map(NameFormatter::getTeacherNameFromUser).toList());
+
+        if (groupOwner != null) {
+            teacherNames.add(NameFormatter.getTeacherNameFromUser(groupOwner));
+        }
 
         String teacherInfo;
-        if (!userGroup.getAdditionalManagers().isEmpty()) {
-            teacherInfo = String.format("your teachers %s and %s",
-                userGroup.getAdditionalManagers().stream().map(NameFormatter::getTeacherNameFromUser).collect(Collectors.joining(", ")),
-                groupOwnerName);
+        if (teacherNames.isEmpty()) {
+            teacherInfo = "no teachers";
+        } else if (teacherNames.size() == 1) {
+            teacherInfo = String.format("your teacher %s", teacherNames.getFirst());
         } else {
-            teacherInfo = String.format("your teacher %s", groupOwnerName);
+            String head = String.join(", ", teacherNames.subList(0, teacherNames.size() - 1));
+            String tail = teacherNames.getLast();
+            teacherInfo = String.format("your teachers %s and %s", head, tail);
         }
 
         String groupName = getFilteredGroupNameFromGroup(userGroup);
@@ -134,7 +142,6 @@ public class GroupChangedService implements IGroupObserver {
         formatGroupAssignmentsInfo(userGroup, htmlSB, plainTextSB);
 
         return new ImmutableMap.Builder<String, Object>()
-            .put("teacherName", groupOwnerName)
             .put("teacherInfo", teacherInfo)
             .put("groupName", groupName)
             .put("assignmentsInfo", plainTextSB.toString())
