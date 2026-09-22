@@ -109,6 +109,7 @@ public class SchoolListReader {
         }
 
         Integer queryLimit = limit == null ? DEFAULT_RESULTS_LIMIT : limit;
+        String searchQueryLower = searchQuery.toLowerCase();
 
         BooleanInstruction matchInstruction = new BooleanInstruction();
         // Exclude excluded/closed schools
@@ -124,20 +125,20 @@ public class SchoolListReader {
         BooleanInstruction searchCriteriaInstruction = new BooleanInstruction();
 
         // School ID
-        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQuery, ID_EXACT_BOOST, false));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_ID_FIELDNAME, searchQueryLower, ID_EXACT_BOOST, false));
 
         // School name
-        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_EXACT_BOOST, false));
-        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_FUZZY_BOOST, true));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQueryLower, NAME_EXACT_BOOST, false));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_NAME_FIELDNAME, searchQueryLower, NAME_FUZZY_BOOST, true));
         if (searchQuery.length() > 2) {
-            searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_NAME_FIELDNAME, searchQuery, NAME_PREFIX_BOOST));
+            searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_NAME_FIELDNAME, searchQueryLower, NAME_PREFIX_BOOST));
         }
 
         // Town
-        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_EXACT_BOOST, false));
-        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_FUZZY_BOOST, true));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQueryLower, TOWN_EXACT_BOOST, false));
+        searchCriteriaInstruction.should(new MatchInstruction(SCHOOL_TOWN_FIELDNAME, searchQueryLower, TOWN_FUZZY_BOOST, true));
         if (searchQuery.length() > 2) {
-            searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_TOWN_FIELDNAME, searchQuery, TOWN_PREFIX_BOOST));
+            searchCriteriaInstruction.should(new PrefixInstruction(SCHOOL_TOWN_FIELDNAME, searchQueryLower, TOWN_PREFIX_BOOST));
         }
 
         // Postcode
