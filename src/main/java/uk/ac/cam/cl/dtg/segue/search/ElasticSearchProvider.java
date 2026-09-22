@@ -335,6 +335,10 @@ public class ElasticSearchProvider implements ISearchProvider {
             List<Hit<ObjectNode>> hits = response.hits().hits();
             List<String> resultList = new ArrayList<>();
 
+            long totalHits = null != response.hits().total()
+                    ? response.hits().total().value()
+                    : 0;
+
             Double bestScore = null;
             if (!hits.isEmpty()) {
                 bestScore = hits.getFirst().score();
@@ -347,8 +351,6 @@ public class ElasticSearchProvider implements ISearchProvider {
                     resultList.add(null != src ? src.toString() : "{}");
                 }
             }
-
-            long totalHits = resultList.size();
 
             return new ResultsWrapper<>(resultList, totalHits);
         } catch (ElasticsearchException | IOException e) {
