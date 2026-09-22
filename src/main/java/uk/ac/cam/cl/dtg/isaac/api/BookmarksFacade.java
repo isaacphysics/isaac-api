@@ -33,6 +33,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
@@ -84,7 +85,7 @@ public class BookmarksFacade extends AbstractIsaacFacade {
         }
 
         if (null != contentType && !contentType.isEmpty()
-                && !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
+                && !Set.of("isaacQuestionPage", "issacFastTrackQuestionPage", "isaacConceptPage").contains(contentType)) {
             log.warn("Invalid content type provided for bookmarks query: {}", contentType);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
         }
@@ -132,7 +133,7 @@ public class BookmarksFacade extends AbstractIsaacFacade {
         try {
             ContentDTO content = this.contentManager.getContentById(contentId);
             contentType = content.getType();
-            if (null == contentType || !(contentType.equals("isaacQuestionPage") || contentType.equals("isaacConceptPage"))) {
+            if (null == contentType || !Set.of("isaacQuestionPage", "issacFastTrackQuestionPage", "isaacConceptPage").contains(contentType)) {
                 log.warn("Invalid content type provided for bookmarks query: {}", contentType);
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
             }
