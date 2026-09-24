@@ -33,6 +33,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.SegueResourceMisuseException;
 import uk.ac.cam.cl.dtg.segue.api.managers.UserAccountManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginSitewideMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AccountAlreadyLinkedException;
 import uk.ac.cam.cl.dtg.segue.auth.exceptions.AdditionalAuthenticationRequiredException;
@@ -390,8 +391,18 @@ public class AuthenticationFacade extends AbstractSegueFacade {
 
         // Stop users logging in who have already locked their account.
         if (misuseMonitor.hasMisused(email.toLowerCase(), SegueLoginMisuseHandler.class.getSimpleName())) {
-            log.error("Login Blocked for ({}). Rate limited - too many logins!", email);
+            log.error("Login Blocked for ({}). Rate limited - too many login attempts for this email!", email);
             return SegueErrorResponse.getRateThrottledResponse(rateThrottleMessage);
+        }
+
+        // Count successful & unsuccessful login attempts towards sitewide misuse so that mass use of stolen valid
+        // credentials is detected.
+        try {
+            misuseMonitor.notifyEvent(SITEWIDE_MISUSE, SegueLoginSitewideMisuseHandler.class.getSimpleName());
+        } catch (SegueResourceMisuseException e) {
+            log.error("Login Blocked for ({}) due to sitewide rate limiting.", email);
+            String message = "Please try again later.";
+            return SegueErrorResponse.getRateThrottledResponse(message);
         }
 
         // ok we need to hand over to user manager
