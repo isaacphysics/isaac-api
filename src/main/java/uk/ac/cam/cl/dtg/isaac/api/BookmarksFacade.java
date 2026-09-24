@@ -85,7 +85,7 @@ public class BookmarksFacade extends AbstractIsaacFacade {
         }
 
         if (null != contentType && !contentType.isEmpty()
-                && !Set.of("isaacQuestionPage", "isaacFastTrackQuestionPage", "isaacConceptPage").contains(contentType)) {
+                && !Set.of(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE).contains(contentType)) {
             log.warn("Invalid content type provided for bookmarks query: {}", contentType);
             return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
         }
@@ -133,7 +133,7 @@ public class BookmarksFacade extends AbstractIsaacFacade {
         try {
             ContentDTO content = this.contentManager.getContentById(contentId);
             contentType = content.getType();
-            if (null == contentType || !Set.of("isaacQuestionPage", "isaacFastTrackQuestionPage", "isaacConceptPage").contains(contentType)) {
+            if (null == contentType || !Set.of(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE, CONCEPT_TYPE).contains(contentType)) {
                 log.warn("Invalid content type provided for bookmarks query: {}", contentType);
                 return new SegueErrorResponse(Status.BAD_REQUEST, "Only question and concept pages can be bookmarked!").toResponse();
             }

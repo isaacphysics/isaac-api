@@ -416,7 +416,7 @@ public class PagesFacade extends AbstractIsaacFacade {
         List<BookmarkDO> bookmarks = null;
         if (searchBookmarks) {
             if (user instanceof RegisteredUserDTO registeredUser) {
-                bookmarks = bookmarksManager.getBookmarksForUser(registeredUser.getId(), "isaacQuestionPage");
+                bookmarks = bookmarksManager.getBookmarksForUser(registeredUser.getId(), QUESTION_TYPE);
                 Set<String> bookmarkIds = bookmarks.stream()
                         .map(BookmarkDO::contentId)
                         .collect(Collectors.toSet());
