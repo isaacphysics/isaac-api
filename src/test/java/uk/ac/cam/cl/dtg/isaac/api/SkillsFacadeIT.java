@@ -570,8 +570,8 @@ public class SkillsFacadeIT extends IsaacIntegrationTestWithREST {
     }
 
     private TestServer testServerExtendedAttemptAge() throws Exception {
-        Long oneYearInMillis = 365L * 24 * 60 * 60 * 1000;
+        Long oneYearPlusOneDayInMillis = 366L * 24 * 60 * 60 * 1000;
         return testServer(null, new SkillsAttemptManager(properties,
-                new PgSkillsAttemptPersistenceManager(postgresSqlDb), oneYearInMillis));
+                new PgSkillsAttemptPersistenceManager(postgresSqlDb), oneYearPlusOneDayInMillis));
     }
 }
