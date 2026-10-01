@@ -43,6 +43,7 @@ import uk.ac.cam.cl.dtg.segue.api.managers.UserAssociationManager;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByEmailMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetByIPMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.PasswordResetSitewideMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.SegueMetrics;
@@ -447,6 +448,7 @@ public class UsersFacade extends AbstractSegueFacade {
             String requestingIPAddress = RequestIPExtractor.getClientIpAddr(request);
             misuseMonitor.notifyEvent(userObject.getEmail(), PasswordResetByEmailMisuseHandler.class.getSimpleName());
             misuseMonitor.notifyEvent(requestingIPAddress, PasswordResetByIPMisuseHandler.class.getSimpleName());
+            misuseMonitor.notifyEvent(SITEWIDE_MISUSE, PasswordResetSitewideMisuseHandler.class.getSimpleName());
             userManager.resetPasswordRequest(userObject);
 
             this.getLogManager()
@@ -469,8 +471,7 @@ public class UsersFacade extends AbstractSegueFacade {
             log.error(error.getErrorMessage(), e);
             return error.toResponse();
         } catch (SegueResourceMisuseException e) {
-            String message = "You have exceeded the number of requests allowed for this endpoint. "
-                    + "Please try again later.";
+            String message = "Please try again later.";
             log.error("Password reset request blocked for email: ({})!", userObject.getEmail());
             return SegueErrorResponse.getRateThrottledResponse(message);
         }
