@@ -120,7 +120,7 @@ public class GroupChangedService implements IGroupObserver {
         List<String> teacherNames = new ArrayList<>(userGroup.getAdditionalManagers().stream().map(NameFormatter::getTeacherNameFromUser).toList());
 
         if (groupOwner != null) {
-            teacherNames.add(NameFormatter.getTeacherNameFromUser(groupOwner));
+            teacherNames.addFirst(NameFormatter.getTeacherNameFromUser(groupOwner));
         }
 
         String teacherInfo;
