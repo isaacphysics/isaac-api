@@ -465,8 +465,11 @@ public class AuthorisationFacade extends AbstractSegueFacade {
             UserGroupDTO group = this.groupManager.getGroupById(associationToken.getGroupId());
 
             List<UserSummaryWithEmailAddressDTO> usersLinkedToToken = Lists.newArrayList();
-            // add owner
-            usersLinkedToToken.add(group.getOwnerSummary());
+            // add owner, if not deleted/archived
+            UserSummaryWithEmailAddressDTO ownerSummary = group.getOwnerSummary();
+            if (null != ownerSummary) {
+                usersLinkedToToken.add(ownerSummary);
+            }
             // add additional managers
             usersLinkedToToken.addAll(group.getAdditionalManagers());
 
