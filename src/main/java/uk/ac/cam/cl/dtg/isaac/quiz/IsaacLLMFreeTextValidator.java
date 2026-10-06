@@ -179,7 +179,7 @@ public class IsaacLLMFreeTextValidator implements IValidator {
         try {
             return openAIClient.getChatCompletions(
                     configLoader.getProperty(LLM_MARKER_DEFAULT_MODEL_NAME),
-                    new ChatCompletionsOptions(questionPrompt).setTemperature(0.0));
+                    new ChatCompletionsOptions(questionPrompt).setTemperature(Double.parseDouble(LLM_MARKER_TEMPERATURE)));
         } catch (final Exception e) {
             log.error("Failed to retrieve completions from OpenAI API", e);
             throw new IOException(e.getMessage());
