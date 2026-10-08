@@ -26,6 +26,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingExpression;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingFunction;
 import uk.ac.cam.cl.dtg.isaac.dos.content.LLMMarkingVariable;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.segue.api.Constants;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.io.IOException;
@@ -177,9 +178,10 @@ public class IsaacLLMFreeTextValidator implements IValidator {
      */
     private ChatCompletions retrieveCompletionsFromOpenAI(final List<ChatRequestMessage> questionPrompt) throws IOException {
         try {
+            String llmTemperatureString = configLoader.getProperty(LLM_MARKER_TEMPERATURE);
             return openAIClient.getChatCompletions(
                     configLoader.getProperty(LLM_MARKER_DEFAULT_MODEL_NAME),
-                    new ChatCompletionsOptions(questionPrompt).setTemperature(0.0));
+                    new ChatCompletionsOptions(questionPrompt).setTemperature(Double.parseDouble(llmTemperatureString)));
         } catch (final Exception e) {
             log.error("Failed to retrieve completions from OpenAI API", e);
             throw new IOException(e.getMessage());
