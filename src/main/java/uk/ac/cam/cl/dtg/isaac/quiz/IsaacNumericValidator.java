@@ -235,8 +235,8 @@ public class IsaacNumericValidator implements IValidator {
                     // Matches value but not units of a correct choice.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_WRONG_UNIT_VALIDATION_RESPONSE), true, false, new Date());
-                } else if (!numericValuesMatched && unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect()) {
-                    // Matches units but not value of a correct choice.
+                } else if (!numericValuesMatched && unitsFromUser.equals(unitsFromChoice) && quantityFromQuestion.isCorrect() && null == bestResponse) {
+                    // Matches units but not value of a correct choice. Lower priority than matching value, so don't overwrite an existing response.
                     bestResponse = new QuantityValidationResponse(isaacNumericQuestion.getId(), answerFromUser,
                             false, new Content(DEFAULT_VALIDATION_RESPONSE), false, true, new Date());
                 }
