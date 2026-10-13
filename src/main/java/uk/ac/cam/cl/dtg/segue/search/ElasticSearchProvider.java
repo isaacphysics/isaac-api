@@ -462,7 +462,7 @@ public class ElasticSearchProvider implements ISearchProvider {
         } else if (matchInstruction instanceof RegexpInstruction regexpMatch) {
             return RegexpQuery.of(rq -> rq
                 .field(regexpMatch.getField())
-                .value(regexpMatch.getValue()))
+                .value(regexpMatch.getRegex()))
                 ._toQuery();
         } else {
             throw new SegueSearchException(
