@@ -30,6 +30,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.PrefixQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import co.elastic.clients.elasticsearch._types.query_dsl.RandomScoreFunction;
 import co.elastic.clients.elasticsearch._types.query_dsl.RangeQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.RegexpQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.TextQueryType;
 import co.elastic.clients.elasticsearch._types.query_dsl.WildcardQuery;
 import co.elastic.clients.elasticsearch.core.GetResponse;
@@ -457,6 +458,11 @@ public class ElasticSearchProvider implements ISearchProvider {
                 .field(prefixMatch.getField())
                 .value(prefixMatch.getValue())
                 .boost(prefixMatch.getBoost().floatValue()))
+                ._toQuery();
+        } else if (matchInstruction instanceof RegexpInstruction regexpMatch) {
+            return RegexpQuery.of(rq -> rq
+                .field(regexpMatch.getField())
+                .value(regexpMatch.getValue()))
                 ._toQuery();
         } else {
             throw new SegueSearchException(
