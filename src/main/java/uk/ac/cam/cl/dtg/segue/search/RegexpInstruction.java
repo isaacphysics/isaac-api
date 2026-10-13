@@ -16,7 +16,7 @@ public class RegexpInstruction extends AbstractInstruction {
         return this.field;
     }
 
-    public String getValue() {
+    public String getRegex() {
         return this.regex;
     }
 }
