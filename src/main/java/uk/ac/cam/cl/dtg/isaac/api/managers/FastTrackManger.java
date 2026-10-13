@@ -127,7 +127,8 @@ public class FastTrackManger {
         }
         searchInstruction.must(levelInstruction);
 
-        String titleRegex = Pattern.quote(conceptTitle) + "([ ][0-9]+i{1,2})?"; // Title optionally followed by 1i, 1ii, 2i, 2ii...
+        String luceneRegexFriendlyTitle = conceptTitle.replaceAll("([.?+*|{}\\[\\]()\"\\\\#@&~<>])", "\\\\$1");
+        String titleRegex = luceneRegexFriendlyTitle + "([ ][0-9]+i{1,2})?"; // Title optionally followed by 1i, 1ii, 2i, 2ii...
 
         searchInstruction.must(new RegexpInstruction(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, titleRegex));
         searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, boardTag));
