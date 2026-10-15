@@ -14,6 +14,7 @@ import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
 import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
 import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
+import uk.ac.cam.cl.dtg.segue.search.RegexpInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Arrays;
@@ -125,7 +126,11 @@ public class FastTrackManger {
         }
         searchInstruction.must(levelInstruction);
 
-        searchInstruction.must(new MatchInstruction(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, conceptTitle));
+        String baseConceptTitle = conceptTitle.replaceAll("\\s\\d+i{1,2}$", "");
+        String luceneRegexFriendlyTitle = baseConceptTitle.replaceAll("([.?+*|{}\\[\\]()\"\\\\#@&~<>])", "\\\\$1");
+        String titleRegex = luceneRegexFriendlyTitle + "([ ][0-9]+i{1,2})?"; // Title optionally followed by 1i, 1ii, 2i, 2ii...
+
+        searchInstruction.must(new RegexpInstruction(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, titleRegex));
         searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, boardTag));
 
 
