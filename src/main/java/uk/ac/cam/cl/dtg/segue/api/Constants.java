@@ -20,6 +20,7 @@ import org.postgresql.util.PGInterval;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -192,6 +193,7 @@ public final class Constants {
      * Constant representing the key for the HMAC Salt - used in HMAC calculations.
      */
     public static final String HMAC_SALT = "HMAC_SALT";
+    public static final String SKILLS_HMAC_SECRET = "SKILLS_HMAC_SECRET";
     public static final int TRUNCATED_TOKEN_LENGTH = 8;
 
     // Search stuff
@@ -222,8 +224,8 @@ public final class Constants {
     public static final String MAILGUN_FROM_ADDRESS = "MAILGUN_FROM_ADDRESS";
     public static final String MAILGUN_DOMAIN = "MAILGUN_DOMAIN";
     public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
-    public static final String MAILGUN_EMAILS_BETA_OPT_IN = "MAILGUN_EMAILS_BETA_OPT_IN";
-
+    public static final Integer MAILGUN_EMAIL_BATCH_SIZE = 500;
+    public static final Integer LARGE_GROUP_SIZE = 50;
     /**
      * Suffix to append to raw fields (minus dot separator) - these are fields that the search engine should not do any
      * processing on (e.g. no stemming)
@@ -246,7 +248,7 @@ public final class Constants {
         AND, OR, NOT
     }
 
-    public static final String SCHOOLS_INDEX_BASE = "schools";
+    public static final String SCHOOLS_INDEX_BASE = "schools_2026";
     public enum SCHOOLS_INDEX_TYPE {
         METADATA("metadata"),
         SCHOOL_SEARCH("school");
@@ -442,11 +444,14 @@ public final class Constants {
 
     public static final String DEFAULT_SEARCH_RESULT_LIMIT_AS_STRING = "25";
     public static final Integer MAX_SEARCH_RESULT_LIMIT = 350;
+    public static final Integer MAX_SCHOOLS_RESULT_LIMIT = 50;
 
     public static final Integer SEARCH_TEXT_CHAR_LIMIT = 1000;
     public static final Integer CONTACT_FORM_CHAR_LIMIT = 5000;
 
     public static final Integer NO_SEARCH_LIMIT = -1;
+
+    public static final String ES_PSEUDOFIELD_SCORE = "ES_PSEUDOFIELD_SCORE";
 
     // Content model specific stuff
     public static final String ID_FIELDNAME = "id";
@@ -509,18 +514,19 @@ public final class Constants {
     public static final String ID_SEPARATOR = "|";
     public static final String ESCAPED_ID_SEPARATOR = "\\" + ID_SEPARATOR;
 
-    // School List loading - raw data
-    public static final String SCHOOL_URN_FIELDNAME = "URN";
-    public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME = "EstablishmentName";
-    public static final String SCHOOL_POSTCODE_FIELDNAME = "Postcode";
-    public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "DataSource";
-    public static final String SCHOOL_CLOSED_FIELDNAME = "Closed";
+    // School List loading
+    public static final String SCHOOL_ID_FIELDNAME = "schoolId";
+    public static final String SCHOOL_COUNTRY_CODE_FIELDNAME = "countryCode";
+    public static final String SCHOOL_NAME_FIELDNAME = "schoolName";
+    public static final String SCHOOL_TOWN_FIELDNAME = "town";
+    public static final String SCHOOL_POSTCODE_FIELDNAME = "postalCode";
+    public static final String SCHOOL_EXCLUDED_FIELDNAME = "excluded";
+    public static final String SCHOOL_CLOSED_FIELDNAME = "closed";
+    public static final String SCHOOL_DATA_SOURCE_FIELDNAME = "dataSource";
 
-    // School List loading POJO fields
-    public static final String SCHOOL_URN_FIELDNAME_POJO = "urn";
-    public static final String SCHOOL_ESTABLISHMENT_NAME_FIELDNAME_POJO = "name";
-    public static final String SCHOOL_POSTCODE_FIELDNAME_POJO = "postcode";
-    public static final String SCHOOL_CLOSED_FIELDNAME_POJO = "closed";
+    public static final Double SCHOOL_SEARCH_RELEVANCE_THRESHOLD = 0.8;
+
+    public static final Pattern UK_POSTCODE_REGEX = Pattern.compile(("^([Gg][Ii][Rr] ?0[Aa]{2})|((([A-Za-z][0-9]{1,2})|(([A-Za-z][A-Ha-hJ-Yj-y][0-9]{1,2})|(([A-Za-z][0-9][A-Za-z])|([A-Za-z][A-Ha-hJ-Yj-y][0-9]?[A-Za-z])))) ?[0-9][A-Za-z]{2})$"));
 
     // User School Reporting
 
@@ -590,6 +596,8 @@ public final class Constants {
     public static final String QUIZ_FEEDBACK_MODE = "quizFeedbackMode";
     public static final String QUIZ_OLD_DUEDATE = "oldDueDate";
     public static final String QUIZ_OLD_FEEDBACK_MODE = "oldQuizFeedbackMode";
+
+    public static final String COMPLETION_NOTIFICATIONS_LOG_FIELDNAME = "completionNotifications";
 
     public static final String EQUALITY_CHECKER_HOST = "EQUALITY_CHECKER_HOST";
     public static final String EQUALITY_CHECKER_PORT = "EQUALITY_CHECKER_PORT";

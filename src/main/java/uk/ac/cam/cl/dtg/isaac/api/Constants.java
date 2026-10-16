@@ -54,6 +54,10 @@ public final class Constants {
     public static final String HIDE_FROM_FILTER_TAG = "nofilter";
     public static final String REGRESSION_TEST_TAG = "regression_test";
 
+    public static final String SIG_FIGS_TAG = "sig_figs";
+    public static final String SIG_FIGS_TOO_FEW_TAG = "sig_figs_too_few";
+    public static final String SIG_FIGS_TOO_MANY_TAG = "sig_figs_too_many";
+
     public static final String RELATED_CONTENT_FIELDNAME = "relatedContent";
 
     public static final List<String> QUESTION_PAGE_TYPES = List.of(QUESTION_TYPE, FAST_TRACK_QUESTION_TYPE);
@@ -141,9 +145,6 @@ public final class Constants {
     public static final Long DEFAULT_MISUSE_STATISTICS_LIMIT = 5L;
 
     public static final int NUMERIC_QUESTION_DEFAULT_SIGNIFICANT_FIGURES = 2;
-
-    public static final Integer MAILGUN_BATCH_SIZE = 500;
-
 
     /**
      * Class to represent Isaac log types.

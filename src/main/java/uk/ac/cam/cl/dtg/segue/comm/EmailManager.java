@@ -363,6 +363,11 @@ public class EmailManager extends AbstractCommunicationQueue<EmailCommunicationM
             return false;
         }
 
+        if (userDTO.getEmailVerificationStatus() == EmailVerificationStatus.AGE_RESTRICTED) {
+            log.info("Email sending abandoned - verification status is AGE_RESTRICTED");
+            return false;
+        }
+
         // if this is an email type that cannot have a preference, send it and log as appropriate
         if (!email.getEmailType().isValidEmailPreference()) {
             log.info("Added {} email to the queue with subject: '{}'.", email.getEmailType().toString().toLowerCase(), email.getSubject());

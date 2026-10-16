@@ -396,7 +396,7 @@ public class GroupsFacade extends AbstractSegueFacade {
                         || !existingGroup.getCreated().equals(groupDTO.getCreated())
                         || !existingGroup.getLastUpdated().equals(groupDTO.getLastUpdated())
                         || !existingGroup.getAdditionalManagersUserIds().equals(groupDTO.getAdditionalManagersUserIds())
-                        || !existingGroup.getOwnerSummary().toString().equals(groupDTO.getOwnerSummary().toString());
+                        || !String.valueOf(existingGroup.getOwnerSummary()).equals(String.valueOf(groupDTO.getOwnerSummary()));
                 boolean additionalManagerCanMakeChange = !ownerOnlyFieldChanged && existingGroup.isAdditionalManagerPrivileges();
 
                 // And that the user is an additional manager with privileges. If not, return an error response

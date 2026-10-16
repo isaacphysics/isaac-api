@@ -300,8 +300,8 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TOO_MANY_TAG));
     }
 
     @Test
@@ -340,8 +340,8 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_few"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TOO_FEW_TAG));
     }
 
     @Test
@@ -389,8 +389,8 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TOO_MANY_TAG));
 
         // 2 sig figs should be correct
         c.setItems(List.of(item1, item2));
@@ -411,8 +411,8 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_few"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TOO_FEW_TAG));
 
         // 2 sig figs should be correct
         c.setItems(List.of(item1, item2));
@@ -432,8 +432,8 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TOO_MANY_TAG));
     }
 
     @Test
@@ -505,8 +505,8 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TOO_MANY_TAG));
     }
 
     @Test
@@ -518,8 +518,8 @@ public class IsaacCoordinateValidatorTest {
         QuestionValidationResponse response = validator.validateQuestionResponse(someCoordinateQuestion, c);
 
         assertFalse(response.isCorrect());
-        assertTrue(response.getExplanation().getTags().contains("sig_figs"));
-        assertTrue(response.getExplanation().getTags().contains("sig_figs_too_many"));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TAG));
+        assertTrue(response.getExplanation().getTags().contains(SIG_FIGS_TOO_MANY_TAG));
     }
 
     @Test

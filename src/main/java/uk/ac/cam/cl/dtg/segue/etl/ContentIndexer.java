@@ -17,18 +17,8 @@ import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCard;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCardDeck;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacClozeQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacCoordinateQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacEventPage;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacNumericQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionBase;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuiz;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuizSection;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicChemistryQuestion;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacSymbolicQuestion;
+import uk.ac.cam.cl.dtg.isaac.dos.*;
+import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
@@ -46,6 +36,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.ItemChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Media;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Quantity;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
+import uk.ac.cam.cl.dtg.isaac.dos.content.SkillsApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Video;
 import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
 import uk.ac.cam.cl.dtg.isaac.util.ContentValidatorUtils;
@@ -71,6 +62,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -562,9 +554,28 @@ public class ContentIndexer {
                 setOfContentObjects.addAll(flattenContentObjects((Content) child));
             }
 
-            if (content instanceof InlineRegion) {
-                for (IsaacQuestionBase child : ((InlineRegion) content).getInlineQuestions()) {
-                    setOfContentObjects.addAll(flattenContentObjects(child));
+            if (content instanceof IsaacQuestionBase question) {
+                List<ContentBase> hints = question.getHints();
+                if (hints != null) {
+                    for (ContentBase hint : hints) {
+                        setOfContentObjects.addAll(flattenContentObjects((Content) hint));
+                    }
+                }
+            }
+
+            if (content instanceof InlineRegion region) {
+                List<IsaacQuestionBase> inlineQuestions = region.getInlineQuestions();
+                if (inlineQuestions != null) {
+                    for (IsaacQuestionBase child : inlineQuestions) {
+                        setOfContentObjects.addAll(flattenContentObjects(child));
+                    }
+                }
+
+                List<ContentBase> hints = region.getHints();
+                if (hints != null) {
+                    for (ContentBase hint : hints) {
+                        setOfContentObjects.addAll(flattenContentObjects((Content) hint));
+                    }
                 }
             }
         }
@@ -962,7 +973,9 @@ public class ContentIndexer {
                     int sizeInKiloBytes = fileData.size() / 1024;
                     this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
                             f.getSrc(), sizeInKiloBytes), indexProblemCache);
-                } else if (f.getSrc().endsWith(".svg")) {
+                }
+
+                if (f.getSrc().endsWith(".svg") && null != fileData) {
                     // Check file contents for svg with either no defined width or a %-based width
                     String fileContents = fileData.toString();
                     Pattern pattern = Pattern.compile("(<svg[^>]*width\\s*=\\s*\"\\d+%\"[^>]*>|<svg(?![^>]*width)[^>]*>)\\n?");
@@ -974,11 +987,21 @@ public class ContentIndexer {
                         );
                     }
                 }
+
+                Pattern badCharacters = Pattern.compile("[^a-zA-Z0-9-_.~/ ]");
+                Matcher badCharactersMatcher = badCharacters.matcher(f.getSrc());
+                if (badCharactersMatcher.find()) {
+                    this.registerContentProblem(content, String.format("Filename '%s' contains illegal character '%s'.",
+                                    f.getSrc(), badCharactersMatcher.group()),
+                            indexProblemCache
+                    );
+                }
             }
 
-            // check that there is some alt text.
-            if (f.getAltText() == null || f.getAltText().isEmpty()) {
-                if (!(f instanceof Video) && !f.getId().equals("eventThumbnail")) {
+            // Check that there is some alt text. Decorative images should have empty alt text.
+            boolean isDecorative = null != f.getDecorative() && f.getDecorative();
+            if (f.getAltText() == null || (f.getAltText().isEmpty() && !isDecorative)) {
+                if (!(f instanceof Video) && !Objects.equals(f.getId(), "eventThumbnail")) {
                     // Videos probably don't need alt text unless there is a good reason. It's not important that event
                     // thumbnails have alt text, so we don't record errors for those either.
                     this.registerContentProblem(content, "No altText attribute set for media element: " + f.getSrc()
@@ -986,13 +1009,36 @@ public class ContentIndexer {
                 }
             }
         }
+
+        if (content instanceof EmailTemplate e) {
+            if (e.getPlainTextContent() == null) {
+                this.registerContentProblem(content,
+                        "Email template should always have plain text content field", indexProblemCache);
+            }
+        }
+
+        if (content instanceof IsaacEventPage e) {
+            if (e.getEndDate() == null) {
+                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
+            } else if (e.getEndDate().before(e.getDate())) {
+                this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
+            }
+        }
+
+        if (content instanceof IsaacQuestionPage qp
+                && flattenContentObjects(content).stream()
+                .allMatch(c -> !(c instanceof Question) || c instanceof IsaacQuickQuestion)) {
+            this.registerContentProblem(content, "Question page: " + qp.getId() + " found without any markable questions. "
+                    + "Question progress will not be recorded correctly.", indexProblemCache);
+        }
+
         if (content instanceof Question && content.getId() == null) {
             this.registerContentProblem(content, "Question: " + content.getTitle() + " in " + content.getCanonicalSourceFile()
                     + " found without a unqiue id. " + "This question cannot be logged correctly.", indexProblemCache);
         }
 
         if (content instanceof ChoiceQuestion question
-                && !(content.getType().equals("isaacQuestion"))) {
+                && !(content.getType().equals("isaacQuestion") || content.getType().equals("isaacLLMFreeTextQuestion"))) {
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,
@@ -1010,21 +1056,6 @@ public class ContentIndexer {
                             "Question: " + question.getId() + " found without a correct answer. "
                                     + "This question will always be automatically marked as incorrect", indexProblemCache);
                 }
-            }
-        }
-
-        if (content instanceof EmailTemplate e) {
-            if (e.getPlainTextContent() == null) {
-                this.registerContentProblem(content,
-                        "Email template should always have plain text content field", indexProblemCache);
-            }
-        }
-
-        if (content instanceof IsaacEventPage e) {
-            if (e.getEndDate() == null) {
-                this.registerContentProblem(content, "Event has no end date", indexProblemCache);
-            } else if (e.getEndDate().before(e.getDate())) {
-                this.registerContentProblem(content, "Event has end date before start date", indexProblemCache);
             }
         }
 
@@ -1061,11 +1092,16 @@ public class ContentIndexer {
             }
             // Verify that significant figure bounds are correct
             if (!q.getDisregardSignificantFigures()) {
-                if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
-                    // Both bounds need to be present, or both not present
+                // If not 'exact answers only', s.f. bounds should be set
+                if (null == q.getSignificantFiguresMin() && null == q.getSignificantFiguresMax()) {
+                    this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has no "
+                            + "significant figure bounds set. If this question does not use significant figures then "
+                            + "'exact answers only' should be set.", indexProblemCache);
+                } else if (null == q.getSignificantFiguresMin() || null == q.getSignificantFiguresMax()) {
+                    // Both bounds need to be present
                     this.registerContentProblem(content, "Numeric Question: " + q.getId() + " has only one "
                             + "significant figure bound, and may be unanswerable as a result. Please add both upper "
-                            + "and lower significant figure bounds, or omit both.", indexProblemCache);
+                            + "and lower significant figure bounds, or set 'exact answers only'.", indexProblemCache);
                 } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
                     // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
                     // (0 significant figures makes no sense for example)
@@ -1165,21 +1201,47 @@ public class ContentIndexer {
             }
         }
 
-        if (content instanceof IsaacCoordinateQuestion q) {
+        if (content instanceof IsaacReorderQuestion q) {
+            if (null != q.getUseSingleList() && q.getUseSingleList()) {
+                if (q.getChoices().stream().map(ItemChoice.class::cast).filter(c -> null == c.isAllowSubsetMatch() || !c.isAllowSubsetMatch())
+                        .allMatch(choice -> choice.getItems().size() != q.getItems().size())) {
+                    this.registerContentProblem(content, "Reorder Question: " + q.getId() + " has useSingleList"
+                            + " and contains a non wildcard-matched answer with missing items.", indexProblemCache);
+                }
+            }
+        }
 
-            if (null == q.getSignificantFiguresMin() ^ null == q.getSignificantFiguresMax()) {
-                // Both bounds need to be present, or both not present
-                this.registerContentProblem(content, String.format("Coordinate Question: %s has only one significant figure bound."
-                        + " Sig figs will be ignored for this question; add both min and max to fix this.", q.getId()),
-                        indexProblemCache);
-            } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
-                // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
-                if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
-                        || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
-                    this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has broken "
-                            + "significant figure rules! The upper bound may be below the lower bound, or "
-                            + "either bound might be less than 1 - the question will be unanswerable unless "
-                            + "this is fixed.", indexProblemCache);
+        if (content instanceof IsaacParsonsQuestion q) {
+            if (null != q.getUseSingleList() && q.getUseSingleList()) {
+                if (q.getChoices().stream().map(ItemChoice.class::cast)
+                        .allMatch(choice -> choice.getItems().size() != q.getItems().size())) {
+                    this.registerContentProblem(content, "Parsons Question: " + q.getId() + " has useSingleList"
+                            + " and contains an answer with missing items.", indexProblemCache);
+                }
+            }
+        }
+
+        if (content instanceof IsaacCoordinateQuestion q) {
+            if (!q.getDisregardSignificantFigures()) {
+                // If not 'exact answers only', s.f. bounds should be set
+                if (null == q.getSignificantFiguresMin() && null == q.getSignificantFiguresMax()) {
+                    this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has no "
+                            + "significant figure bounds set. If this question does not use significant figures then "
+                            + "'exact answers only' should be set.", indexProblemCache);
+                } else if (null == q.getSignificantFiguresMin() || null == q.getSignificantFiguresMax()) {
+                    // Both bounds need to be present
+                    this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has only one "
+                            + "significant figure bound, and may be unanswerable as a result. Please add both upper "
+                            + "and lower significant figure bounds, or set 'exact answers only'.", indexProblemCache);
+                } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
+                    // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
+                    if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
+                            || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
+                        this.registerContentProblem(content, "Coordinate Question: " + q.getId() + " has broken "
+                                + "significant figure rules! The upper bound may be below the lower bound, or "
+                                + "either bound might be less than 1 - the question will be unanswerable unless "
+                                + "this is fixed.", indexProblemCache);
+                    }
                 }
             }
 
@@ -1202,6 +1264,23 @@ public class ContentIndexer {
                 }
             }
         }
-    }
 
+        if (content instanceof IsaacLLMFreeTextQuestion q) {
+            if (null == q.getMarkScheme() || q.getMarkScheme().isEmpty()) {
+                this.registerContentProblem(content,
+                        String.format("LLM Free Text Question: %s has no mark scheme set. This question cannot be marked.", q.getId()),
+                    indexProblemCache);
+            }
+        }
+
+        if (content instanceof SkillsApp a) {
+            if (null == a.getId()) {
+                this.registerContentProblem(content, "Skill app is missing an id.", indexProblemCache);
+            }
+            if (null == a.getAnvilApp() || null == a.getAnvilApp().getType() || !a.getAnvilApp().getType().equals("anvilApp")) {
+                this.registerContentProblem(content,
+                    String.format("Skill app '%s' must contain an Anvil app.", a.getId()), indexProblemCache);
+            }
+        }
+    }
 }

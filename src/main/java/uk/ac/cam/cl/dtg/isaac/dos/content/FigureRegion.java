@@ -13,6 +13,7 @@ public class FigureRegion {
     private Float width;
     private Float left;
     private Float top;
+    private String boxAlign;
 
     public String getId() {
         return id;
@@ -52,5 +53,13 @@ public class FigureRegion {
 
     public void setTop(final Float top) {
         this.top = top;
+    }
+
+    public String getBoxAlign() {
+        return boxAlign;
+    }
+
+    public void setBoxAlign(final String boxAlign) {
+        this.boxAlign = boxAlign;
     }
 }

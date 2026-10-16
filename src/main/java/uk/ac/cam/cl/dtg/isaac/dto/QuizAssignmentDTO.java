@@ -37,6 +37,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
     private Date dueDate;
     private Date scheduledStartDate;
     private QuizFeedbackMode quizFeedbackMode;
+    private Boolean completionNotifications;
 
     private QuizAttemptDTO attempt; // For augmenting a user's attempt when fetching assignments.
     private List<QuizUserFeedbackDTO> userFeedback; // For augmenting all student's marks when a teacher fetches assignment.
@@ -64,7 +65,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
      */
     public QuizAssignmentDTO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
                              final Date creationDate, final Date dueDate, final Date scheduledStartDate,
-                             final QuizFeedbackMode quizFeedbackMode) {
+                             final QuizFeedbackMode quizFeedbackMode, Boolean completionNotifications) {
         this.id = id;
         this.quizId = quizId;
         this.ownerUserId = ownerUserId;
@@ -73,6 +74,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         this.dueDate = dueDate;
         this.scheduledStartDate = scheduledStartDate;
         this.quizFeedbackMode = quizFeedbackMode;
+        this.completionNotifications = completionNotifications;
     }
 
     /**
@@ -279,6 +281,14 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
         this.quiz = quiz;
     }
 
+    public Boolean getCompletionNotifications() {
+        return completionNotifications;
+    }
+
+    public void setCompletionNotifications(final Boolean completionNotifications) {
+        this.completionNotifications = completionNotifications;
+    }
+
     @Override
     public String toString() {
         return "QuizAssignmentDTO ["
@@ -290,6 +300,7 @@ public class QuizAssignmentDTO implements IAssignmentLike, IHasQuizSummary {
             + ", dueDate=" + dueDate
             + ", scheduledStartDate=" + scheduledStartDate
             + ", quizFeedbackMode=" + quizFeedbackMode
+            + ", completionNotifications=" + completionNotifications
             + ']';
     }
 }

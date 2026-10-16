@@ -30,6 +30,7 @@ public class QuizAssignmentDO {
     private Date dueDate;
     private Date scheduledStartDate;
     private QuizFeedbackMode quizFeedbackMode;
+    private Boolean completionNotifications;
 
     /**
      * Complete AssignmentDO constructor with all dependencies.
@@ -51,7 +52,7 @@ public class QuizAssignmentDO {
      */
     public QuizAssignmentDO(final Long id, final String quizId, final Long ownerUserId, final Long groupId,
                             final Date creationDate, @Nullable final Date dueDate, @Nullable Date scheduledStartDate,
-                            final QuizFeedbackMode quizFeedbackMode) {
+                            final QuizFeedbackMode quizFeedbackMode, final Boolean completionNotifications) {
         this.id = id;
         this.quizId = quizId;
         this.ownerUserId = ownerUserId;
@@ -60,6 +61,7 @@ public class QuizAssignmentDO {
         this.dueDate = dueDate;
         this.scheduledStartDate = scheduledStartDate;
         this.quizFeedbackMode = quizFeedbackMode;
+        this.completionNotifications = completionNotifications;
     }
 
     /**
@@ -213,5 +215,13 @@ public class QuizAssignmentDO {
      */
     public void setQuizFeedbackMode(final QuizFeedbackMode quizFeedbackMode) {
         this.quizFeedbackMode = quizFeedbackMode;
+    }
+
+    public Boolean getCompletionNotifications() {
+        return completionNotifications;
+    }
+
+    public void setCompletionNotifications(final Boolean completionNotifications) {
+        this.completionNotifications = completionNotifications;
     }
 }

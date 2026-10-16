@@ -5,11 +5,6 @@ services:
     image: ucamcldtg/equality-checker
     restart: unless-stopped
 
-  chemistry-checker:
-    container_name: chemistry-checker
-    image: ucamcldtg/chemistry-checker
-    restart: unless-stopped
-
   chemistry-checker-js:
     container_name: chemistry-checker-js
     image: ghcr.io/isaacphysics/chemistry-checker-js

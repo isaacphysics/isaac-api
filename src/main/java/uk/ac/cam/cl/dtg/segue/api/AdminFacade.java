@@ -86,11 +86,14 @@ import java.net.http.HttpResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -794,8 +797,8 @@ public class AdminFacade extends AbstractSegueFacade {
      *            - if searching by role
      * @param schoolOther
      *            - if searching by school other field.
-     * @param schoolURN
-     *            - if searching by school by the URN.
+     * @param schoolId
+     *            - if searching for school by ID.
      * @param emailVerificationStatus
      *            - if searching by email verification status
      * @return a userDTO or a segue error response
@@ -808,7 +811,7 @@ public class AdminFacade extends AbstractSegueFacade {
             @QueryParam("id") final Long userId, @QueryParam("email") @Nullable final String email,
             @QueryParam("familyName") @Nullable final String familyName, @QueryParam("role") @Nullable final Role role,
             @QueryParam("schoolOther") @Nullable final String schoolOther,
-            @QueryParam("schoolURN") @Nullable final String schoolURN,
+            @QueryParam("schoolId") @Nullable final String schoolId,
             @QueryParam("emailVerificationStatus") @Nullable final EmailVerificationStatus emailVerificationStatus) {
 
         RegisteredUserDTO currentUser;
@@ -825,7 +828,7 @@ public class AdminFacade extends AbstractSegueFacade {
                     && (null == familyName || familyName.isEmpty())
                     && (null == schoolOther || schoolOther.isEmpty())
                     && (null == email || email.isEmpty())
-                    && (null == schoolURN || schoolURN.isEmpty())) {
+                    && (null == schoolId || schoolId.isEmpty())) {
                 return new SegueErrorResponse(Status.FORBIDDEN, "You do not have permission to do wildcard searches.")
                         .toResponse();
 
@@ -870,8 +873,8 @@ public class AdminFacade extends AbstractSegueFacade {
                 userPrototype.setSchoolOther(schoolOther);
             }
             
-            if (null != schoolURN) {
-                userPrototype.setSchoolId(schoolURN);
+            if (null != schoolId) {
+                userPrototype.setSchoolId(schoolId);
             }
 
             if (null != emailVerificationStatus) {

@@ -179,7 +179,7 @@ public class IsaacCoordinateValidator implements IValidator {
                     } else if (allItemsMatchWithoutSigFigs) {
                         // Too many sig figs, or too few sig figs but the choice has trailing zeros; otherwise correct
                         feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
-                        feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                        feedback.setTags(new HashSet<>(ImmutableList.of(SIG_FIGS_TAG, SIG_FIGS_TOO_MANY_TAG)));
                         break;
                     }
 
@@ -220,7 +220,7 @@ public class IsaacCoordinateValidator implements IValidator {
                                 // At least one value has too many sig figs, or too few sig figs but the choice has
                                 // trailing zeros; otherwise the submission is a subset of the choice
                                 feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
-                                feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                                feedback.setTags(new HashSet<>(ImmutableList.of(SIG_FIGS_TAG, SIG_FIGS_TOO_MANY_TAG)));
                                 break;
                             }
                         }
@@ -261,7 +261,7 @@ public class IsaacCoordinateValidator implements IValidator {
                                 // At least one value has too many sig figs, or too few sig figs but the choice has
                                 // trailing zeros; otherwise the submission is a superset of the choice
                                 feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
-                                feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_many")));
+                                feedback.setTags(new HashSet<>(ImmutableList.of(SIG_FIGS_TAG, SIG_FIGS_TOO_MANY_TAG)));
                                 break;
                             }
                         }
@@ -284,7 +284,7 @@ public class IsaacCoordinateValidator implements IValidator {
         if (!disregardSigFigs && !responseCorrect && feedbackIsNullOrEmpty(feedback) && submittedItems.stream().anyMatch(i -> i.getCoordinates().stream()
                 .anyMatch(c -> ValidationUtils.tooFewSignificantFigures(c, sigFigsMin, log)))) {
             feedback = new Content(DEFAULT_VALIDATION_RESPONSE);
-            feedback.setTags(new HashSet<>(ImmutableList.of("sig_figs", "sig_figs_too_few")));
+            feedback.setTags(new HashSet<>(ImmutableList.of(SIG_FIGS_TAG, SIG_FIGS_TOO_FEW_TAG)));
         }
 
         return new QuestionValidationResponse(question.getId(), answer, responseCorrect, feedback, new Date());

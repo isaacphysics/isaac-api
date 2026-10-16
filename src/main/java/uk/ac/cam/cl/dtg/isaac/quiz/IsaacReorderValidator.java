@@ -80,7 +80,11 @@ public class IsaacReorderValidator implements IValidator {
 
         if (null == feedback) {
             if (null == submittedChoice.getItems() || submittedChoice.getItems().isEmpty()) {
-                feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
+                if (null != reorderQuestion.getUseSingleList() && reorderQuestion.getUseSingleList()) {
+                    feedback = new Content(FEEDBACK_NO_ANSWER_PROVIDED);
+                    } else {
+                    feedback = new Content("You did not provide an answer. Remember to move items from the available items to your answer.");
+                }
             } else if (submittedChoice.getItems().stream().anyMatch(i -> i.getClass() != Item.class)) {
                 feedback = new Content(FEEDBACK_UNRECOGNISED_FORMAT);
             } else {

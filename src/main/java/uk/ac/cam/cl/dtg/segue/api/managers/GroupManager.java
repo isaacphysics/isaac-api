@@ -533,9 +533,9 @@ public class GroupManager {
 
         try {
             dtoToReturn.setOwnerSummary(userManager.convertToDetailedUserSummaryObject(userManager.getUserDTOById(group.getOwnerId()), UserSummaryWithEmailAddressDTO.class));
-        } catch (NoUserException e) {
-            // This should never happen!
-            log.error("Group ({}) has owner ID ({}) that no longer exists!", group.getId(), group.getOwnerId());
+        } catch (final NoUserException e) {
+            // Owner has been archived/deleted
+            log.debug("Group ({}) has owner ID ({}) that no longer exists!", group.getId(), group.getOwnerId());
         }
 
         Set<UserSummaryWithEmailAddressDTO> setOfUsers = Sets.newHashSet();

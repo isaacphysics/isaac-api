@@ -417,17 +417,35 @@ public class QuestionManager {
     /**
      * @param users who we are interested in.
      * @param questionPageIds we want to look up.
+     * @param toDate only include question attempts before this date
      * @return a map of user id to question page id to question_id to list of attempts.
      * @throws SegueDatabaseException if there is a database error.
      */
     public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingLightweightQuestionAttempts(
-            final List<RegisteredUserDTO> users, final List<String> questionPageIds) throws SegueDatabaseException {
+            final List<RegisteredUserDTO> users, final List<String> questionPageIds, final Date toDate)
+            throws SegueDatabaseException {
         List<Long> userIds = Lists.newArrayList();
         for (RegisteredUserDTO user : users) {
             userIds.add(user.getId());
         }
 
-        return this.questionAttemptPersistenceManager.getMatchingLightweightQuestionAttempts(userIds, questionPageIds);
+        return this.questionAttemptPersistenceManager.getMatchingLightweightQuestionAttempts(userIds, questionPageIds, toDate);
+    }
+
+    /**
+     * Helper method for when we don't want to filter question attempts by date.
+     *
+     * @see #getMatchingLightweightQuestionAttempts(List, List, Date)
+     *
+     * @param users who we are interested in.
+     * @param questionPageIds we want to look up.
+     * @return a map of user id to question page id to question_id to list of attempts.
+     * @throws SegueDatabaseException if there is a database error.
+     */
+    public Map<Long, Map<String, Map<String, List<LightweightQuestionValidationResponse>>>> getMatchingLightweightQuestionAttempts(
+            final List<RegisteredUserDTO> users, final List<String> questionPageIds)
+            throws SegueDatabaseException {
+        return getMatchingLightweightQuestionAttempts(users, questionPageIds, null);
     }
 
     /**

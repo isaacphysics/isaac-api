@@ -52,7 +52,8 @@ public class PgExternalAccountPersistenceManager implements IExternalAccountData
                 + "    LEFT OUTER JOIN user_preferences AS events_prefs ON users.id = events_prefs.user_id AND events_prefs.preference_type='EMAIL_PREFERENCE' AND events_prefs.preference_name='EVENTS' "
                 + "    LEFT OUTER JOIN external_accounts ON users.id=external_accounts.user_id AND provider_name='MailJet' "
                 + "WHERE (users.last_updated >= provider_last_updated OR news_prefs.last_updated >= provider_last_updated "
-                + "           OR events_prefs.last_updated >= provider_last_updated OR provider_last_updated IS NULL)";
+                + "           OR events_prefs.last_updated >= provider_last_updated OR provider_last_updated IS NULL)"
+                + " AND email_verification_status<>'AGE_RESTRICTED'";
         try (Connection conn = database.getDatabaseConnection();
              PreparedStatement pst = conn.prepareStatement(query);
              ResultSet results = pst.executeQuery();

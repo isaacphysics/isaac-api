@@ -96,8 +96,6 @@ public class UserAuthenticationManager {
     private static final Logger log = LoggerFactory.getLogger(UserAuthenticationManager.class);
     private static final String HMAC_SHA_ALGORITHM = "HmacSHA256";
 
-    private static final String DUPLICATE_COOKIES = "Duplicate auth cookies found in request from ({}). Ignoring old cookie!";
-
     private final AbstractConfigLoader properties;
     private final IUserDataManager database;
     private final IDeletionTokenPersistenceManager deletionTokenPersistenceManager;
@@ -1212,17 +1210,9 @@ public class UserAuthenticationManager {
         }
 
         for (Cookie c : request.getCookies()) {
-            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
             if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
-                if (null != segueAuthCookie) {
-                    log.warn(DUPLICATE_COOKIES, RequestIPExtractor.getClientIpAddr(request));
-                } else {
-                    segueAuthCookie = c;
-                }
+                log.warn("Insecure cookie ignored in request from ({})!", RequestIPExtractor.getClientIpAddr(request));
             } else if (c.getName().equals(SECURE_SEGUE_AUTH_COOKIE)) {
-                if (null != segueAuthCookie) {
-                    log.warn(DUPLICATE_COOKIES, RequestIPExtractor.getClientIpAddr(request));
-                }
                 segueAuthCookie = c;
             }
         }
@@ -1252,17 +1242,7 @@ public class UserAuthenticationManager {
         }
 
         for (HttpCookie c : request.getCookies()) {
-            // FIXME old-cookies: remove support for SEGUE_AUTH_COOKIE after old cookies expired.
-            if (c.getName().equals(SEGUE_AUTH_COOKIE)) {
-                if (null != segueAuthCookie) {
-                    log.warn(DUPLICATE_COOKIES, "websocket");
-                } else {
-                    segueAuthCookie = c;
-                }
-            } else if (c.getName().equals(SECURE_SEGUE_AUTH_COOKIE)) {
-                if (null != segueAuthCookie) {
-                    log.warn(DUPLICATE_COOKIES, "websocket");
-                }
+            if (c.getName().equals(SECURE_SEGUE_AUTH_COOKIE)) {
                 segueAuthCookie = c;
             }
         }

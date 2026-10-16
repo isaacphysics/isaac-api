@@ -38,7 +38,7 @@ import static org.easymock.EasyMock.resetToNice;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.ac.cam.cl.dtg.segue.api.Constants.HOST_NAME;
+import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 
 public class QuizAssignmentManagerTest extends AbstractManagerTest {
 
@@ -68,7 +68,7 @@ public class QuizAssignmentManagerTest extends AbstractManagerTest {
             null, studentQuiz.getId(),
             teacher.getId(), studentGroup.getId(),
             somePastDate, someFutureDate, null,
-            QuizFeedbackMode.OVERALL_MARK);
+            QuizFeedbackMode.OVERALL_MARK, false);
     }
 
     @Test

@@ -32,6 +32,7 @@ import uk.ac.cam.cl.dtg.isaac.quiz.ValidatesWith;
 public class IsaacParsonsQuestion extends IsaacItemQuestion {
 
     private Boolean disableIndentation;
+    private Boolean useSingleList;
 
     public Boolean getDisableIndentation() {
         return disableIndentation;
@@ -39,5 +40,13 @@ public class IsaacParsonsQuestion extends IsaacItemQuestion {
 
     public void setDisableIndentation(final Boolean disableIndentation) {
         this.disableIndentation = disableIndentation;
+    }
+
+    public Boolean getUseSingleList() {
+        return useSingleList;
+    }
+
+    public void setUseSingleList(Boolean useSingleList) {
+        this.useSingleList = useSingleList;
     }
 }

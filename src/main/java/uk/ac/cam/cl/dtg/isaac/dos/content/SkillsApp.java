@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Stephen Cummins
+ * Copyright 2026 Barna Magyarkuti
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.search;
-
-import java.util.Collection;
+package uk.ac.cam.cl.dtg.isaac.dos.content;
+import uk.ac.cam.cl.dtg.isaac.dto.content.SkillsAppDTO;
 
 /**
- * TermsFilterInstruction.
- * A class to help encapsulate filter instructions.
+ * A DO for holding a skill app.
  *
- * This instruction will expect to match at least one of the terms in the list provided.
+ * @author bm710
  */
-public class TermsFilterInstruction extends AbstractFilterInstruction {
-    private final Collection<String> matchValues;
+@DTOMapping(SkillsAppDTO.class)
+@JsonContentType("skillsApp")
+public class SkillsApp extends Content {
+    private AnvilApp anvilApp;
 
-    public TermsFilterInstruction(Collection<String> matchValues) {
-        this.matchValues = matchValues;
+    public AnvilApp getAnvilApp() {
+        return anvilApp;
     }
 
-    public Collection<String> getMatchValues() {
-        return matchValues;
+    public void setAnvilApp(final AnvilApp anvilApp) {
+        this.anvilApp = anvilApp;
     }
 }

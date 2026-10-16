@@ -288,6 +288,10 @@ public class IsaacController extends AbstractIsaacFacade {
                 mimeType = "image/gif";
                 break;
 
+            case "avif":
+                mimeType = "image/avif";
+                break;
+
             default:
                 // Unsupported filetype, don't allow this.
                 SegueErrorResponse error = new SegueErrorResponse(

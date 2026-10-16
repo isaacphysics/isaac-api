@@ -27,6 +27,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
 import uk.ac.cam.cl.dtg.isaac.api.services.ContentSummarizerService;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dto.AssignmentStatusDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuizDTO;
@@ -106,9 +107,11 @@ public class QuizFacadeTest extends AbstractFacadeTest {
         quizAttemptManager = createMock(QuizAttemptManager.class);
         quizQuestionManager = createMock(QuizQuestionManager.class);
         associationManager = createMock(UserAssociationManager.class);
+        EmailService emailService = createNiceMock(EmailService.class);  // not currently testing emails
 
         quizFacade = new QuizFacade(properties, logManager, contentManager, quizManager, userManager,
-            associationManager, groupManager, quizAssignmentManager, assignmentService, quizAttemptManager, quizQuestionManager);
+                associationManager, groupManager, quizAssignmentManager, assignmentService, quizAttemptManager,
+                quizQuestionManager, emailService);
 
         registerDefaultsFor(quizAssignmentManager, m -> {
             expect(m.getAssignedQuizzes(anyObject(RegisteredUserDTO.class))).andStubAnswer(() -> {
@@ -330,7 +333,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
     @Test
     public void createQuizAssignment() {
-        QuizAssignmentDTO newAssignment = new QuizAssignmentDTO(0xB8003111799L, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK);
+        QuizAssignmentDTO newAssignment = new QuizAssignmentDTO(0xB8003111799L, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK, false);
         List<AssignmentStatusDTO> newAssignments = new ArrayList<>();
         newAssignments.add(
                 new AssignmentStatusDTO(newAssignment.getGroupId(), newAssignment.getId())
@@ -348,7 +351,7 @@ public class QuizFacadeTest extends AbstractFacadeTest {
 
         List<QuizAssignmentDTO> assignmentRequest = new ArrayList<>();
         assignmentRequest.add(
-                new QuizAssignmentDTO(null, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK)
+                new QuizAssignmentDTO(null, otherQuiz.getId(), null, studentGroup.getId(), null, someFutureDate, null, QuizFeedbackMode.OVERALL_MARK, false)
         );
 
         forEndpoint((List<QuizAssignmentDTO> assignments) -> () -> quizFacade.createQuizAssignments(httpServletRequest, assignments),

@@ -15,7 +15,6 @@
  */
 package uk.ac.cam.cl.dtg.isaac.api.services;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
@@ -23,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.GroupMembershipStatus;
 import uk.ac.cam.cl.dtg.isaac.dto.IAssignmentLike;
+import uk.ac.cam.cl.dtg.isaac.dto.QuizAssignmentDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.UserGroupDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.content.EmailTemplateDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.users.GroupMembershipDTO;
@@ -41,13 +41,11 @@ import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 import jakarta.annotation.Nullable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getFilteredGroupNameFromGroup;
 import static uk.ac.cam.cl.dtg.util.NameFormatter.getTeacherNameFromUser;
@@ -79,14 +77,6 @@ public class EmailService {
     }
 
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy");
-
-    private boolean userInMailGunBetaList(final Long userId) {
-        String optInIds = properties.getProperty(MAILGUN_EMAILS_BETA_OPT_IN);
-        if (Strings.isNullOrEmpty(optInIds)) {
-            return false;
-        }
-        return Arrays.stream(optInIds.split(",")).anyMatch(id -> id.equals(userId.toString()));
-    }
 
     public void sendAssignmentEmailToGroup(final IAssignmentLike assignment, final HasTitleOrId on, final Map<String, String> tokenToValueMapping, final String templateName) throws SegueDatabaseException {
         try {
@@ -131,9 +121,9 @@ public class EmailService {
                     .filter(user -> GroupMembershipStatus.ACTIVE.equals(userMembershipMapforGroup.get(user.getId()).getStatus()))
                     .collect(Collectors.toList());
 
-            // Send the email using MailGun if owner on list or if scheduled:
-            if (this.userInMailGunBetaList(assignment.getOwnerUserId()) || assignment.getScheduledStartDate() != null) {
-                Iterables.partition(usersToEmail, MAILGUN_BATCH_SIZE)
+            // Send the email using MailGun if large group or if assignment was scheduled:
+            if (usersToEmail.size() >= LARGE_GROUP_SIZE || assignment.getScheduledStartDate() != null) {
+                Iterables.partition(usersToEmail, MAILGUN_EMAIL_BATCH_SIZE)
                     .forEach(userBatch -> mailGunEmailManager.sendBatchEmails(
                         userBatch,
                         emailTemplate,
@@ -158,5 +148,45 @@ public class EmailService {
         } catch (IndexOutOfBoundsException e) {
             log.error("Could not send assignment email because group did not exist.", e);
         }
+    }
+
+    /**
+     *  Send a notification to a quiz assigner that a user has submitted an attempt.
+     *
+     *  For privacy reasons, we do not wish to include any details about the submitting user.
+     *
+     * @param quizAssignment the assignment the attempt belongs to.
+     */
+    public void sendQuizCompletionNotification(final QuizAssignmentDTO quizAssignment) {
+        if (null == quizAssignment || quizAssignment.getCompletionNotifications() == null
+                || !quizAssignment.getCompletionNotifications()) {
+            return;
+        }
+
+        try {
+            RegisteredUserDTO assignmentOwnerDTO = this.userManager.getUserDTOById(quizAssignment.getOwnerUserId());
+            String assignmentOwner = getTeacherNameFromUser(assignmentOwnerDTO);
+            UserGroupDTO userGroupDTO = groupManager.getGroupsByIds(Collections.singletonList(quizAssignment.getGroupId()), false).getFirst();
+            String groupName = getFilteredGroupNameFromGroup(userGroupDTO);
+
+
+            final Map<String, Object> variables = Map.of(
+                "groupName", groupName,
+                "assignmentOwner", assignmentOwner,
+                "quizAssignmentId", quizAssignment.getId()
+            );
+
+            EmailTemplateDTO emailTemplate = emailManager.getEmailTemplateDTO("email-template-quiz-completed");
+
+            emailManager.sendTemplatedEmailToUser(assignmentOwnerDTO, emailTemplate, variables, EmailType.ADMIN);
+
+        } catch (final NoUserException e) {
+            log.error("Could not send quiz completion email because owner did not exist.");
+        } catch (final SegueDatabaseException e) {
+            log.error("Database error whilst emailing quiz completion notification.", e);
+        } catch (final ContentManagerException e) {
+            log.error("Could not send quiz completion email because of content error.", e);
+        }
+
     }
 }

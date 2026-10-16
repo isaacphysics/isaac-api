@@ -1,6 +1,5 @@
 package uk.ac.cam.cl.dtg.isaac.api.managers;
 
-import com.google.api.client.util.Lists;
 import com.google.api.client.util.Maps;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
@@ -11,18 +10,17 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.api.Constants;
-import uk.ac.cam.cl.dtg.segue.api.services.ContentService;
 import uk.ac.cam.cl.dtg.segue.dao.content.ContentManagerException;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 import static uk.ac.cam.cl.dtg.segue.api.Constants.*;
@@ -68,11 +66,10 @@ public class FastTrackManger {
      * @throws ContentManagerException if content cant be found which matches the question ID.
      */
     public final String getConceptFromQuestionId(final String questionId) throws ContentManagerException {
-        Map<String, List<String>> fieldsToMatch = Maps.newHashMap();
-        fieldsToMatch.put(TYPE_FIELDNAME, Arrays.asList(FAST_TRACK_QUESTION_TYPE));
-        fieldsToMatch.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Arrays.asList(questionId));
-        ResultsWrapper<ContentDTO> resultsList = contentManager.findByFieldNames(
-                ContentService.generateDefaultFieldToMatch(fieldsToMatch), 0, DEFAULT_RESULTS_LIMIT);
+        BooleanInstruction fieldsToMatch = new BooleanInstruction();
+        fieldsToMatch.must(new MatchInstruction(TYPE_FIELDNAME, FAST_TRACK_QUESTION_TYPE));
+        fieldsToMatch.must(new MatchInstruction(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, questionId));
+        ResultsWrapper<ContentDTO> resultsList = this.contentManager.nestedMatchSearch(fieldsToMatch, 0, DEFAULT_RESULTS_LIMIT, null, null);
 
         String upperConceptTitle = "";
         if (resultsList.getTotalResults() == 1) {
@@ -113,24 +110,31 @@ public class FastTrackManger {
     private List<ContentDTO> getFastTrackConceptQuestions(
             final String boardTag, final List<FASTTRACK_LEVEL> levelFilters, final String conceptTitle
     ) throws ContentManagerException {
-        List<String> stringLevelFilters = levelFilters.stream().map(FASTTRACK_LEVEL::name).collect(Collectors.toList());
+        List<String> stringLevelFilters = levelFilters.stream().map(FASTTRACK_LEVEL::name).toList();
+        BooleanInstruction searchInstruction = new BooleanInstruction();
 
-        List<GitContentManager.BooleanSearchClause> fieldsToMap = Lists.newArrayList();
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TYPE_FIELDNAME, Constants.BooleanOperator.OR, QUESTION_PAGE_TYPES));
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.BooleanOperator.AND,
-                Collections.singletonList(conceptTitle)));
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TAGS_FIELDNAME, Constants.BooleanOperator.AND, Collections.singletonList(boardTag)));
-        fieldsToMap.add(new GitContentManager.BooleanSearchClause(
-                TAGS_FIELDNAME, Constants.BooleanOperator.OR, stringLevelFilters));
+        BooleanInstruction pageTypeInstruction = new BooleanInstruction();
+        for (String type : QUESTION_PAGE_TYPES) {
+            pageTypeInstruction.should(new MatchInstruction(TYPE_FIELDNAME, type));
+        }
+        searchInstruction.must(pageTypeInstruction);
+
+        BooleanInstruction levelInstruction = new BooleanInstruction();
+        for (String levelFilter : stringLevelFilters) {
+            levelInstruction.should(new MatchInstruction(TAGS_FIELDNAME, levelFilter));
+        }
+        searchInstruction.must(levelInstruction);
+
+        searchInstruction.must(new MatchInstruction(TITLE_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, conceptTitle));
+        searchInstruction.must(new MatchInstruction(TAGS_FIELDNAME, boardTag));
+
 
         Map<String, Constants.SortOrder> sortInstructions = Maps.newHashMap();
         sortInstructions.put(ID_FIELDNAME + "." + UNPROCESSED_SEARCH_FIELD_SUFFIX, Constants.SortOrder.ASC);
 
-        return this.contentManager
-                .findByFieldNames(fieldsToMap, 0, SEARCH_MAX_WINDOW_SIZE, sortInstructions)
-                .getResults();
+        ResultsWrapper<ContentDTO> results = this.contentManager
+                .nestedMatchSearch(searchInstruction, 0, SEARCH_MAX_WINDOW_SIZE, null, sortInstructions);
+
+        return results.getResults();
     }
 }

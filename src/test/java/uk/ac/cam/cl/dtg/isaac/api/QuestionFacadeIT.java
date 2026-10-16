@@ -1,31 +1,21 @@
 package uk.ac.cam.cl.dtg.isaac.api;
-import com.google.inject.Injector;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidator;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest;
-import uk.ac.cam.cl.dtg.isaac.quiz.IsaacStringMatchValidator;
 import uk.ac.cam.cl.dtg.segue.api.QuestionFacade;
-import uk.ac.cam.cl.dtg.segue.configuration.SegueGuiceConfigurationModule;
 
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
 
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.shaded.com.google.common.collect.Maps.immutableEntry;
 import static uk.ac.cam.cl.dtg.isaac.quiz.IsaacDndValidatorTest.*;
 
 @SuppressWarnings("checkstyle:MissingJavadocType")
@@ -71,7 +61,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
     class DndQuestion {
         @Test
         public void invalidQuestion() throws Exception {
-            var question = persistJSON(new JSONObject()
+            var question = elasticHelper.persistJSON(new JSONObject()
                 .put("type", "isaacDndQuestion")
                 .put("items", new JSONArray().put(new JSONObject().put("id", "item_id").put("type", "item")))
                 .put("children", new JSONArray().put(
@@ -109,7 +99,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         public void badRequest_ErrorReturned(
             final String answerStr, final String emsg, final String estate
         ) throws Exception {
-            var dndQuestion = persist(question(correctChoice(item(item_3cm, "leg_1"))));
+            var dndQuestion = elasticHelper.persist(question(correctChoice(item(item_3cm, "leg_1"))));
             var response = testServer().client().post(url(dndQuestion.getId()), answerStr);
             response.assertError(emsg, estate);
         }
@@ -124,7 +114,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         public void badRequest_IncorrectReturnedWithExplanation(
             final String answerStr, final String emsg
         ) throws Exception {
-            var dndQuestion = persist(question(
+            var dndQuestion = elasticHelper.persist(question(
                 correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse"))
             ));
             var response = testServer().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
@@ -138,7 +128,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             "{\"type\": \"dndChoice\", \"items\": []}"
         }, delimiter = '|')
         public void emptyAnswer_IncorrectReturned(final String answerStr) throws Exception {
-            var dndQuestion = persist(question(correctChoice(item(item_3cm, "leg_1"))));
+            var dndQuestion = elasticHelper.persist(question(correctChoice(item(item_3cm, "leg_1"))));
             var response = testServer().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertFalse(response.getBoolean("correct"));
             assertEquals(
@@ -158,7 +148,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         public void correctAnswer_CorrectReturned(final String answerStr) throws Exception {
             var dndQuestion = question(correctChoice(item(item_3cm, "leg_1")));
             dndQuestion.setChildren(List.of(new Content("[drop-zone:leg_1]")));
-            persist(dndQuestion);
+            elasticHelper.persist(dndQuestion);
 
             var response = testServer().client().post(url(dndQuestion.getId()), answerStr).readEntityAsJson();
             assertTrue(response.getBoolean("correct"));
@@ -168,7 +158,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
 
         @Test
         public void wrongAnswer_IncorrectReturned() throws Exception {
-            var dndQuestion = persist(question(
+            var dndQuestion = elasticHelper.persist(question(
                 correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse"))
             ));
             var answer = choice(item(item_3cm, "leg_2"), item(item_4cm, "hypothenuse"), item(item_5cm, "leg_1"));
@@ -182,7 +172,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
         @Test
         public void answerWithMatchingExplanation_ExplanationReturned() throws Exception {
             var explanation = new Content("That's right!");
-            var dndQuestion = persist(question(correctChoice(
+            var dndQuestion = elasticHelper.persist(question(correctChoice(
                 explanation,
                 item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse")
             )));
@@ -200,7 +190,7 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
                 correctChoice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse"))
             );
             dndQuestion.setDetailedItemFeedback(true);
-            persist(dndQuestion);
+            elasticHelper.persist(dndQuestion);
             var answer = choice(item(item_3cm, "leg_1"), item(item_4cm, "leg_2"), item(item_5cm, "hypothenuse"));
 
             var response = testServer().client().post(url(dndQuestion.getId()), answer).readEntityAsJson();
@@ -212,28 +202,6 @@ public class QuestionFacadeIT extends IsaacIntegrationTestWithREST {
             );
         }
     }
-
-    private IsaacDndQuestion persist(final IsaacDndQuestion question) throws Exception {
-        elasticSearchProvider.bulkIndexWithIDs(
-            contentManager.getCurrentContentSHA(),
-            "content",
-            List.of(immutableEntry(
-                question.getId(), contentMapper.getSharedContentObjectMapper().writeValueAsString(question))
-            )
-        );
-        return question;
-    }
-
-    private JSONObject persistJSON(final JSONObject questionJSON) throws Exception {
-        questionJSON.put("id", "i1");
-        elasticSearchProvider.bulkIndexWithIDs(
-            contentManager.getCurrentContentSHA(),
-            "content",
-            List.of(immutableEntry("i1", questionJSON.toString()))
-        );
-        return questionJSON;
-    }
-
 
     private TestServer testServer() throws Exception {
         return startServer(

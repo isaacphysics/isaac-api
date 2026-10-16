@@ -34,6 +34,7 @@ import uk.ac.cam.cl.dtg.isaac.api.managers.QuizAttemptManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizManager;
 import uk.ac.cam.cl.dtg.isaac.api.managers.QuizQuestionManager;
 import uk.ac.cam.cl.dtg.isaac.api.services.AssignmentService;
+import uk.ac.cam.cl.dtg.isaac.api.services.EmailService;
 import uk.ac.cam.cl.dtg.isaac.dos.QuizFeedbackMode;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Content;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
@@ -122,6 +123,7 @@ public class QuizFacade extends AbstractIsaacFacade {
     private final AssignmentService assignmentService;
     private final QuizAttemptManager quizAttemptManager;
     private final QuizQuestionManager quizQuestionManager;
+    private final EmailService emailService;
 
     private static final Logger log = LoggerFactory.getLogger(QuizFacade.class);
 
@@ -139,6 +141,7 @@ public class QuizFacade extends AbstractIsaacFacade {
      * @param assignmentService     - for general assignment-related services.
      * @param quizAttemptManager    - for managing attempts at quizzes.
      * @param quizQuestionManager   - for parsing, validating, and persisting quiz question answers.
+     * @param emailService          - for sending completion notifications.
      */
     @Inject
     public QuizFacade(final AbstractConfigLoader properties, final ILogManager logManager,
@@ -146,7 +149,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                       final UserAccountManager userManager, final UserAssociationManager associationManager,
                       final GroupManager groupManager, final QuizAssignmentManager quizAssignmentManager,
                       final AssignmentService assignmentService, final QuizAttemptManager quizAttemptManager,
-                      final QuizQuestionManager quizQuestionManager) {
+                      final QuizQuestionManager quizQuestionManager, final EmailService emailService) {
         super(properties, logManager);
 
         this.contentManager = contentManager;
@@ -158,6 +161,7 @@ public class QuizFacade extends AbstractIsaacFacade {
         this.assignmentService = assignmentService;
         this.quizAttemptManager = quizAttemptManager;
         this.quizQuestionManager = quizQuestionManager;
+        this.emailService = emailService;
     }
 
     /**
@@ -681,23 +685,34 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAttemptDTO quizAttempt = getQuizAttempt(quizAttemptId);
 
             if (!quizAttempt.getUserId().equals(user.getId())) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "You cannot complete someone else's test.").toResponse();
+                return SegueErrorResponse.getForbiddenResponse("You cannot complete someone else's test.");
             }
 
             if ((quizAttempt.getCompletedDate() != null)) {
-                return new SegueErrorResponse(Status.FORBIDDEN, "That test is already complete.").toResponse();
+                return SegueErrorResponse.getForbiddenResponse("That test is already complete.");
+            }
+
+            // TODO (quiz-refactor): this email notification logic should likely live in a manager not a facade:
+            try {
+                QuizAssignmentDTO quizAssignment = getQuizAssignment(quizAttempt);
+                if (null != quizAssignment && quizAssignment.getCompletionNotifications() != null
+                        && quizAssignment.getCompletionNotifications()) {
+                    emailService.sendQuizCompletionNotification(quizAssignment);
+                }
+            } catch (final AssignmentCancelledException e) {
+                return SegueErrorResponse.getForbiddenResponse("This test assignment has been cancelled.");
             }
 
             quizAttempt = quizAttemptManager.updateAttemptCompletionStatus(quizAttempt, true);
 
             return Response.ok(quizAttempt).build();
-        } catch (NoUserLoggedInException e) {
+        } catch (final NoUserLoggedInException e) {
             return SegueErrorResponse.getNotLoggedInResponse();
-        } catch (SegueDatabaseException e) {
-            String message = "SegueDatabaseException whilst marking test attempt complete";
+        } catch (final SegueDatabaseException e) {
+            String message = "A database error occurred whilst marking test attempt complete.";
             log.error(message, e);
             return new SegueErrorResponse(Status.INTERNAL_SERVER_ERROR, message).toResponse();
-        } catch (ErrorResponseWrapper responseWrapper) {
+        } catch (final ErrorResponseWrapper responseWrapper) {
             return responseWrapper.toResponse();
         }
     }
@@ -1051,6 +1066,16 @@ public class QuizFacade extends AbstractIsaacFacade {
                         continue;
                     }
 
+                    if (quizAssignmentDTO.getCompletionNotifications() != null
+                            && quizAssignmentDTO.getCompletionNotifications()
+                            && !isUserStaffOrEventLeader(userManager, currentlyLoggedInUser)) {
+                        quizStatuses.add(new AssignmentStatusDTO(
+                                quizAssignmentDTO.getGroupId(),
+                                "Only staff can opt-in to completion notifications."
+                        ));
+                        continue;
+                    }
+
                     IsaacQuizDTO quiz = quizMap.get(quizAssignmentDTO.getQuizId());
                     if (null == quiz) {
                         quiz = this.quizManager.findQuiz(quizAssignmentDTO.getQuizId());
@@ -1090,6 +1115,7 @@ public class QuizFacade extends AbstractIsaacFacade {
                     eventDetails.put(QUIZ_ASSIGNMENT_FK, assignmentWithID.getId());
                     eventDetails.put(ASSIGNMENT_DUEDATE, assignmentWithID.getDueDate() == null ? "NO_DUE_DATE" : assignmentWithID.getDueDate());
                     eventDetails.put(ASSIGNMENT_SCHEDULED_START_DATE, assignmentWithID.getScheduledStartDate());
+                    eventDetails.put(COMPLETION_NOTIFICATIONS_LOG_FIELDNAME, assignmentWithID.getCompletionNotifications() != null && assignmentWithID.getCompletionNotifications());
 
                     this.getLogManager().logEvent(currentlyLoggedInUser, request, Constants.IsaacServerLogType.SET_NEW_QUIZ_ASSIGNMENT, eventDetails);
 
@@ -1263,6 +1289,8 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, user);
+
             QuizAssignmentDTO assignment = quizAssignmentManager.getById(quizAssignmentId);
             UserGroupDTO group = quizAssignmentManager.getGroupForAssignment(assignment);
             if (!canManageGroup(user, group)) {
@@ -1282,7 +1310,11 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
             headerBuilder.append(String.format("Test (%s) Results: Downloaded on %s \nGenerated by: %s %s \n\n",
                     quiz.getTitle(), new Date(), user.getGivenName(), user.getFamilyName()));
-            headerBuilder.append(",,\"Completed\",\"Correct\",\"Incorrect\",\"Not Attempted\",");
+            headerBuilder.append("\"Last Name\",\"First Name\",");
+            if (includeUserIDs) {
+                headerBuilder.append("\"User ID\",");
+            }
+            headerBuilder.append("\"Completed\",\"Correct\",\"Incorrect\",\"Not Attempted\",");
             List<String> questionTitles = new ArrayList<>();
             List<String> questionIds = new ArrayList<>();
             for (ContentBaseDTO section : quiz.getChildren().stream().filter(c -> c instanceof IsaacQuizSectionDTO).toList()) {
@@ -1300,7 +1332,13 @@ public class QuizFacade extends AbstractIsaacFacade {
             List<QuizUserFeedbackDTO> userFeedback = getUserFeedback(user, assignment, quiz, groupMembers);
             for (QuizUserFeedbackDTO f : userFeedback) {
                 QuizFeedbackDTO feedback = f.getFeedback();
-                List<String> row = new ArrayList<>(Arrays.asList(f.getUser().getFamilyName(), f.getUser().getGivenName()));
+                List<String> row;
+                if (includeUserIDs) {
+                    row = new ArrayList<>(Arrays.asList(f.getUser().getFamilyName(), f.getUser().getGivenName(), f.getUser().getId().toString()));
+                } else {
+                    row = new ArrayList<>(Arrays.asList(f.getUser().getFamilyName(), f.getUser().getGivenName()));
+                }
+
                 if (null == feedback) {
                     row.add("This user has revoked their data sharing authorization.");
                 } else {
@@ -1320,12 +1358,12 @@ public class QuizFacade extends AbstractIsaacFacade {
                                 detailedMark.add("Correct");
                                 summaryMark.correct += 1;
                             } else {
-                                row.add("ERROR"); // This should not happen at this level
+                                detailedMark.add("ERROR"); // This should not happen at this level
                             }
                         } else {
                             // The front-end shows this as "Not completed" so I'm leaving this empty
                             // because we already have a "Completed" column
-                            row.add("");
+                            detailedMark.add("");
                         }
                     }
                     row.add(String.format("%d", summaryMark.correct));
@@ -1378,6 +1416,8 @@ public class QuizFacade extends AbstractIsaacFacade {
                 return SegueErrorResponse.getIncorrectRoleResponse();
             }
 
+            boolean includeUserIDs = isUserAnAdminOrEventManager(userManager, currentUser);
+
             UserGroupDTO group = this.groupManager.getGroupById(groupId);
 
             List<RegisteredUserDTO> groupMembers = this.groupManager.getUsersInGroup(group);
@@ -1396,7 +1436,10 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
             headerBuilder.append(String.format("Quiz results for group (%s): Downloaded on %s \nGenerated by: %s %s \n\n",
                     group.getGroupName(), new Date(), currentUser.getGivenName(), currentUser.getFamilyName()));
-            headerBuilder.append(",,");
+            headerBuilder.append("\"Last Name\",\"First Name\",");
+            if (includeUserIDs) {
+                headerBuilder.append("\"User ID\",");
+            }
 
             List<String> quizTitles = new ArrayList<>();
             List<String> questionTitles = new ArrayList<>();
@@ -1413,7 +1456,14 @@ public class QuizFacade extends AbstractIsaacFacade {
             }
 
             for (RegisteredUserDTO groupMember : groupMembers) {
-                List<String> row = new ArrayList<>(Arrays.asList(groupMember.getGivenName(), groupMember.getFamilyName()));
+
+                List<String> row;
+                if (includeUserIDs) {
+                    row = new ArrayList<>(Arrays.asList(groupMember.getFamilyName(), groupMember.getGivenName(), groupMember.getId().toString()));
+                } else {
+                    row = new ArrayList<>(Arrays.asList(groupMember.getFamilyName(), groupMember.getGivenName()));
+                }
+
                 List<String> quizTotals = new ArrayList<>();
                 List<String> questionResults = new ArrayList<>();
 

@@ -29,6 +29,8 @@ import uk.ac.cam.cl.dtg.isaac.dto.SegueErrorResponse;
 import uk.ac.cam.cl.dtg.isaac.dto.content.ContentDTO;
 import uk.ac.cam.cl.dtg.segue.dao.ILogManager;
 import uk.ac.cam.cl.dtg.segue.dao.content.GitContentManager;
+import uk.ac.cam.cl.dtg.segue.search.BooleanInstruction;
+import uk.ac.cam.cl.dtg.segue.search.MatchInstruction;
 import uk.ac.cam.cl.dtg.util.AbstractConfigLoader;
 
 import jakarta.ws.rs.GET;
@@ -41,8 +43,6 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Request;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -135,12 +135,8 @@ public class GlossaryFacade extends AbstractSegueFacade {
         // Get from server cache, else load and cache:
         try {
             ResultsWrapper<ContentDTO> c = termCache.get(cacheKey, () -> {
-                List<GitContentManager.BooleanSearchClause> fieldsToMatch = Collections.singletonList(
-                        new GitContentManager.BooleanSearchClause(
-                                TYPE_FIELDNAME, BooleanOperator.AND, Collections.singletonList("glossaryTerm"))
-                );
-
-                return this.contentManager.findByFieldNames(fieldsToMatch, startIndexOfResults, resultsLimit);
+                MatchInstruction searchInstruction = new MatchInstruction(TYPE_FIELDNAME, "glossaryTerm");
+                return this.contentManager.nestedMatchSearch(searchInstruction, startIndexOfResults, resultsLimit, null, null);
             });
 
             return Response.ok(c).tag(etag).cacheControl(getCacheControl(NUMBER_SECONDS_IN_ONE_HOUR, true)).build();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Stephen Cummins
+ * Copyright 2026 Barna Magyarkuti
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uk.ac.cam.cl.dtg.segue.search;
+package uk.ac.cam.cl.dtg.isaac.dto.content;
 
-/**
- * FilterInstruction
- * 
- * Class to help abstract away the search filter format within Segue.
+/** DTO for a SkillApp.
  *
+ * @author bm710
  */
-public abstract class AbstractFilterInstruction {
+public class SkillsAppDTO extends ContentDTO {
+    private AnvilAppDTO anvilApp;
 
+    public AnvilAppDTO getAnvilApp() {
+        return anvilApp;
+    }
+
+    public void setAnvilApp(final AnvilAppDTO anvilApp) {
+        this.anvilApp = anvilApp;
+    }
 }

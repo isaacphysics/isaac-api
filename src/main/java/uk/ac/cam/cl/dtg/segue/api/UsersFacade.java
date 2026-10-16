@@ -434,7 +434,6 @@ public class UsersFacade extends AbstractSegueFacade {
             }
 
             misuseMonitor.notifyEvent(currentUser.getEmail(), TeacherPasswordResetMisuseHandler.class.getSimpleName());
-            SegueMetrics.PASSWORD_RESET.inc();
             userManager.resetPasswordRequest(userOfInterest);
 
             this.getLogManager()
@@ -779,7 +778,7 @@ public class UsersFacade extends AbstractSegueFacade {
                     if (null != school) {
                         builder.put(user.getId().toString(), school);
                     } else {
-                        // The school once existed in the list but no longer does. Set the name to be the URN:
+                        // The school once existed in the list but no longer does. Set the name to be the ID:
                         builder.put(user.getId().toString(), ImmutableMap.of("name", user.getSchoolId()));
                     }
                 } else if (user.getSchoolOther() != null && !user.getSchoolOther().isEmpty()) {

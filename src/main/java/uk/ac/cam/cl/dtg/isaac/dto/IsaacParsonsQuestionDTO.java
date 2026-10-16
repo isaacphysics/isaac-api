@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.JsonContentType;
 public class IsaacParsonsQuestionDTO extends IsaacItemQuestionDTO {
 
     private Boolean disableIndentation;
+    private Boolean useSingleList;
 
     public Boolean getDisableIndentation() {
         return disableIndentation;
@@ -32,5 +33,13 @@ public class IsaacParsonsQuestionDTO extends IsaacItemQuestionDTO {
 
     public void setDisableIndentation(final Boolean disableIndentation) {
         this.disableIndentation = disableIndentation;
+    }
+
+    public Boolean getUseSingleList() {
+        return useSingleList;
+    }
+
+    public void setUseSingleList(Boolean useSingleList) {
+        this.useSingleList = useSingleList;
     }
 }
