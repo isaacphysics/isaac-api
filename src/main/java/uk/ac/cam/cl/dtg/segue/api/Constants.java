@@ -422,6 +422,7 @@ public final class Constants {
     public static final String LLM_MARKER_SUBJECT = "LLM_MARKER_SUBJECT";
     public static final String LLM_MARKER_DEFAULT_MODEL_NAME = "LLM_MARKER_DEFAULT_MODEL_NAME";
     public static final String LLM_MARKER_MAX_ANSWER_LENGTH = "LLM_MARKER_MAX_ANSWER_LENGTH";
+    public static final String LLM_MARKER_TEMPERATURE = "LLM_MARKER_TEMPERATURE";
     public static final String LLM_FREE_TEXT_QUESTION_TYPE = "isaacLLMFreeTextQuestion";
     public static final String LLM_PROVIDER_NAME = "OPENAI";
     public static final String LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE = "LLM_QUESTION_MISUSE_THRESHOLD_OVERRIDE";
