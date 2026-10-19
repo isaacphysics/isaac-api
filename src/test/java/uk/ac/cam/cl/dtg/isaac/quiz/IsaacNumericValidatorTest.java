@@ -618,6 +618,36 @@ public class IsaacNumericValidatorTest {
         assertTrue(quantityValidationResponse.getExplanation().getTags().contains(SIG_FIGS_TOO_FEW_TAG));
     }
 
+    /*
+     Test that if an answer matches the value of one correct choice and the units of another correct choice, the value
+     is marked as correct and the units are marked as incorrect.
+     */
+    @Test
+    public final void isaacNumericValidator_CheckValueVsUnitsPrecedence_ValueShouldBeCorrect() {
+        // Set up the question object:
+        IsaacNumericQuestion someNumericQuestion = new IsaacNumericQuestion();
+
+        List<Choice> answerList = Lists.newArrayList();
+        Quantity someCorrectAnswer = new Quantity("1200", "m");
+        someCorrectAnswer.setCorrect(true);
+        answerList.add(someCorrectAnswer);
+        Quantity anotherCorrectAnswer = new Quantity("12", "km");
+        anotherCorrectAnswer.setCorrect(true);
+        answerList.add(anotherCorrectAnswer);
+        someNumericQuestion.setChoices(answerList);
+
+        // Set up user answer:
+        Quantity q = new Quantity("1200", "km");
+
+        // Test response:
+        QuestionValidationResponse response = validator.validateQuestionResponse(someNumericQuestion, q);
+        QuantityValidationResponse quantityValidationResponse = (QuantityValidationResponse) response;
+
+        assertFalse(response.isCorrect());
+        assertTrue(quantityValidationResponse.getCorrectValue());
+        assertFalse(quantityValidationResponse.getCorrectUnits());
+    }
+
     //  ---------- Tests from here test invalid questions themselves ----------
 
     /*
