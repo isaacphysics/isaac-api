@@ -59,6 +59,7 @@ import uk.ac.cam.cl.dtg.segue.api.monitors.IMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.IPQuestionAttemptMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.InMemoryMisuseMonitor;
 import uk.ac.cam.cl.dtg.segue.api.monitors.RegistrationMisuseHandler;
+import uk.ac.cam.cl.dtg.segue.api.monitors.SegueLoginSitewideMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TeacherPasswordResetMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.api.monitors.TokenOwnerLookupMisuseHandler;
 import uk.ac.cam.cl.dtg.segue.auth.AuthenticationProvider;
@@ -323,6 +324,7 @@ public class AbstractIsaacIntegrationTest {
         misuseMonitor = new InMemoryMisuseMonitor();
         misuseMonitor.registerHandler(GroupManagerLookupMisuseHandler.class.getSimpleName(), new GroupManagerLookupMisuseHandler(emailManager, properties));
         misuseMonitor.registerHandler(RegistrationMisuseHandler.class.getSimpleName(), new RegistrationMisuseHandler(emailManager, properties));
+        misuseMonitor.registerHandler(SegueLoginSitewideMisuseHandler.class.getSimpleName(), new SegueLoginSitewideMisuseHandler(emailManager, properties));
         misuseMonitor.registerHandler(EmailVerificationMisuseHandler.class.getSimpleName(), new EmailVerificationMisuseHandler());
         misuseMonitor.registerHandler(TeacherPasswordResetMisuseHandler.class.getSimpleName(), new TeacherPasswordResetMisuseHandler());
         misuseMonitor.registerHandler(TokenOwnerLookupMisuseHandler.class.getSimpleName(), new TokenOwnerLookupMisuseHandler(emailManager, properties));
