@@ -36,6 +36,7 @@ public class SeguePage extends Content {
     private String notes;
     private String teacherNotes;
     private String sidebar;
+    private String language;
 
     @JsonCreator
     public SeguePage(@JsonProperty("id") String id,
@@ -129,5 +130,13 @@ public class SeguePage extends Content {
 
     public void setSidebar(final String sidebar) {
         this.sidebar = sidebar;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(final String language) {
+        this.language = language;
     }
 }
