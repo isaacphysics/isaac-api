@@ -36,7 +36,6 @@ import java.util.Set;
 public class IsaacPod extends Content {
     private Image image;
     private String url;
-    private String language;
 
     @JsonCreator
     public IsaacPod(
@@ -102,21 +101,5 @@ public class IsaacPod extends Content {
      */
     public void setUrl(final String url) {
         this.url = url;
-    }
-
-    /**
-     * Gets the language.
-     * @return the language
-     */
-    public String getLanguage() {
-        return language;
-    }
-
-    /**
-     * Sets the language.
-     * @param language the language to set
-     */
-    public void setLanguage(final String language) {
-        this.language = language;
     }
 }
