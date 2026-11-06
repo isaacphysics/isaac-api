@@ -988,7 +988,7 @@ public class ContentIndexer {
                     }
                 }
 
-                Pattern badCharacters = Pattern.compile("[^a-zA-Z0-9-_.~/ ]");
+                Pattern badCharacters = Pattern.compile("[^a-zA-Z0-9-_.~/]");
                 Matcher badCharactersMatcher = badCharacters.matcher(f.getSrc());
                 if (badCharactersMatcher.find()) {
                     this.registerContentProblem(content, String.format("Filename '%s' contains illegal character '%s'.",
