@@ -18,7 +18,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.*;
-import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
@@ -244,6 +243,16 @@ public class ContentIndexer {
                     content = this.augmentChildContent(content, treeWalk.getPathString(), null, content.getPublished());
 
                     if (null != content) {
+                        // Check filename for disallowed characters
+                        String filename = content.getCanonicalSourceFile();
+                        if (null != filename) {
+                            Matcher badCharactersMatcher = BAD_FILENAME_CHARACTERS.matcher(filename);
+                            if (badCharactersMatcher.find()) {
+                                String message = String.format("Filename '%s' contains illegal character '%s'.", filename, badCharactersMatcher.group());
+                                this.registerContentProblem(content, message, indexProblemCache);
+                            }
+                        }
+
                         // Walk the content for site-wide searchable fields
                         StringBuilder prioritisedContentCollector = new StringBuilder();
                         StringBuilder contentCollector = new StringBuilder();
@@ -613,22 +622,6 @@ public class ContentIndexer {
     }
 
     /**
-     * Helper method to register problems with files. These may be detected for more than one content object in the file
-     * but should only be recorded once.
-     * @param c
-     *            - Partial content object to represent the object that has problems.
-     * @param message
-     *            - Error message to associate with the problem file / content.
-     * @param indexProblemCache
-     *            - Problems already found.
-     */
-    private synchronized void registerContentProblemIfAbsent(final Content c, final String message, final Map<Content, List<String>> indexProblemCache) {
-        if (indexProblemCache.values().stream().noneMatch(msgs -> msgs.contains(message))) {
-            registerContentProblem(c, message, indexProblemCache);
-        }
-    }
-
-    /**
      * Helper function to build up a set of used tags for each version.
      *
      * @param tags
@@ -938,17 +931,6 @@ public class ContentIndexer {
      * @param content   a single item of content
      */
     public void recordContentTypeSpecificError(final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
-
-        // Check for disallowed characters in filenames
-        String filename = content.getCanonicalSourceFile();
-        if (null != filename) {
-            Matcher badCharactersMatcher = BAD_FILENAME_CHARACTERS.matcher(filename);
-            if (badCharactersMatcher.find()) {
-                String message = String.format("Filename '%s' contains illegal character '%s'.", filename, badCharactersMatcher.group());
-                this.registerContentProblemIfAbsent(content, message, indexProblemCache);
-            }
-        }
-
         // ensure content does not have children and a value
         if (content.getValue() != null && !content.getChildren().isEmpty()) {
             String id = content.getId();
