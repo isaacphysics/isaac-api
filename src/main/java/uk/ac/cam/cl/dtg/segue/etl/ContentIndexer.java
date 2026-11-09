@@ -85,7 +85,7 @@ public class ContentIndexer {
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
 
-    private static final Pattern BAD_FILENAME_CHARACTERS = Pattern.compile("[^a-zA-Z0-9-_.~/]");
+    private static final Pattern BAD_FILENAME_CHARACTERS = Pattern.compile("[^a-zA-Z0-9-_./]");
 
     public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
     public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
