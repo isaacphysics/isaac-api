@@ -86,6 +86,8 @@ public class ContentIndexer {
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
 
+    private static final Pattern BAD_FILENAME_CHARACTERS = Pattern.compile("[^a-zA-Z0-9-_.~/]");
+
     public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
     public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
     public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
@@ -611,6 +613,22 @@ public class ContentIndexer {
     }
 
     /**
+     * Helper method to register problems with files. These may be detected for more than one content object in the file
+     * but should only be recorded once.
+     * @param c
+     *            - Partial content object to represent the object that has problems.
+     * @param message
+     *            - Error message to associate with the problem file / content.
+     * @param indexProblemCache
+     *            - Problems already found.
+     */
+    private synchronized void registerContentProblemIfAbsent(final Content c, final String message, final Map<Content, List<String>> indexProblemCache) {
+        if (indexProblemCache.values().stream().noneMatch(msgs -> msgs.contains(message))) {
+            registerContentProblem(c, message, indexProblemCache);
+        }
+    }
+
+    /**
      * Helper function to build up a set of used tags for each version.
      *
      * @param tags
@@ -920,6 +938,17 @@ public class ContentIndexer {
      * @param content   a single item of content
      */
     public void recordContentTypeSpecificError(final String sha, final Content content, final Map<Content, List<String>> indexProblemCache) {
+
+        // Check for disallowed characters in filenames
+        String filename = content.getCanonicalSourceFile();
+        if (null != filename) {
+            Matcher badCharactersMatcher = BAD_FILENAME_CHARACTERS.matcher(filename);
+            if (badCharactersMatcher.find()) {
+                String message = String.format("Filename '%s' contains illegal character '%s'.", filename, badCharactersMatcher.group());
+                this.registerContentProblemIfAbsent(content, message, indexProblemCache);
+            }
+        }
+
         // ensure content does not have children and a value
         if (content.getValue() != null && !content.getChildren().isEmpty()) {
             String id = content.getId();
@@ -988,8 +1017,7 @@ public class ContentIndexer {
                     }
                 }
 
-                Pattern badCharacters = Pattern.compile("[^a-zA-Z0-9-_.~/]");
-                Matcher badCharactersMatcher = badCharacters.matcher(f.getSrc());
+                Matcher badCharactersMatcher = BAD_FILENAME_CHARACTERS.matcher(f.getSrc());
                 if (badCharactersMatcher.find()) {
                     this.registerContentProblem(content, String.format("Filename '%s' contains illegal character '%s'.",
                                     f.getSrc(), badCharactersMatcher.group()),
