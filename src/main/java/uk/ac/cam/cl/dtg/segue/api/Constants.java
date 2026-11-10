@@ -224,6 +224,7 @@ public final class Constants {
     public static final String MAILGUN_FROM_ADDRESS = "MAILGUN_FROM_ADDRESS";
     public static final String MAILGUN_DOMAIN = "MAILGUN_DOMAIN";
     public static final String MAILGUN_SECRET_KEY = "MAILGUN_SECRET_KEY";
+    public static final String MAILGUN_SIGNING_KEY = "MAILGUN_SIGNING_KEY";
     public static final Integer MAILGUN_EMAIL_BATCH_SIZE = 500;
     public static final Integer LARGE_GROUP_SIZE = 50;
     /**
