@@ -18,7 +18,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.*;
-import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
@@ -85,6 +84,8 @@ public class ContentIndexer {
 
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
+
+    private static final Pattern BAD_FILENAME_CHARACTERS = Pattern.compile("[^a-zA-Z0-9-_./]");
 
     public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
     public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
@@ -242,6 +243,16 @@ public class ContentIndexer {
                     content = this.augmentChildContent(content, treeWalk.getPathString(), null, content.getPublished());
 
                     if (null != content) {
+                        // Check filename for disallowed characters
+                        String filename = content.getCanonicalSourceFile();
+                        if (null != filename) {
+                            Matcher badCharactersMatcher = BAD_FILENAME_CHARACTERS.matcher(filename);
+                            if (badCharactersMatcher.find()) {
+                                String message = String.format("Filename '%s' contains illegal character '%s'.", filename, badCharactersMatcher.group());
+                                this.registerContentProblem(content, message, indexProblemCache);
+                            }
+                        }
+
                         // Walk the content for site-wide searchable fields
                         StringBuilder prioritisedContentCollector = new StringBuilder();
                         StringBuilder contentCollector = new StringBuilder();
@@ -988,8 +999,7 @@ public class ContentIndexer {
                     }
                 }
 
-                Pattern badCharacters = Pattern.compile("[^a-zA-Z0-9-_.~/ ]");
-                Matcher badCharactersMatcher = badCharacters.matcher(f.getSrc());
+                Matcher badCharactersMatcher = BAD_FILENAME_CHARACTERS.matcher(f.getSrc());
                 if (badCharactersMatcher.find()) {
                     this.registerContentProblem(content, String.format("Filename '%s' contains illegal character '%s'.",
                                     f.getSrc(), badCharactersMatcher.group()),
