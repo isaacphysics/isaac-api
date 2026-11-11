@@ -18,7 +18,6 @@ import org.eclipse.jgit.treewalk.TreeWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dos.*;
-import uk.ac.cam.cl.dtg.isaac.dos.content.AnvilApp;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChemicalFormula;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.ChoiceQuestion;
@@ -85,11 +84,6 @@ public class ContentIndexer {
 
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
-
-    public static final String FEEDBACK_QUESTION_NO_DZ = "NO_DROPZONES_DND: This question doesn't have any drop zones.";
-    public static final String FEEDBACK_QUESTION_DUP_DZ = "DUPLICATE_DROPZONES_DND: This question contains duplicate drop zones.";
-    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "INCOMPLETE_ANS_DND: This question contains a correct answer that doesn't use all drop zones.";
-    public static final String FEEDBACK_QUESTION_UNRECOGNISED_DZ = "UNKNOWN_DROPZONES_DND: This question contains an answer with unrecognised drop zones.";
 
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentSubclassMapper mapper) {
@@ -1178,22 +1172,21 @@ public class ContentIndexer {
             if (res == null) {
                 List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
                 if (dropZones.isEmpty()) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_NO_DZ, q);
+                    res = new IsaacDndValidator.DndProblem("NO_DROPZONES_DND: This question doesn't have any drop zones.", q);
                 } else if (dropZones.size() != new HashSet<>(dropZones).size()) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_DUP_DZ, q);
+                    res = new IsaacDndValidator.DndProblem("DUPLICATE_DROPZONES_DND: This question contains duplicate drop zones.", q);
                 } else if (q.getChoices().stream().anyMatch(c ->
                         c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNUSED_DZ, q);
+                    res = new IsaacDndValidator.DndProblem("INCOMPLETE_ANS_DND: This question contains a correct answer that doesn't use all drop zones.", q);
                 } else if (q.getChoices().stream().anyMatch(c ->
                         ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNRECOGNISED_DZ, q);
+                    res = new IsaacDndValidator.DndProblem("UNKNOWN_DROPZONES_DND: This question contains an answer with unrecognised drop zones.", q);
                 }
             }
             if (res != null) {
-                var template = "Drag-and-drop Question: %s has a problem. %s";
                 this.registerContentProblem(
                     content,
-                    String.format(template, content.getId(), res.message),
+                    String.format("Drag-and-drop Question: %s has a problem. %s", content.getId(), res.message),
                     indexProblemCache
                 );
             }

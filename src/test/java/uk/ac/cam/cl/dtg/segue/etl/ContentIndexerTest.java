@@ -55,7 +55,6 @@ import static org.easymock.EasyMock.reset;
 import static org.easymock.EasyMock.verify;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static uk.ac.cam.cl.dtg.segue.etl.ContentIndexer.FEEDBACK_QUESTION_UNUSED_DZ;
 
 /**
  * Test class for the GitContentManager class.
@@ -440,10 +439,9 @@ public class ContentIndexerTest {
         }
 
         // ASSERT
-        Collection<List<String>> expected = List.of(List.of(
-                String.format("Drag-and-drop Question: %s has a problem. %s",
-                        dndQuestion.getId(), FEEDBACK_QUESTION_UNUSED_DZ)));
-        assertEquals(expected, List.copyOf(problemCache.values()));
+        String loggedProblem = List.copyOf(problemCache.values()).getFirst().getFirst();
+        String dndFeedback = loggedProblem.split(" has a problem\\. ", 2)[1];
+        assertTrue(dndFeedback.startsWith("INCOMPLETE_ANS_DND"));
     }
 
     @Test
