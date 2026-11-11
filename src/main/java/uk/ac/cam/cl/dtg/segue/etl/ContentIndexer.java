@@ -86,12 +86,10 @@ public class ContentIndexer {
     private static final int MEDIA_FILE_SIZE_LIMIT = 300 * 1024; // Bytes
     private static final int NANOSECONDS_IN_A_MILLISECOND = 1000000;
 
-    public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
-    public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
-    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
-            + "all drop zones.";
-    public static final String FEEDBACK_QUESTION_UNRECOGNISED_DZ = "This question contains an answer with unrecognised "
-            + "drop zones.";
+    public static final String FEEDBACK_QUESTION_NO_DZ = "NO_DROPZONES_DND: This question doesn't have any drop zones.";
+    public static final String FEEDBACK_QUESTION_DUP_DZ = "DUPLICATE_DROPZONES_DND: This question contains duplicate drop zones.";
+    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "INCOMPLETE_ANS_DND: This question contains a correct answer that doesn't use all drop zones.";
+    public static final String FEEDBACK_QUESTION_UNRECOGNISED_DZ = "UNKNOWN_DROPZONES_DND: This question contains an answer with unrecognised drop zones.";
 
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentSubclassMapper mapper) {
