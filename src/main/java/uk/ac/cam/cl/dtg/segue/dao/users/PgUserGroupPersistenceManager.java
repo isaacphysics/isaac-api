@@ -536,14 +536,14 @@ public class PgUserGroupPersistenceManager implements IUserGroupPersistenceManag
      */
     private UserGroup buildGroup(final ResultSet set) throws SQLException {
         return new UserGroup(set.getLong("id"), set.getString("group_name"), set.getLong("owner_id"),
-                GroupStatus.valueOf(set.getString("group_status")), set.getDate("created"),
+                GroupStatus.valueOf(set.getString("group_status")), set.getTimestamp("created"),
                 set.getBoolean("archived"), set.getBoolean("additional_manager_privileges"),
-                set.getDate("last_updated"), set.getBoolean("self_removal"));
+                set.getTimestamp("last_updated"), set.getBoolean("self_removal"));
     }
 
     private GroupMembership buildMembershipRecord(final ResultSet set) throws SQLException {
         return new GroupMembership(set.getLong("group_id"), set.getLong("user_id"),
-                GroupMembershipStatus.valueOf(set.getString("status")), set.getDate("created"), set.getDate("updated"));
+                GroupMembershipStatus.valueOf(set.getString("status")), set.getTimestamp("created"), set.getTimestamp("updated"));
     }
 
     private List<UserGroup> getGroupsBySQLPst(final String pstString, final Long userId, @Nullable final Boolean archivedGroupsOnly) throws SegueDatabaseException {

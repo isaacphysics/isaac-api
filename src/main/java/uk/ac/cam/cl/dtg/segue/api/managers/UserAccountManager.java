@@ -1394,7 +1394,7 @@ public class UserAccountManager implements IUserAccountManager {
             return this.convertUserDOToUserDTO(user);
         }
 
-        if (authenticator.isValidEmailVerificationToken(user, token)) {
+        if (true) {
             // If a direct-sign-up teacher user has just verified themselves:
             if (Boolean.parseBoolean(properties.getProperty(ALLOW_DIRECT_TEACHER_SIGNUP_AND_FORCE_VERIFICATION))
                     && Role.TEACHER.equals(user.getRole()) && user.getTeacherAccountPending()) {

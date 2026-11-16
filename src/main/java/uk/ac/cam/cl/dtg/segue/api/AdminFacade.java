@@ -86,14 +86,11 @@ import java.net.http.HttpResponse;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -478,7 +475,7 @@ public class AdminFacade extends AbstractSegueFacade {
     public Response notifySingleDeliveryFailure(@Context final HttpServletRequest request,
                                                 final Map<String, Object> webhookPayload) {
 
-        String trustedSigningKey = getProperties().getProperty(MAILGUN_SECRET_KEY);
+        String trustedSigningKey = getProperties().getProperty(MAILGUN_SIGNING_KEY);
         if (null == trustedSigningKey || trustedSigningKey.isEmpty()) {
             return SegueErrorResponse.getNotImplementedResponse();
         }
