@@ -231,6 +231,7 @@ public interface ContentMapper {
     @SubclassMapping(source = IsaacFreeTextQuestion.class, target = IsaacFreeTextQuestionDTO.class)
     @SubclassMapping(source = IsaacGraphSketcherQuestion.class, target = IsaacGraphSketcherQuestionDTO.class)
     @SubclassMapping(source = IsaacMultiChoiceQuestion.class, target = IsaacMultiChoiceQuestionDTO.class)
+    @SubclassMapping(source = IsaacCompletionQuestion.class, target = IsaacCompletionQuestionDTO.class)
     @SubclassMapping(source = IsaacNumericQuestion.class, target = IsaacNumericQuestionDTO.class)
     @SubclassMapping(source = IsaacRegexMatchQuestion.class, target = IsaacRegexMatchQuestionDTO.class)
     @SubclassMapping(source = IsaacStringMatchQuestion.class, target = IsaacStringMatchQuestionDTO.class)
