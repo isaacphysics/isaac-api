@@ -287,13 +287,13 @@ public class QuizFacadeTest extends AbstractFacadeTest {
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
                 prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
                 prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(null)),
-                failsWith(Status.FORBIDDEN)
+                failsWith(Status.NOT_FOUND)
             ),
             as(studentsTeachersOrAdmin(),
                 prepare(quizAssignmentManager, m -> expect(m.getGroupForAssignment(studentAssignment)).andReturn(studentGroup)),
                 prepare(associationManager, m -> expect(m.hasPermission(currentUser(), student)).andReturn(true)),
                 prepare(quizAttemptManager, m -> expect(m.getByQuizAssignmentAndUser(studentAssignment, student)).andReturn(studentAttempt)),
-                failsWith(Status.FORBIDDEN)
+                failsWith(Status.NOT_FOUND)
             ),
             forbiddenForEveryoneElse()
         );
