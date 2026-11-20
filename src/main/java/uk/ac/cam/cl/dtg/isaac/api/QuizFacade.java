@@ -1651,7 +1651,7 @@ public class QuizFacade extends AbstractIsaacFacade {
             QuizAttemptDTO quizAttempt = quizAttemptManager.getByQuizAssignmentAndUser(assignment, student);
 
             if (quizAttempt == null || quizAttempt.getCompletedDate() == null) {
-                return new SegueErrorResponse(Status.FORBIDDEN,
+                return new SegueErrorResponse(Status.NOT_FOUND,
                         "That student has not completed this test assignment.").toResponse();
             }
 
