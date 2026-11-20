@@ -173,17 +173,17 @@ CREATE TABLE anonymous.user_streak_targets AS
 -- Skills question attempt table:
 
 CREATE TABLE anonymous.skills_question_attempts AS
-SELECT
-    id,
-    anonymise(user_id, hash_salt) AS user_id,
-    skill_assignment_id,
-    skill_id,
-    subskill_id,
-    question,
-    question_attempt,
-    marks,
-    timestamp
-FROM public.skills_question_attempts;
+    SELECT
+        id,
+        anonymise(user_id, hash_salt) AS user_id,
+        skill_assignment_id,
+        skill_id,
+        subskill_id,
+        question,
+        question_attempt,
+        marks,
+        timestamp
+    FROM public.skills_question_attempts;
 
 -- Quiz tables:
 
