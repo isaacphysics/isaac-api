@@ -30,8 +30,8 @@
         <web.xml.local>web-api-local.xml</web.xml.local>
         <dependency-check.version>13.0.0</dependency-check.version>
         <ossindex.version>3.2.0</ossindex.version>
-        <swagger-core.version>2.2.54</swagger-core.version>
-        <jgit.version>7.8.0.202609011348-r</jgit.version>
+        <swagger-core.version>2.2.56</swagger-core.version>
+        <jgit.version>7.8.1.202611041320-r</jgit.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <surefire.jacoco.args />
         <failsafe.jacoco.args />
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-core-http-jdk-httpclient</artifactId>
-            <version>1.1.7</version>
+            <version>1.3.0</version>
         </dependency>
 
         <dependency>
@@ -233,12 +233,12 @@
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>java-jwt</artifactId>
-            <version>4.6.1</version>
+            <version>4.6.2</version>
         </dependency>
         <dependency>
             <groupId>com.auth0</groupId>
             <artifactId>jwks-rsa</artifactId>
-            <version>0.24.1</version>
+            <version>0.24.2</version>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
@@ -327,7 +327,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.20.0</version>
+            <version>3.22.0</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -389,7 +389,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.7.13</version>
+            <version>42.7.14</version>
         </dependency>
 
         <dependency>
@@ -401,7 +401,7 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.14.4</version>
+            <version>2.15.1</version>
         </dependency>
 
         <dependency>
@@ -480,7 +480,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.86</version>
+            <version>1.87</version>
         </dependency>
 
         <dependency>
@@ -653,7 +653,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.15</version>
+                <version>0.8.16</version>
                 <executions>
                     <execution>
                         <id>before-unit-test-execution</id>
