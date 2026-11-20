@@ -225,6 +225,15 @@ public class StatisticsManager implements IStatisticsManager {
             }
             IsaacQuestionPageDTO questionPageDTO = (IsaacQuestionPageDTO) contentDTO;
 
+            // Do this here so we can skip if there are no markable questions in the ones he answered
+            List<QuestionDTO> questionParts = GameManager.getAllMarkableQuestionPartsDFSOrder(questionPageDTO);
+
+            // If the student answered none of the countable parts, skip this page
+            if (questionParts.stream().noneMatch(
+                    questionPart -> question.getValue().containsKey(questionPart.getId()))) {
+                continue;
+            }
+
             attemptedQuestions++;
             boolean questionIsCorrect = true;  // Are all Parts of the Question correct?
             LocalDate mostRecentCorrectQuestionPart = null;
@@ -233,7 +242,7 @@ public class StatisticsManager implements IStatisticsManager {
             int questionPartsIncorrect = 0;
             int questionPartsTotal = 0;
             // Loop through each Part of the Question:
-            for (QuestionDTO questionPart : GameManager.getAllMarkableQuestionPartsDFSOrder(questionPageDTO)) {
+            for (QuestionDTO questionPart : questionParts) {
 
                 questionPartsTotal++;
                 boolean questionPartIsCorrect = false;  // Is this Part of the Question correct?
