@@ -275,8 +275,8 @@ public class ContentIndexer {
                                 log.debug("Resource with invalid ID ({}) detected in cache. Skipping {}",
                                         content.getId(), treeWalk.getPathString());
 
-                                this.registerContentProblem(flattenedContent, "INVALID_ID: Index failure - Invalid ID "
-                                        + flattenedContent.getId() + " found in file " + treeWalk.getPathString()
+                                this.registerContentProblem(flattenedContent, "INVALID_ID: Index failure - Invalid ID ("
+                                        + flattenedContent.getId() + ") in file " + treeWalk.getPathString()
                                         + ". Must not contain restricted characters.", indexProblemCache);
                                 continue;
                             }
@@ -317,7 +317,7 @@ public class ContentIndexer {
                             log.debug("Resource with duplicate ID ({}) detected in cache. Skipping {}",
                                     flattenedContent.getId(), treeWalk.getPathString());
                             this.registerContentProblem(flattenedContent, String.format(
-                                    "DUPLICATE_ID: Index failure - Duplicate ID (%s) found in files (%s) and (%s): only one will be available.",
+                                    "DUPLICATE_ID: Index failure - Duplicate ID (%s) in files (%s) and (%s). Only one will be available.",
                                             flattenedContent.getId(), treeWalk.getPathString(), contentCache.get(flattenedContent.getId()).getCanonicalSourceFile()),
                                 indexProblemCache);
                         }
@@ -821,13 +821,12 @@ public class ContentIndexer {
         for (String id : missingContent) {
             for (Content src : incomingReferences.get(id)) {
                 this.registerContentProblem(src, "MISSING_REFERENCE: The id '" + id + "' was referenced by "
-                        + src.getCanonicalSourceFile() + " but the content with that "
-                        + "ID cannot be found.", indexProblemCache);
+                        + src.getCanonicalSourceFile() + " but the content with that ID cannot be found.", indexProblemCache);
             }
         }
         if (missingContent.size() > 0) {
             log.debug("Referential integrity broken for ({}) related Content items. "
-                    + "The following ids are referenced but do not exist: {}", missingContent.size(), expectedIds);
+                    + "The following IDs are referenced but do not exist: {}", missingContent.size(), expectedIds);
         }
 
         // Find all references from published content to unpublished content.
@@ -921,8 +920,7 @@ public class ContentIndexer {
             }
 
             this.registerContentProblem(content, "CHILDREN_AND_VALUE: " + firstLine + " in " + content.getCanonicalSourceFile()
-                    + " found with both children and a value. "
-                    + "Content objects are only allowed to have one or the other.", indexProblemCache);
+                    + " has both children and a value. Content objects are only allowed to have one or the other.", indexProblemCache);
 
             log.error("Invalid content item detected: The object with ID ({}) has both children and a value.", content.getCanonicalSourceFile());
         }
@@ -931,12 +929,11 @@ public class ContentIndexer {
         if (((null != content.getLayout() && content.getLayout().equals("tabs")) || content instanceof CodeSnippet) && null != content.getChildren()) {
             String expandableChildrenLog = collateExpandableChildren(content);
             if (!expandableChildrenLog.isEmpty()) {
-                this.registerContentProblem(content, "NESTED_EXPANDABLE: Content of type " + content.getType() + " in " + content.getCanonicalSourceFile() + " is "
-                        + "potentially expandable, but has expandable children of the following types: " + expandableChildrenLog
+                this.registerContentProblem(content, "NESTED_EXPANDABLE: Content of type " + content.getType() + " in " + content.getCanonicalSourceFile()
+                        + "is potentially expandable, but has expandable children of the following types: " + expandableChildrenLog
                         + ". These children will have their expandable property disabled since we cannot handle nested "
-                        + "expandable content. Please make sure the parent content block is "
-                        + "marked as expandable instead, and that it's children blocks have the expandable property "
-                        + "disabled.", indexProblemCache);
+                        + "expandable content. Please make sure the parent content block is marked as expandable instead, "
+                        + "and that its children blocks have the expandable property disabled.", indexProblemCache);
             }
         }
 
@@ -973,9 +970,8 @@ public class ContentIndexer {
                     Pattern pattern = Pattern.compile("(<svg[^>]*width\\s*=\\s*\"\\d+%\"[^>]*>|<svg(?![^>]*width)[^>]*>)\\n?");
 
                     if (pattern.matcher(fileContents).find()) {
-                        this.registerContentProblem(content, "INVALID_IMAGE_WIDTH: Width is not set to an absolute (non-%) value in Image: "
-                                + f.getSrc(),
-                                indexProblemCache
+                        this.registerContentProblem(content, "INVALID_IMAGE_WIDTH: Width is not set to an absolute (non-%) value in Image '"
+                                + f.getSrc() + "'", indexProblemCache
                         );
                     }
                 }
@@ -996,8 +992,8 @@ public class ContentIndexer {
                 if (!(f instanceof Video) && !Objects.equals(f.getId(), "eventThumbnail")) {
                     // Videos probably don't need alt text unless there is a good reason. It's not important that event
                     // thumbnails have alt text, so we don't record errors for those either.
-                    this.registerContentProblem(content, "MISSING_ALTTEXT: No altText attribute set for media element: " + f.getSrc()
-                            + " in Git source file " + content.getCanonicalSourceFile(), indexProblemCache);
+                    this.registerContentProblem(content, "MISSING_ALTTEXT: No alt text set for media '" + f.getSrc()
+                            + "' in Git source file " + content.getCanonicalSourceFile(), indexProblemCache);
                 }
             }
         }
@@ -1005,7 +1001,7 @@ public class ContentIndexer {
         if (content instanceof EmailTemplate e) {
             if (e.getPlainTextContent() == null) {
                 this.registerContentProblem(content,
-                        "EMAIL_TEMPLATE: Email template should always have plain text content field", indexProblemCache);
+                        "EMAIL_TEMPLATE: Email template has no plain text content field", indexProblemCache);
             }
         }
 
@@ -1020,13 +1016,13 @@ public class ContentIndexer {
         if (content instanceof IsaacQuestionPage qp
                 && flattenContentObjects(content).stream()
                 .allMatch(c -> !(c instanceof Question) || c instanceof IsaacQuickQuestion)) {
-            this.registerContentProblem(content, "NO_MARKABLE_QUESTIONS: Question page: " + qp.getId() + " found without any markable questions. "
+            this.registerContentProblem(content, "NO_MARKABLE_QUESTIONS: Question page (" + qp.getId() + ") has no markable questions. "
                     + "Question progress will not be recorded correctly.", indexProblemCache);
         }
 
         if (content instanceof Question && content.getId() == null) {
-            this.registerContentProblem(content, "NO_ID_QUESTION: Question: " + content.getTitle() + " in " + content.getCanonicalSourceFile()
-                    + " found without an id. " + "This question cannot be logged correctly.", indexProblemCache);
+            this.registerContentProblem(content, "NO_ID_QUESTION: Question '" + content.getTitle() + " in " + content.getCanonicalSourceFile()
+                    + " has no id. This question cannot be logged correctly.", indexProblemCache);
         }
 
         if (content instanceof ChoiceQuestion question
@@ -1034,8 +1030,8 @@ public class ContentIndexer {
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,
-                        "NO_CHOICES: Question: " + question.getId() + " found without any choice metadata. "
-                                + "This question will always be automatically " + "marked as incorrect", indexProblemCache);
+                        "NO_CHOICES: Question (" + question.getId() + ") has no choices. "
+                                + "This question will always be marked as incorrect", indexProblemCache);
             } else {
                 boolean correctOptionFound = false;
                 for (Choice choice : question.getChoices()) {
@@ -1045,8 +1041,8 @@ public class ContentIndexer {
                 }
                 if (!correctOptionFound) {
                     this.registerContentProblem(question,
-                            "NO_CORRECT_CHOICE: Question: " + question.getId() + " found without a correct answer. "
-                                    + "This question will always be automatically marked as incorrect", indexProblemCache);
+                            "NO_CORRECT_CHOICES: Question (" + question.getId() + ") has no correct choices. "
+                                    + "This question will always be marked as incorrect", indexProblemCache);
                 }
             }
         }
@@ -1061,14 +1057,13 @@ public class ContentIndexer {
                         stringValueToDouble(reformatNumberForParsing(quantity.getValue()));
                     } catch (NumberFormatException e) {
                         this.registerContentProblem(content,
-                                "INVALID_CHOICE_NUMERIC: Numeric Question: " + q.getId() + " has Quantity (" + quantity.getValue()
-                                        + ")  with value that cannot be interpreted as a number. "
-                                        + "Users will never be able to match this answer.", indexProblemCache);
+                                "INVALID_CHOICE_NUMERIC: Numeric Question: " + q.getId() + " has non-numeric choice ("
+                                        + quantity.getValue() + "). Users cannot match this choice.", indexProblemCache);
                     }
 
                     if (!q.getRequireUnits() && (null != quantity.getUnits() && !quantity.getUnits().isEmpty())) {
-                        this.registerContentProblem(content, "INVALID_CHOICE_NUMERIC: Numeric Question: " + q.getId()
-                                + " has a Quantity with units but does not require units!", indexProblemCache);
+                        this.registerContentProblem(content, "INVALID_CHOICE_NUMERIC: Numeric Question (" + q.getId()
+                                + ") has a choice with units but does not require units!", indexProblemCache);
                     }
 
 
@@ -1079,30 +1074,29 @@ public class ContentIndexer {
             }
             // Give warning if we have both required and display unit set
             if (q.getRequireUnits() && (null != q.getDisplayUnit() && !q.getDisplayUnit().isEmpty())) {
-                this.registerContentProblem(content, "UNITS_CONFLICT: Numeric Question: " + q.getId() + " has a displayUnit set but also requiresUnits!"
+                this.registerContentProblem(content, "UNITS_CONFLICT: Numeric Question (" + q.getId() + ") has a displayUnit set but also requiresUnits!"
                         + " Units will be ignored for this question!", indexProblemCache);
             }
             // Verify that significant figure bounds are correct
             if (!q.getDisregardSignificantFigures()) {
                 // If not 'exact answers only', s.f. bounds should be set
                 if (null == q.getSignificantFiguresMin() && null == q.getSignificantFiguresMax()) {
-                    this.registerContentProblem(content, "NO_SIGFIG_BOUNDS_NUMERIC: Numeric Question: " + q.getId() + " has no "
-                            + "significant figure bounds set. If this question does not use significant figures then "
+                    this.registerContentProblem(content, "NO_SIGFIG_BOUNDS_NUMERIC: Numeric Question (" + q.getId()
+                            + ") has no significant figure bounds set. If this question does not use significant figures, "
                             + "'exact answers only' should be set.", indexProblemCache);
                 } else if (null == q.getSignificantFiguresMin() || null == q.getSignificantFiguresMax()) {
                     // Both bounds need to be present
-                    this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_NUMERIC: Numeric Question: " + q.getId() + " has only one "
-                            + "significant figure bound, and may be unanswerable as a result. Please add both upper "
-                            + "and lower significant figure bounds, or set 'exact answers only'.", indexProblemCache);
+                    this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_NUMERIC: Numeric Question (" + q.getId() + ") has only one "
+                            + "significant figure bound. Please add both upper and lower significant figure bounds, or "
+                            + "set 'exact answers only'.", indexProblemCache);
                 } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
                     // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
                     // (0 significant figures makes no sense for example)
                     if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
                             || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
-                        this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_NUMERIC: Numeric Question: " + q.getId() + " has broken "
-                                + "significant figure rules! The upper bound may be below the lower bound, or "
-                                + "either bound might be less than 1 - the question will be unanswerable unless "
-                                + "this is fixed.", indexProblemCache);
+                        this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_NUMERIC: Numeric Question (" + q.getId() + ") has broken "
+                                + "significant figure rules. Either the upper bound is below the lower bound, or either bound "
+                                + "is less than 1. The question cannot be answered correctly.", indexProblemCache);
                     }
                 }
             }
@@ -1114,21 +1108,21 @@ public class ContentIndexer {
                 IsaacSymbolicQuestion q = (IsaacSymbolicQuestion) content;
                 for (String sym : q.getAvailableSymbols()) {
                     if (sym.contains("\\")) {
-                        this.registerContentProblem(content, "INVALID_SYMBOL: Symbolic Question: " + q.getId() + " has availableSymbol ("
+                        this.registerContentProblem(content, "INVALID_SYMBOL: Symbolic Question (" + q.getId() + ") has availableSymbol ("
                                 + sym + ") which contains a '\\' character.", indexProblemCache);
                     }
                 }
                 for (Choice choice : q.getChoices()) {
                     if (choice instanceof Formula f) {
                         if (f.getPythonExpression().contains("\\")) {
-                            this.registerContentProblem(content, "INVALID_PYTHON: Symbolic Question: " + q.getId() + " has Formula ("
+                            this.registerContentProblem(content, "INVALID_PYTHON: Symbolic Question (" + q.getId() + ") has Formula ("
                                     + choice.getValue() + ") with pythonExpression which contains a '\\' character.", indexProblemCache);
                         } else if (f.getPythonExpression() == null || f.getPythonExpression().isEmpty()) {
-                            this.registerContentProblem( content, "INVALID_PYTHON: Symbolic Question: " + q.getId() + " has Formula ("
+                            this.registerContentProblem( content, "INVALID_PYTHON: Symbolic Question (" + q.getId() + ") has Formula ("
                                     + choice.getValue() + ") with empty pythonExpression!", indexProblemCache);
                         }
                     } else {
-                        this.registerContentProblem(content, "INVALID_CHOICE_SYMBOLIC: Symbolic Question: " + q.getId() + " has non-Formula Choice ("
+                        this.registerContentProblem(content, "INVALID_CHOICE_SYMBOLIC: Symbolic Question (" + q.getId() + ") has non-Formula Choice ("
                                 + choice.getValue() + "). It must be deleted and a new Formula Choice created.", indexProblemCache);
                     }
                 }
@@ -1137,11 +1131,11 @@ public class ContentIndexer {
                 for (Choice choice : q.getChoices()) {
                     if (choice instanceof ChemicalFormula f) {
                         if (f.getMhchemExpression() == null || f.getMhchemExpression().isEmpty()) {
-                            this.registerContentProblem(content, "INVALID_CHOICE_CHEM: Chemistry Question: " + q.getId() + " has ChemicalFormula"
-                                    + " with empty mhchemExpression!", indexProblemCache);
+                            this.registerContentProblem(content, "INVALID_CHOICE_CHEM: Chemistry Question (" + q.getId() + ") has ChemicalFormula"
+                                    + " with empty mhchemExpression.", indexProblemCache);
                         }
                     } else {
-                        this.registerContentProblem(content, "INVALID_CHOICE_CHEM: Chemistry Question: " + q.getId() + " has non-ChemicalFormula Choice ("
+                        this.registerContentProblem(content, "INVALID_CHOICE_CHEM: Chemistry Question (" + q.getId() + ") has non-ChemicalFormula Choice ("
                                 + choice.getValue() + "). It must be deleted and a new ChemicalFormula Choice created.", indexProblemCache);
                     }
                 }
@@ -1153,13 +1147,13 @@ public class ContentIndexer {
             for (Choice choice : q.getChoices()) {
                 if (choice instanceof ItemChoice c) {
                     if (null == c.getItems() || c.getItems().isEmpty()) {
-                        this.registerContentProblem(content, "INVALID_CHOICE_CLOZE: Cloze Question: " + q.getId() + " has choice with missing items!", indexProblemCache);
+                        this.registerContentProblem(content, "INVALID_CHOICE_CLOZE: Cloze Question: " + q.getId() + " has choice with missing items.", indexProblemCache);
                         continue;
                     }
                     int items = c.getItems().size();
                     if (numberItems != null && items != numberItems) {
-                        this.registerContentProblem(content, "INVALID_CHOICE_CLOZE: Cloze Question: " + q.getId() + " has choice with incorrect number of items!"
-                                + " (Expected " + numberItems + ", got " + items + "!)", indexProblemCache);
+                        this.registerContentProblem(content, "INVALID_CHOICE_CLOZE: Cloze Question: " + q.getId() + " has choice with incorrect number of items."
+                                + " (Expected " + numberItems + ", got " + items + ".)", indexProblemCache);
                         continue;
                     }
                     numberItems = items;
@@ -1177,16 +1171,16 @@ public class ContentIndexer {
                     res = new IsaacDndValidator.DndProblem("DUPLICATE_DROPZONES_DND: This question contains duplicate drop zones.", q);
                 } else if (q.getChoices().stream().anyMatch(c ->
                         c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
-                    res = new IsaacDndValidator.DndProblem("INCOMPLETE_ANS_DND: This question contains a correct answer that doesn't use all drop zones.", q);
+                    res = new IsaacDndValidator.DndProblem("INCOMPLETE_ANS_DND: This question has a correct answer that doesn't use all drop zones.", q);
                 } else if (q.getChoices().stream().anyMatch(c ->
                         ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
-                    res = new IsaacDndValidator.DndProblem("UNKNOWN_DROPZONES_DND: This question contains an answer with unrecognised drop zones.", q);
+                    res = new IsaacDndValidator.DndProblem("UNKNOWN_DROPZONES_DND: This question has an answer with unrecognised drop zones.", q);
                 }
             }
             if (res != null) {
                 this.registerContentProblem(
                     content,
-                    String.format("Drag-and-drop Question: %s has a problem. %s", content.getId(), res.message),
+                    String.format("Drag-and-drop Question (%s) has a problem. %s", content.getId(), res.message),
                     indexProblemCache
                 );
             }
@@ -1197,7 +1191,7 @@ public class ContentIndexer {
                 if (q.getChoices().stream().map(ItemChoice.class::cast).filter(c -> null == c.isAllowSubsetMatch() || !c.isAllowSubsetMatch())
                         .allMatch(choice -> choice.getItems().size() != q.getItems().size())) {
                     this.registerContentProblem(content, "MISSING_ITEMS_REORDER: Reorder Question: " + q.getId() + " has useSingleList"
-                            + " and contains a non wildcard-matched answer with missing items.", indexProblemCache);
+                            + " and has a non wildcard-matched choice with missing items.", indexProblemCache);
                 }
             }
         }
@@ -1207,7 +1201,7 @@ public class ContentIndexer {
                 if (q.getChoices().stream().map(ItemChoice.class::cast)
                         .allMatch(choice -> choice.getItems().size() != q.getItems().size())) {
                     this.registerContentProblem(content, "MISSING_ITEMS_PARSONS: Parsons Question: " + q.getId() + " has useSingleList"
-                            + " and contains an answer with missing items.", indexProblemCache);
+                            + " and has a choice with missing items.", indexProblemCache);
                 }
             }
         }
@@ -1216,22 +1210,21 @@ public class ContentIndexer {
             if (!q.getDisregardSignificantFigures()) {
                 // If not 'exact answers only', s.f. bounds should be set
                 if (null == q.getSignificantFiguresMin() && null == q.getSignificantFiguresMax()) {
-                    this.registerContentProblem(content, "NO_SIGFIG_BOUNDS_COORDINATE: Coordinate Question: " + q.getId() + " has no "
-                            + "significant figure bounds set. If this question does not use significant figures then "
+                    this.registerContentProblem(content, "NO_SIGFIG_BOUNDS_COORD: Coordinate Question (" + q.getId()
+                            + ") has no significant figure bounds set. If this question does not use significant figures, "
                             + "'exact answers only' should be set.", indexProblemCache);
                 } else if (null == q.getSignificantFiguresMin() || null == q.getSignificantFiguresMax()) {
                     // Both bounds need to be present
-                    this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_COORDINATE: Coordinate Question: " + q.getId() + " has only one "
-                            + "significant figure bound, and may be unanswerable as a result. Please add both upper "
-                            + "and lower significant figure bounds, or set 'exact answers only'.", indexProblemCache);
+                    this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_COORD: Coordinate Question (" + q.getId() + ") has only one "
+                            + "significant figure bound. Please add both upper and lower significant figure bounds, or "
+                            + "set 'exact answers only'.", indexProblemCache);
                 } else if (null != q.getSignificantFiguresMin() && null != q.getSignificantFiguresMax()) {
                     // Upper bound must be above or equal to the lower bound, and both bounds must be more than 1
                     if (q.getSignificantFiguresMin() < 1 || q.getSignificantFiguresMax() < 1
                             || q.getSignificantFiguresMax() < q.getSignificantFiguresMin()) {
-                        this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_COORDINATE: Coordinate Question: " + q.getId() + " has broken "
-                                + "significant figure rules! The upper bound may be below the lower bound, or "
-                                + "either bound might be less than 1 - the question will be unanswerable unless "
-                                + "this is fixed.", indexProblemCache);
+                        this.registerContentProblem(content, "INVALID_SIGFIG_BOUNDS_COORD: Coordinate Question (" + q.getId() + ") has broken "
+                                + "significant figure rules. Either the upper bound is below the lower bound, or either bound "
+                                + "is less than 1. The question cannot be answered correctly.", indexProblemCache);
                     }
                 }
             }
@@ -1246,7 +1239,7 @@ public class ContentIndexer {
                                     stringValueToDouble(reformatNumberForParsing(coord));
                                 } catch (NumberFormatException e) {
                                     this.registerContentProblem(content,
-                                            String.format("INVALID_CHOICE_COORDINATE: Coordinate Question: %s has a value (%s) that cannot be interpreted as a number!",
+                                            String.format("INVALID_CHOICE_COORDINATE: Coordinate Question (%s) has a value (%s) that cannot be interpreted as a number.",
                                                     q.getId(), coord), indexProblemCache);
                                 }
                             }
@@ -1259,18 +1252,18 @@ public class ContentIndexer {
         if (content instanceof IsaacLLMFreeTextQuestion q) {
             if (null == q.getMarkScheme() || q.getMarkScheme().isEmpty()) {
                 this.registerContentProblem(content,
-                        String.format("NO_MARKSCHEME_LLM: LLM Free Text Question: %s has no mark scheme set. This question cannot be marked.", q.getId()),
+                        String.format("NO_MARKSCHEME_LLM: LLM Free Text Question (%s) has no mark scheme set. This question cannot be marked.", q.getId()),
                     indexProblemCache);
             }
         }
 
         if (content instanceof SkillsApp a) {
             if (null == a.getId()) {
-                this.registerContentProblem(content, "NO_ID_SKILLS: Skill app is missing an id.", indexProblemCache);
+                this.registerContentProblem(content, "NO_ID_SKILLS: Skill app has no ID.", indexProblemCache);
             }
             if (null == a.getAnvilApp() || null == a.getAnvilApp().getType() || !a.getAnvilApp().getType().equals("anvilApp")) {
                 this.registerContentProblem(content,
-                    String.format("NO_APP_SKILLS: Skill app '%s' must contain an Anvil app.", a.getId()), indexProblemCache);
+                    String.format("NO_APP_SKILLS: Skill app '%s' does not contain an Anvil app.", a.getId()), indexProblemCache);
             }
         }
     }
