@@ -85,6 +85,9 @@ public interface IValidator {
         }
         boolean valueEmpty = null == feedback.getValue() || feedback.getValue().isEmpty();
         boolean childrenEmpty = null == feedback.getChildren() || feedback.getChildren().isEmpty();
+        if (!childrenEmpty && feedback.getChildren().size() == 1) {
+            childrenEmpty = feedback.getChildren().getFirst() instanceof Content child && feedbackIsNullOrEmpty(child);
+        }
         return valueEmpty && childrenEmpty;
     }
 }
