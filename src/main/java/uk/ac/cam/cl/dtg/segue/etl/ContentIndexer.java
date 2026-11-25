@@ -87,13 +87,6 @@ public class ContentIndexer {
 
     private static final Pattern BAD_FILENAME_CHARACTERS = Pattern.compile("[^a-zA-Z0-9-_./]");
 
-    public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
-    public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
-    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
-            + "all drop zones.";
-    public static final String FEEDBACK_QUESTION_UNRECOGNISED_DZ = "This question contains an answer with unrecognised "
-            + "drop zones.";
-
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentSubclassMapper mapper) {
         this.database = database;
@@ -1197,23 +1190,23 @@ public class ContentIndexer {
 
             if (!hasDropZones) {
                 this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
-                                + FEEDBACK_QUESTION_NO_DZ, indexProblemCache);
+                                + "This question doesn't have any drop zones.", indexProblemCache);
             }
 
             if (dropZones.size() != new HashSet<>(dropZones).size()) {
                 this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
-                                + FEEDBACK_QUESTION_DUP_DZ, indexProblemCache);
+                                + "This question contains duplicate drop zones.", indexProblemCache);
             }
 
             if (q.getChoices() != null && hasDropZones) {
                 if (q.getChoices().stream().anyMatch(c -> c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
-                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
-                                    + FEEDBACK_QUESTION_UNUSED_DZ, indexProblemCache);
+                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId()
+                            + ". This question contains a correct answer that doesn't use all drop zones.", indexProblemCache);
                 }
 
                 if (q.getChoices().stream().anyMatch(c -> ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
-                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
-                                    + FEEDBACK_QUESTION_UNRECOGNISED_DZ, indexProblemCache);
+                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId()
+                            + ". This question contains an answer with unrecognised drop zones.", indexProblemCache);
                 }
             }
         }
