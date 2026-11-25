@@ -50,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 
 public class IsaacDndValidatorTest {
@@ -296,7 +297,7 @@ public class IsaacDndValidatorTest {
         Supplier<QuestionValidationTestCase> itemUnrecognisedFormatCase = () -> new QuestionValidationTestCase()
                 .expectExplLog("The question is invalid, because it has an answer in an unrecognised format.");
         Supplier<QuestionValidationTestCase> noAnswersTestCase = () -> new QuestionValidationTestCase()
-                .expectExplLog(IsaacDndValidator.FEEDBACK_QUESTION_NO_ANSWERS);
+                .expectExplLog(FEEDBACK_NO_ANSWERS);
         Supplier<QuestionValidationTestCase> noCorrectAnswersTestCase = () -> new QuestionValidationTestCase()
                 .expectExplLog(Constants.FEEDBACK_NO_CORRECT_ANSWERS);
 
@@ -588,7 +589,7 @@ public class IsaacDndValidatorTest {
                                 + "isaac.dos.content.ParsonsChoice!", id);
                     case "The question is invalid, because it has an answer in an unrecognised format.":
                         return format("Found item with missing id or drop zone id in answer for question id (%s)!", id);
-                    case IsaacDndValidator.FEEDBACK_QUESTION_NO_ANSWERS:
+                    case FEEDBACK_NO_ANSWERS:
                         return format("Question does not have any answers. %s src: %s", idFile);
                     case Constants.FEEDBACK_NO_CORRECT_ANSWERS:
                         return format("Question does not have any correct answers. %s src: %s", idFile);

@@ -36,10 +36,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /** Validator that only provides functionality to validate Drag and drop questions. */
 public class IsaacDndValidator implements IValidator {
-    public static final String FEEDBACK_QUESTION_NO_ANSWERS = "This question does not have any answers.";
     public static final String FEEDBACK_QUESTION_INVALID_ANS = "This question contains at least one invalid answer.";
     public static final String FEEDBACK_QUESTION_MISSING_ITEMS = "This question is missing items.";
     public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "You did not provide a valid answer; it does not contain "
@@ -163,7 +163,7 @@ public class IsaacDndValidator implements IValidator {
 
         // answers
         if (question.getChoices() == null || question.getChoices().isEmpty()) {
-            return new DndProblem(FEEDBACK_QUESTION_NO_ANSWERS, question);
+            return new DndProblem(FEEDBACK_NO_ANSWERS, question);
         }
 
         Optional<Choice> nonDndChoice = question.getChoices().stream()
@@ -256,7 +256,7 @@ public class IsaacDndValidator implements IValidator {
                         "Expected items in question (%s), but didn't find any!", id);
                 case "The question is invalid, because it has an answer with duplicate drop zones." ->
                         String.format("Question contains duplicate drop zones. %s src %s", id, sourceFile);
-                case FEEDBACK_QUESTION_NO_ANSWERS -> String.format(
+                case FEEDBACK_NO_ANSWERS -> String.format(
                         "Question does not have any answers. %s src: %s", id, sourceFile);
                 case Constants.FEEDBACK_NO_CORRECT_ANSWERS -> String.format(
                         "Question does not have any correct answers. %s src: %s", id, sourceFile
