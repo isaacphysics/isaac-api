@@ -202,7 +202,7 @@ public class IsaacDndValidator implements IValidator {
                 .map(c -> ((DndChoice) c).getItems().size()).orElse(0)) {
             return new DndProblem("an answer with more items than we have gaps.", q);
         }
-        var dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).toList();
+        List<String> dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).toList();
         if (dropZoneIds.size() != new HashSet<>(dropZoneIds).size()) {
             return new DndProblem("an answer with duplicate drop zones.", q);
         }
@@ -234,8 +234,8 @@ public class IsaacDndValidator implements IValidator {
         }
 
         private static String messageFor(final DndProblem message) {
-            var id = message.question.getId();
-            var sourceFile = message.question.getCanonicalSourceFile();
+            String id = message.question.getId();
+            String sourceFile = message.question.getCanonicalSourceFile();
             return switch (message.message) {
                 // questions
                 case FEEDBACK_QUESTION_MISSING_ITEMS -> String.format(
