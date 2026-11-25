@@ -41,8 +41,7 @@ import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 public class IsaacDndValidator implements IValidator {
     public static final String FEEDBACK_QUESTION_INVALID_ANS = "This choice is invalid.";
     public static final String FEEDBACK_QUESTION_MISSING_ITEMS = "This question is missing items.";
-    public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "You did not provide a valid answer; it does not contain "
-                                                          + "an item for each gap.";
+    public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "Your answer does not contain an item for each gap.";
 
     private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
 
@@ -117,8 +116,7 @@ public class IsaacDndValidator implements IValidator {
             feedback = question.getDefaultFeedback();
         }
 
-        return new DndValidationResponse(
-            question.getId(), answer, isCorrect, mostDropZonesCorrect, feedback, new Date());
+        return new DndValidationResponse(question.getId(), answer, isCorrect, mostDropZonesCorrect, feedback, new Date());
     }
 
     private List<String> getProblemsWithQuestionOrChoice(final Question question, final Choice choice) {
