@@ -236,32 +236,32 @@ public class IsaacDndValidator implements IValidator {
         private static String messageFor(final DndProblem message) {
             var id = message.question.getId();
             var sourceFile = message.question.getCanonicalSourceFile();
-            switch (message.message) {
+            return switch (message.message) {
                 // questions
-                case FEEDBACK_QUESTION_MISSING_ITEMS: return String.format(
-                    "Expected items in question (%s), but didn't find any!", id);
-                case "The question is invalid, because it has an answer with duplicate drop zones.":
-                    return String.format("Question contains duplicate drop zones. %s src %s", id, sourceFile);
-                case FEEDBACK_QUESTION_NO_ANSWERS: return String.format(
-                    "Question does not have any answers. %s src: %s", id, sourceFile);
-                case Constants.FEEDBACK_NO_CORRECT_ANSWERS: return String.format(
-                    "Question does not have any correct answers. %s src: %s", id, sourceFile
+                case FEEDBACK_QUESTION_MISSING_ITEMS -> String.format(
+                        "Expected items in question (%s), but didn't find any!", id);
+                case "The question is invalid, because it has an answer with duplicate drop zones." ->
+                        String.format("Question contains duplicate drop zones. %s src %s", id, sourceFile);
+                case FEEDBACK_QUESTION_NO_ANSWERS -> String.format(
+                        "Question does not have any answers. %s src: %s", id, sourceFile);
+                case Constants.FEEDBACK_NO_CORRECT_ANSWERS -> String.format(
+                        "Question does not have any correct answers. %s src: %s", id, sourceFile
                 );
-                case FEEDBACK_QUESTION_INVALID_ANS: return String.format(
-                    "Expected DndItem in question (%s), instead found %s!", id, message.choice.getClass());
+                case FEEDBACK_QUESTION_INVALID_ANS -> String.format(
+                        "Expected DndItem in question (%s), instead found %s!", id, message.choice.getClass());
                 // answers
-                case "The question is invalid, because it has an empty answer.": return String.format(
-                    "Expected list of DndItems, but none found in choice for question id (%s)!", id);
-                case "The question is invalid, because it has an invalid answer.": return String.format(
-                    "Expected list of DndItems, but something else found in choice for question id (%s)!", id);
-                case "The question is invalid, because it has an answer in an unrecognised format.": return
-                    String.format("Found item with missing id or drop zone id in answer for question id (%s)!", id);
-                case "The question is invalid, because it has an answer with unrecognised items.": return String.format(
-                    "Question contains invalid item ref. %s src %s", id, sourceFile);
-                case "The question is invalid, because it has an answer with more items than we have gaps.": return
-                    String.format("Question has answer with more items than we have gaps. %s src %s", id, sourceFile);
-                default: return null;
-            }
+                case "The question is invalid, because it has an empty answer." -> String.format(
+                        "Expected list of DndItems, but none found in choice for question id (%s)!", id);
+                case "The question is invalid, because it has an invalid answer." -> String.format(
+                        "Expected list of DndItems, but something else found in choice for question id (%s)!", id);
+                case "The question is invalid, because it has an answer in an unrecognised format." ->
+                        String.format("Found item with missing id or drop zone id in answer for question id (%s)!", id);
+                case "The question is invalid, because it has an answer with unrecognised items." -> String.format(
+                        "Question contains invalid item ref. %s src %s", id, sourceFile);
+                case "The question is invalid, because it has an answer with more items than we have gaps." ->
+                        String.format("Question has answer with more items than we have gaps. %s src %s", id, sourceFile);
+                default -> null;
+            };
         }
     }
 }
