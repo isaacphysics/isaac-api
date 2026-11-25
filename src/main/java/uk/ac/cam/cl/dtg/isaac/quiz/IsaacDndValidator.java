@@ -25,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -148,7 +149,7 @@ public class IsaacDndValidator implements IValidator {
      * @return a list of problems, empty if no problems were found
      */
     public static List<String> getProblemsWithQuestion(final IsaacDndQuestion question) {
-        List<String> problems = new java.util.ArrayList<>();
+        List<String> problems = new ArrayList<>();
 
         if (question.getItems() == null || question.getItems().isEmpty()) {
             problems.add(String.format("Question '%s': %s", question.getId(), FEEDBACK_QUESTION_MISSING_ITEMS));
@@ -174,7 +175,7 @@ public class IsaacDndValidator implements IValidator {
     }
 
     private static List<String> getProblemsWithChoice(final IsaacDndQuestion question, final DndChoice choice) {
-        List<String> problems = new java.util.ArrayList<>();
+        List<String> problems = new ArrayList<>();
 
         if (choice.getItems() == null || choice.getItems().isEmpty()) {
             problems.add(String.format("DnD question (%s) contains a choice (%s) with no items", question.getId(), choice.getId()));
