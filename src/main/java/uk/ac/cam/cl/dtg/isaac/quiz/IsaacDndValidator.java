@@ -49,12 +49,10 @@ public class IsaacDndValidator implements IValidator {
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
         List<String> problems = getProblemsWithQuestionOrChoice(question, answer);
-        if (problems.isEmpty()) {
-            return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
-        } else {
-            return new DndValidationResponse(
-                question.getId(), answer, false, null, new Content(String.join(" ", problems)), new Date());
+        if (!problems.isEmpty()) {
+            return new DndValidationResponse(question.getId(), answer, false, null, new Content(String.join("\n", problems)), new Date());
         }
+        return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
     }
 
     private DndValidationResponse getMarkedResponse(final IsaacDndQuestion question, final DndChoice answer) {
