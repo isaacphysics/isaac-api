@@ -960,7 +960,7 @@ public class ContentIndexer {
                             + " in Git. Could the reference be incorrect? SourceFile is " + content.getCanonicalSourceFile(), indexProblemCache);
                 } else if (fileData.size() > MEDIA_FILE_SIZE_LIMIT) {
                     int sizeInKiloBytes = fileData.size() / 1024;
-                    this.registerContentProblem(content, String.format("Image (%s) is %s kB and exceeds file size warning limit!",
+                    this.registerContentProblem(content, String.format("IMAGE_TOO_LARGE: Image (%s) is %s kB and exceeds file size warning limit!",
                             f.getSrc(), sizeInKiloBytes), indexProblemCache);
                 }
 
