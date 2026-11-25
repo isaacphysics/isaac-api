@@ -152,64 +152,64 @@ public class IsaacDndValidator implements IValidator {
     /**
      * Check for problems with a DnD question, including problems with its choices.
      *
-     * @param q the question to validate
+     * @param question the question to validate
      * @return a {@link DndProblem} describing the first problem found, or {@code null} if valid
      */
-    public static DndProblem getProblemsWithQuestion(final IsaacDndQuestion q) {
+    public static DndProblem getProblemsWithQuestion(final IsaacDndQuestion question) {
         // items
-        if (q.getItems() == null || q.getItems().isEmpty()) {
-            return new DndProblem(FEEDBACK_QUESTION_MISSING_ITEMS, q);
+        if (question.getItems() == null || question.getItems().isEmpty()) {
+            return new DndProblem(FEEDBACK_QUESTION_MISSING_ITEMS, question);
         }
 
         // answers
-        if (q.getChoices() == null || q.getChoices().isEmpty()) {
-            return new DndProblem(FEEDBACK_QUESTION_NO_ANSWERS, q);
+        if (question.getChoices() == null || question.getChoices().isEmpty()) {
+            return new DndProblem(FEEDBACK_QUESTION_NO_ANSWERS, question);
         }
 
-        Optional<Choice> nonDndChoice = q.getChoices().stream()
+        Optional<Choice> nonDndChoice = question.getChoices().stream()
             .filter(c -> !DndChoice.class.equals(c.getClass()))
             .findFirst();
         if (nonDndChoice.isPresent()) {
-            return new DndProblem(FEEDBACK_QUESTION_INVALID_ANS, q, nonDndChoice.get());
+            return new DndProblem(FEEDBACK_QUESTION_INVALID_ANS, question, nonDndChoice.get());
         }
 
-        if (q.getChoices().stream().noneMatch(Choice::isCorrect)) {
-            return new DndProblem(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q);
+        if (question.getChoices().stream().noneMatch(Choice::isCorrect)) {
+            return new DndProblem(Constants.FEEDBACK_NO_CORRECT_ANSWERS, question);
         }
 
-        Optional<String> choiceProblems = q.getChoices().stream()
-            .map(c -> getProblemsWithChoice(q, (DndChoice) c))
+        Optional<String> choiceProblems = question.getChoices().stream()
+            .map(c -> getProblemsWithChoice(question, (DndChoice) c))
             .filter(Objects::nonNull)
             .map(m -> "The question is invalid, because it has " + m.message)
             .findFirst();
         if (choiceProblems.isPresent()) {
-            return new DndProblem(choiceProblems.get(), q);
+            return new DndProblem(choiceProblems.get(), question);
         }
 
         return null;
     }
 
-    private static DndProblem getProblemsWithChoice(final IsaacDndQuestion q, final DndChoice a) {
-        if (a.getItems() == null || a.getItems().isEmpty()) {
-            return new DndProblem("an empty answer.", q);
+    private static DndProblem getProblemsWithChoice(final IsaacDndQuestion question, final DndChoice choice) {
+        if (choice.getItems() == null || choice.getItems().isEmpty()) {
+            return new DndProblem("an empty answer.", question);
         }
-        if (a.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class)) {
-            return new DndProblem("an invalid answer.", q);
+        if (choice.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class)) {
+            return new DndProblem("an invalid answer.", question);
         }
-        if (a.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
+        if (choice.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
                 || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""))) {
-            return new DndProblem("an answer in an unrecognised format.", q);
+            return new DndProblem("an answer in an unrecognised format.", question);
         }
-        if (a.getItems().stream().anyMatch(i -> !q.getItems().contains(i))) {
-            return new DndProblem("an answer with unrecognised items.", q);
+        if (choice.getItems().stream().anyMatch(i -> !question.getItems().contains(i))) {
+            return new DndProblem("an answer with unrecognised items.", question);
         }
-        if (a.getItems().size() > q.getChoices().stream().filter(Choice::isCorrect).findFirst()
+        if (choice.getItems().size() > question.getChoices().stream().filter(Choice::isCorrect).findFirst()
                 .map(c -> ((DndChoice) c).getItems().size()).orElse(0)) {
-            return new DndProblem("an answer with more items than we have gaps.", q);
+            return new DndProblem("an answer with more items than we have gaps.", question);
         }
-        List<String> dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).toList();
+        List<String> dropZoneIds = choice.getItems().stream().map(DndItem::getDropZoneId).toList();
         if (dropZoneIds.size() != new HashSet<>(dropZoneIds).size()) {
-            return new DndProblem("an answer with duplicate drop zones.", q);
+            return new DndProblem("an answer with duplicate drop zones.", question);
         }
         return null;
     }
