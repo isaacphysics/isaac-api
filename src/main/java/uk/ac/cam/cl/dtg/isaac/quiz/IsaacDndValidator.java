@@ -149,7 +149,12 @@ public class IsaacDndValidator implements IValidator {
         return null;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
+    /**
+     * Check for problems with a DnD question, including problems with its choices.
+     *
+     * @param q the question to validate
+     * @return a {@link DndProblem} describing the first problem found, or {@code null} if valid
+     */
     public static DndProblem getProblemsWithQuestion(final IsaacDndQuestion q) {
         // items
         if (q.getItems() == null || q.getItems().isEmpty()) {
@@ -215,12 +220,24 @@ public class IsaacDndValidator implements IValidator {
         public Question question;
         public Choice choice = null;
 
+        /**
+         * Construct a problem associated with a question.
+         *
+         * @param message a description of the problem
+         * @param question the question where the problem was found
+         */
         public DndProblem(final String message, final Question question) {
             this.message = message;
             this.question = question;
         }
 
-        @SuppressWarnings("checkstyle:MissingJavadocMethod")
+        /**
+         * Construct a problem associated with a question and a specific choice.
+         *
+         * @param message a description of the problem
+         * @param question the question where the problem was found
+         * @param choice the specific choice where the problem was found
+         */
         public DndProblem(final String message, final Question question, final Choice choice) {
             this.message = message;
             this.question = question;
