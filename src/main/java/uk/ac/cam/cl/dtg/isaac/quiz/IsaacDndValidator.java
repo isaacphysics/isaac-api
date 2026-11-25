@@ -183,7 +183,7 @@ public class IsaacDndValidator implements IValidator {
             problems.add(String.format("DnD question (%s) contains a choice (%s) with an invalid item", question.getId(), choice.getId()));
         }
         if (choice.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
-                || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""))) {
+                || i.getId().isBlank() || i.getDropZoneId().isBlank())) {
             problems.add(String.format("DnD question (%s) contains a choice (%s) with an item with an empty id or dropzone id", question.getId(), choice.getId()));
         }
         if (question.getItems() != null && choice.getItems().stream().anyMatch(i -> !question.getItems().contains(i))) {
