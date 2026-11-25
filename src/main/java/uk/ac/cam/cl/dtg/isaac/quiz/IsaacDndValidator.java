@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -49,11 +48,12 @@ public class IsaacDndValidator implements IValidator {
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        String problem = getProblemsWithQuestionOrChoice(question, answer);
-        if (problem == null) {
+        List<String> problems = getProblemsWithQuestionOrChoice(question, answer);
+        if (problems.isEmpty()) {
             return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
         } else {
-            return new DndValidationResponse(question.getId(), answer, false, null, new Content(problem), new Date());
+            return new DndValidationResponse(
+                question.getId(), answer, false, null, new Content(String.join(" ", problems)), new Date());
         }
     }
 
@@ -121,7 +121,7 @@ public class IsaacDndValidator implements IValidator {
             question.getId(), answer, isCorrect, mostDropZonesCorrect, feedback, new Date());
     }
 
-    private String getProblemsWithQuestionOrChoice(final Question question, final Choice choice) {
+    private List<String> getProblemsWithQuestionOrChoice(final Question question, final Choice choice) {
         Objects.requireNonNull(question);
         Objects.requireNonNull(choice);
 
@@ -133,65 +133,73 @@ public class IsaacDndValidator implements IValidator {
             throw new IllegalArgumentException(format("This validator only works with IsaacDndQuestions (%s is not an IsaacDndQuestion)", question.getId()));
         }
 
-        String questionProblem = getProblemsWithQuestion((IsaacDndQuestion) question);
-        if (questionProblem != null) {
-            log.error(questionProblem);
-            return questionProblem;
+        List<String> problems = getProblemsWithQuestion((IsaacDndQuestion) question);
+        if (!problems.isEmpty()) {
+            problems.forEach(log::error);
         }
-        return getProblemsWithChoice((IsaacDndQuestion) question, (DndChoice) choice); // FIXME this method still only returns at most one problem
+
+        List<String> answerProblems = getProblemsWithChoice((IsaacDndQuestion) question, (DndChoice) choice);
+        problems.addAll(answerProblems);
+        return problems;
     }
 
     /**
      * Check for problems with a DnD question, including problems with its choices.
      *
      * @param question the question to validate
-     * @return a description of the first problem found, or {@code null} if no problems
+     * @return a list of problems, empty if no problems were found
      */
-    public static String getProblemsWithQuestion(final IsaacDndQuestion question) {
+    public static List<String> getProblemsWithQuestion(final IsaacDndQuestion question) {
+        List<String> problems = new java.util.ArrayList<>();
+
         if (question.getItems() == null || question.getItems().isEmpty()) {
-            return String.format("Question '%s': %s", question.getId(), FEEDBACK_QUESTION_MISSING_ITEMS);
+            problems.add(String.format("Question '%s': %s", question.getId(), FEEDBACK_QUESTION_MISSING_ITEMS));
         }
 
         if (question.getChoices() == null || question.getChoices().isEmpty()) {
-            return String.format("Question '%s': %s", question.getId(), FEEDBACK_NO_ANSWERS);
+            problems.add(String.format("Question '%s': %s", question.getId(), FEEDBACK_NO_ANSWERS));
+            return problems;
         }
 
-        Optional<Choice> nonDndChoice = question.getChoices().stream().filter(c -> !DndChoice.class.equals(c.getClass())).findFirst();
-        if (nonDndChoice.isPresent()) {
-            return String.format("Question '%s', Choice '%s': %s", question.getId(), nonDndChoice.get().getId(), FEEDBACK_QUESTION_INVALID_ANS);
-        }
+        question.getChoices().stream()
+            .filter(c -> !DndChoice.class.equals(c.getClass()))
+            .forEach(c -> problems.add(String.format("Question '%s', Choice '%s': %s", question.getId(), c.getId(), FEEDBACK_QUESTION_INVALID_ANS)));
 
         if (question.getChoices().stream().noneMatch(Choice::isCorrect)) {
-            return String.format("Question '%s': %s", question.getId(), FEEDBACK_NO_CORRECT_ANSWERS);
+            problems.add(String.format("Question '%s': %s", question.getId(), FEEDBACK_NO_CORRECT_ANSWERS));
         }
 
-        Optional<String> choiceProblems = question.getChoices().stream().map(c -> getProblemsWithChoice(question, (DndChoice) c))
-                .filter(Objects::nonNull).findFirst();
-        return choiceProblems.orElse(null);
+        question.getChoices().stream().filter(DndChoice.class::isInstance).map(DndChoice.class::cast)
+            .forEach(c -> problems.addAll(getProblemsWithChoice(question, c)));
+
+        return problems;
     }
 
-    private static String getProblemsWithChoice(final IsaacDndQuestion question, final DndChoice choice) {
+    private static List<String> getProblemsWithChoice(final IsaacDndQuestion question, final DndChoice choice) {
+        List<String> problems = new java.util.ArrayList<>();
+
         if (choice.getItems() == null || choice.getItems().isEmpty()) {
-            return String.format("DnD question (%s) contains a choice (%s) with no items", question.getId(), choice.getId());
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with no items", question.getId(), choice.getId()));
+            return problems;
         }
         if (choice.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class)) {
-            return String.format("DnD question (%s) contains a choice (%s) with an invalid item", question.getId(), choice.getId());
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with an invalid item", question.getId(), choice.getId()));
         }
         if (choice.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
                 || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""))) {
-            return String.format("DnD question (%s) contains a choice (%s) with an item with an empty id or dropzone id", question.getId(), choice.getId());
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with an item with an empty id or dropzone id", question.getId(), choice.getId()));
         }
-        if (choice.getItems().stream().anyMatch(i -> !question.getItems().contains(i))) {
-            return String.format("DnD question (%s) contains a choice (%s) with an item that is not in the question's items", question.getId(), choice.getId());
+        if (question.getItems() != null && choice.getItems().stream().anyMatch(i -> !question.getItems().contains(i))) {
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with an item that is not in the question's items", question.getId(), choice.getId()));
         }
-        if (choice.getItems().size() > question.getChoices().stream().filter(Choice::isCorrect).findFirst()
-                .map(c -> ((DndChoice) c).getItems().size()).orElse(0)) {
-            return String.format("DnD question (%s) contains a choice (%s) with more items than there are gaps", question.getId(), choice.getId());
+        Optional<Integer> correctNumberOfGaps = question.getChoices().stream().filter(Choice::isCorrect).findFirst().map(c -> ((DndChoice) c).getItems().size());
+        if (correctNumberOfGaps.isPresent() && choice.getItems().size() > correctNumberOfGaps.get()) {
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with more items than there are gaps", question.getId(), choice.getId()));
         }
         List<String> dropZoneIds = choice.getItems().stream().map(DndItem::getDropZoneId).toList();
         if (dropZoneIds.size() != new HashSet<>(dropZoneIds).size()) {
-            return String.format("DnD question (%s) contains a choice (%s) with duplicate dropzone IDs", question.getId(), choice.getId());
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with duplicate dropzone IDs", question.getId(), choice.getId()));
         }
-        return null;
+        return problems;
     }
 }

@@ -1179,10 +1179,9 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacDndQuestion q) {
-            String validatorProblem = IsaacDndValidator.getProblemsWithQuestion(q);
-            if (validatorProblem != null) {
-                this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". " + validatorProblem, indexProblemCache);
-            }
+            List<String> validatorProblems = IsaacDndValidator.getProblemsWithQuestion(q);
+            validatorProblems.forEach(problem -> this.registerContentProblem(content,
+                "Drag-and-drop Question: " + content.getId() + ". " + problem, indexProblemCache));
 
             List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
             boolean hasDropZones = !dropZones.isEmpty();
