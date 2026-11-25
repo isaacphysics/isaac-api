@@ -182,11 +182,8 @@ public class IsaacDndValidator implements IValidator {
             .filter(Objects::nonNull)
             .map(m -> "The question is invalid, because it has " + m.message)
             .findFirst();
-        if (choiceProblems.isPresent()) {
-            return new DndProblem(choiceProblems.get(), question);
-        }
+        return choiceProblems.map(s -> new DndProblem(s, question)).orElse(null);
 
-        return null;
     }
 
     private static DndProblem getProblemsWithChoice(final IsaacDndQuestion question, final DndChoice choice) {
