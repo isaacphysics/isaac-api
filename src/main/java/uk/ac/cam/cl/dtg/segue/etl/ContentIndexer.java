@@ -1186,28 +1186,35 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacDndQuestion q) {
-            IsaacDndValidator.DndProblem res = IsaacDndValidator.getProblemsWithQuestion(q);
-            if (res == null) {
-                List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
-                if (dropZones.isEmpty()) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_NO_DZ, q);
-                } else if (dropZones.size() != new HashSet<>(dropZones).size()) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_DUP_DZ, q);
-                } else if (q.getChoices().stream().anyMatch(c ->
-                        c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNUSED_DZ, q);
-                } else if (q.getChoices().stream().anyMatch(c ->
-                        ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNRECOGNISED_DZ, q);
-                }
+            IsaacDndValidator.DndProblem validatorProblem = IsaacDndValidator.getProblemsWithQuestion(q);
+            if (validatorProblem != null) {
+                this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
+                                + validatorProblem.message, indexProblemCache);
             }
-            if (res != null) {
-                String template = "Drag-and-drop Question: %s has a problem. %s";
-                this.registerContentProblem(
-                    content,
-                    String.format(template, content.getId(), res.message),
-                    indexProblemCache
-                );
+
+            List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
+            boolean hasDropZones = !dropZones.isEmpty();
+
+            if (!hasDropZones) {
+                this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
+                                + FEEDBACK_QUESTION_NO_DZ, indexProblemCache);
+            }
+
+            if (dropZones.size() != new HashSet<>(dropZones).size()) {
+                this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
+                                + FEEDBACK_QUESTION_DUP_DZ, indexProblemCache);
+            }
+
+            if (q.getChoices() != null && hasDropZones) {
+                if (q.getChoices().stream().anyMatch(c -> c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
+                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
+                                    + FEEDBACK_QUESTION_UNUSED_DZ, indexProblemCache);
+                }
+
+                if (q.getChoices().stream().anyMatch(c -> ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
+                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
+                                    + FEEDBACK_QUESTION_UNRECOGNISED_DZ, indexProblemCache);
+                }
             }
         }
 
@@ -1294,3 +1301,4 @@ public class ContentIndexer {
         }
     }
 }
+
