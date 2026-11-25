@@ -49,7 +49,7 @@ public class IsaacDndValidator implements IValidator {
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        DndProblem problem = getProblemsWithQuestionOrAnswer(question, answer);
+        DndProblem problem = getProblemsWithQuestionOrChoice(question, answer);
         if (problem == null) {
             return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
         } else {
@@ -122,11 +122,11 @@ public class IsaacDndValidator implements IValidator {
             question.getId(), answer, isCorrect, mostDropZonesCorrect, feedback, new Date());
     }
 
-    private DndProblem getProblemsWithQuestionOrAnswer(final Question question, final Choice answer) {
+    private DndProblem getProblemsWithQuestionOrChoice(final Question question, final Choice choice) {
         Objects.requireNonNull(question);
-        Objects.requireNonNull(answer);
+        Objects.requireNonNull(choice);
 
-        if (!(answer instanceof DndChoice)) {
+        if (!(choice instanceof DndChoice)) {
             throw new IllegalArgumentException(format(
                 "This validator only works with DndChoices (%s is not DndChoice)", question.getId()));
         }
@@ -141,10 +141,10 @@ public class IsaacDndValidator implements IValidator {
             DndLogger.log(questionProblem);
             return questionProblem;
         }
-        DndProblem answerProblem = getProblemsWithAnswer((IsaacDndQuestion) question, (DndChoice) answer);
-        if (answerProblem != null) {
-            answerProblem.message = "You provided " + answerProblem.message;
-            return answerProblem;
+        DndProblem choiceProblem = getProblemsWithChoice((IsaacDndQuestion) question, (DndChoice) choice);
+        if (choiceProblem != null) {
+            choiceProblem.message = "You provided " + choiceProblem.message;
+            return choiceProblem;
         }
         return null;
     }
@@ -172,19 +172,19 @@ public class IsaacDndValidator implements IValidator {
             return new DndProblem(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q);
         }
 
-        Optional<String> answerProblems = q.getChoices().stream()
-            .map(c -> getProblemsWithAnswer(q, (DndChoice) c))
+        Optional<String> choiceProblems = q.getChoices().stream()
+            .map(c -> getProblemsWithChoice(q, (DndChoice) c))
             .filter(Objects::nonNull)
             .map(m -> "The question is invalid, because it has " + m.message)
             .findFirst();
-        if (answerProblems.isPresent()) {
-            return new DndProblem(answerProblems.get(), q);
+        if (choiceProblems.isPresent()) {
+            return new DndProblem(choiceProblems.get(), q);
         }
 
         return null;
     }
 
-    private static DndProblem getProblemsWithAnswer(final IsaacDndQuestion q, final DndChoice a) {
+    private static DndProblem getProblemsWithChoice(final IsaacDndQuestion q, final DndChoice a) {
         if (a.getItems() == null || a.getItems().isEmpty()) {
             return new DndProblem("an empty answer.", q);
         }
