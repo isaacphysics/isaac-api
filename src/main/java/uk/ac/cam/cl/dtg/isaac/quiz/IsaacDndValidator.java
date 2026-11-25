@@ -180,7 +180,7 @@ public class IsaacDndValidator implements IValidator {
         Optional<String> choiceProblems = question.getChoices().stream()
             .map(c -> getProblemsWithChoice(question, (DndChoice) c))
             .filter(Objects::nonNull)
-            .map(m -> "The question is invalid, because it has " + m.message)
+            .map(m -> m.message)
             .findFirst();
         return choiceProblems.map(s -> new DndProblem(s, question)).orElse(null);
 
@@ -188,25 +188,25 @@ public class IsaacDndValidator implements IValidator {
 
     private static DndProblem getProblemsWithChoice(final IsaacDndQuestion question, final DndChoice choice) {
         if (choice.getItems() == null || choice.getItems().isEmpty()) {
-            return new DndProblem("an empty answer.", question);
+            return new DndProblem("Question has an empty answer.", question);
         }
         if (choice.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class)) {
-            return new DndProblem("an invalid answer.", question);
+            return new DndProblem("Question has an invalid answer.", question);
         }
         if (choice.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
                 || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""))) {
-            return new DndProblem("an answer in an unrecognised format.", question);
+            return new DndProblem("Question has an answer in an unrecognised format.", question);
         }
         if (choice.getItems().stream().anyMatch(i -> !question.getItems().contains(i))) {
-            return new DndProblem("an answer with unrecognised items.", question);
+            return new DndProblem("Question has an answer with unrecognised items.", question);
         }
         if (choice.getItems().size() > question.getChoices().stream().filter(Choice::isCorrect).findFirst()
                 .map(c -> ((DndChoice) c).getItems().size()).orElse(0)) {
-            return new DndProblem("an answer with more items than we have gaps.", question);
+            return new DndProblem("Question has an answer with more items than we have gaps.", question);
         }
         List<String> dropZoneIds = choice.getItems().stream().map(DndItem::getDropZoneId).toList();
         if (dropZoneIds.size() != new HashSet<>(dropZoneIds).size()) {
-            return new DndProblem("an answer with duplicate drop zones.", question);
+            return new DndProblem("Question has an answer with duplicate drop zones.", question);
         }
         return null;
     }
@@ -248,34 +248,7 @@ public class IsaacDndValidator implements IValidator {
         }
 
         private static String messageFor(final DndProblem message) {
-            String id = message.question.getId();
-            String sourceFile = message.question.getCanonicalSourceFile();
-            return switch (message.message) {
-                // questions
-                case FEEDBACK_QUESTION_MISSING_ITEMS -> String.format(
-                        "Expected items in question (%s), but didn't find any!", id);
-                case "The question is invalid, because it has an answer with duplicate drop zones." ->
-                        String.format("Question contains duplicate drop zones. %s src %s", id, sourceFile);
-                case FEEDBACK_NO_ANSWERS -> String.format(
-                        "Question does not have any answers. %s src: %s", id, sourceFile);
-                case Constants.FEEDBACK_NO_CORRECT_ANSWERS -> String.format(
-                        "Question does not have any correct answers. %s src: %s", id, sourceFile
-                );
-                case FEEDBACK_QUESTION_INVALID_ANS -> String.format(
-                        "Expected DndItem in question (%s), instead found %s!", id, message.choice.getClass());
-                // answers
-                case "The question is invalid, because it has an empty answer." -> String.format(
-                        "Expected list of DndItems, but none found in choice for question id (%s)!", id);
-                case "The question is invalid, because it has an invalid answer." -> String.format(
-                        "Expected list of DndItems, but something else found in choice for question id (%s)!", id);
-                case "The question is invalid, because it has an answer in an unrecognised format." ->
-                        String.format("Found item with missing id or drop zone id in answer for question id (%s)!", id);
-                case "The question is invalid, because it has an answer with unrecognised items." -> String.format(
-                        "Question contains invalid item ref. %s src %s", id, sourceFile);
-                case "The question is invalid, because it has an answer with more items than we have gaps." ->
-                        String.format("Question has answer with more items than we have gaps. %s src %s", id, sourceFile);
-                default -> null;
-            };
+            return String.format("%s (question %s in file %s)", message.message, message.question.getId(), message.question.getCanonicalSourceFile());
         }
     }
 }
