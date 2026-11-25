@@ -87,13 +87,6 @@ public class ContentIndexer {
 
     private static final Pattern BAD_FILENAME_CHARACTERS = Pattern.compile("[^a-zA-Z0-9-_./]");
 
-    public static final String FEEDBACK_QUESTION_NO_DZ = "This question doesn't have any drop zones.";
-    public static final String FEEDBACK_QUESTION_DUP_DZ = "This question contains duplicate drop zones.";
-    public static final String FEEDBACK_QUESTION_UNUSED_DZ = "This question contains a correct answer that doesn't use "
-            + "all drop zones.";
-    public static final String FEEDBACK_QUESTION_UNRECOGNISED_DZ = "This question contains an answer with unrecognised "
-            + "drop zones.";
-
     @Inject
     public ContentIndexer(GitDb database, ElasticSearchIndexer es, ContentSubclassMapper mapper) {
         this.database = database;
@@ -1186,28 +1179,33 @@ public class ContentIndexer {
         }
 
         if (content instanceof IsaacDndQuestion q) {
-            IsaacDndValidator.DndProblem res = IsaacDndValidator.getProblemsWithQuestion(q);
-            if (res == null) {
-                List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
-                if (dropZones.isEmpty()) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_NO_DZ, q);
-                } else if (dropZones.size() != new HashSet<>(dropZones).size()) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_DUP_DZ, q);
-                } else if (q.getChoices().stream().anyMatch(c ->
-                        c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNUSED_DZ, q);
-                } else if (q.getChoices().stream().anyMatch(c ->
-                        ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
-                    res = new IsaacDndValidator.DndProblem(FEEDBACK_QUESTION_UNRECOGNISED_DZ, q);
-                }
+            List<String> validatorProblems = IsaacDndValidator.getProblemsWithQuestion(q);
+            validatorProblems.forEach(problem -> this.registerContentProblem(content,
+                "Drag-and-drop Question: " + content.getId() + ". " + problem, indexProblemCache));
+
+            List<String> dropZones = ContentValidatorUtils.DropZones.getFromQuestion(q);
+            boolean hasDropZones = !dropZones.isEmpty();
+
+            if (!hasDropZones) {
+                this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
+                                + "This question doesn't have any drop zones.", indexProblemCache);
             }
-            if (res != null) {
-                var template = "Drag-and-drop Question: %s has a problem. %s";
-                this.registerContentProblem(
-                    content,
-                    String.format(template, content.getId(), res.message),
-                    indexProblemCache
-                );
+
+            if (dropZones.size() != new HashSet<>(dropZones).size()) {
+                this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId() + ". "
+                                + "This question contains duplicate drop zones.", indexProblemCache);
+            }
+
+            if (q.getChoices() != null && hasDropZones) {
+                if (q.getChoices().stream().anyMatch(c -> c.isCorrect() && dropZones.size() != ((DndChoice) c).getItems().size())) {
+                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId()
+                            + ". This question contains a correct answer that doesn't use all drop zones.", indexProblemCache);
+                }
+
+                if (q.getChoices().stream().anyMatch(c -> ((DndChoice) c).getItems().stream().anyMatch(i -> !dropZones.contains(i.getDropZoneId())))) {
+                    this.registerContentProblem(content, "Drag-and-drop Question: " + content.getId()
+                            + ". This question contains an answer with unrecognised drop zones.", indexProblemCache);
+                }
             }
         }
 
@@ -1294,3 +1292,4 @@ public class ContentIndexer {
         }
     }
 }
+

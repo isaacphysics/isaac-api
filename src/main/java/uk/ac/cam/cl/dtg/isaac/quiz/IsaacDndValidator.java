@@ -17,7 +17,6 @@ package uk.ac.cam.cl.dtg.isaac.quiz;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.cam.cl.dtg.isaac.api.Constants;
 import uk.ac.cam.cl.dtg.isaac.dos.DndValidationResponse;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacDndQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Choice;
@@ -26,6 +25,7 @@ import uk.ac.cam.cl.dtg.isaac.dos.content.DndChoice;
 import uk.ac.cam.cl.dtg.isaac.dos.content.DndItem;
 import uk.ac.cam.cl.dtg.isaac.dos.content.Question;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -36,26 +36,23 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static uk.ac.cam.cl.dtg.isaac.api.Constants.*;
 
 /** Validator that only provides functionality to validate Drag and drop questions. */
 public class IsaacDndValidator implements IValidator {
-    public static final String FEEDBACK_QUESTION_NO_ANSWERS = "This question does not have any answers.";
-    public static final String FEEDBACK_QUESTION_INVALID_ANS = "This question contains at least one invalid answer.";
+    public static final String FEEDBACK_QUESTION_INVALID_ANS = "This choice is invalid.";
     public static final String FEEDBACK_QUESTION_MISSING_ITEMS = "This question is missing items.";
-    public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "You did not provide a valid answer; it does not contain "
-                                                          + "an item for each gap.";
+    public static final String FEEDBACK_ANSWER_NOT_ENOUGH = "Your answer does not contain an item for each gap.";
 
     private static final Logger log = LoggerFactory.getLogger(IsaacDndValidator.class);
 
     @Override
     public final DndValidationResponse validateQuestionResponse(final Question question, final Choice answer) {
-        DndProblem problem = getProblemsWithQuestionOrAnswer(question, answer);
-        if (problem == null) {
-            return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
-        } else {
-            return new DndValidationResponse(
-                question.getId(), answer, false, null, new Content(problem.message), new Date());
+        List<String> problems = getProblemsWithQuestionOrChoice(question, answer);
+        if (!problems.isEmpty()) {
+            return new DndValidationResponse(question.getId(), answer, false, null, new Content(String.join("\n", problems)), new Date());
         }
+        return getMarkedResponse((IsaacDndQuestion) question, (DndChoice) answer);
     }
 
     private DndValidationResponse getMarkedResponse(final IsaacDndQuestion question, final DndChoice answer) {
@@ -118,150 +115,88 @@ public class IsaacDndValidator implements IValidator {
             feedback = question.getDefaultFeedback();
         }
 
-        return new DndValidationResponse(
-            question.getId(), answer, isCorrect, mostDropZonesCorrect, feedback, new Date());
+        return new DndValidationResponse(question.getId(), answer, isCorrect, mostDropZonesCorrect, feedback, new Date());
     }
 
-    private DndProblem getProblemsWithQuestionOrAnswer(final Question question, final Choice answer) {
+    private List<String> getProblemsWithQuestionOrChoice(final Question question, final Choice choice) {
         Objects.requireNonNull(question);
-        Objects.requireNonNull(answer);
+        Objects.requireNonNull(choice);
 
-        if (!(answer instanceof DndChoice)) {
-            throw new IllegalArgumentException(format(
-                "This validator only works with DndChoices (%s is not DndChoice)", question.getId()));
+        if (!(choice instanceof DndChoice)) {
+            throw new IllegalArgumentException(format("This validator only works with DndChoices (%s is not a DndChoice)", choice.getId()));
         }
 
         if (!(question instanceof IsaacDndQuestion)) {
-            throw new IllegalArgumentException(format(
-                "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
+            throw new IllegalArgumentException(format("This validator only works with IsaacDndQuestions (%s is not an IsaacDndQuestion)", question.getId()));
         }
 
-        DndProblem questionProblem = getProblemsWithQuestion((IsaacDndQuestion) question);
-        if (questionProblem != null) {
-            DndLogger.log(questionProblem);
-            return questionProblem;
+        List<String> problems = getProblemsWithQuestion((IsaacDndQuestion) question);
+        if (!problems.isEmpty()) {
+            problems.forEach(log::error);
         }
-        DndProblem answerProblem = getProblemsWithAnswer((IsaacDndQuestion) question, (DndChoice) answer);
-        if (answerProblem != null) {
-            answerProblem.message = "You provided " + answerProblem.message;
-            return answerProblem;
-        }
-        return null;
+
+        List<String> answerProblems = getProblemsWithChoice((IsaacDndQuestion) question, (DndChoice) choice);
+        problems.addAll(answerProblems);
+        return problems;
     }
 
-    @SuppressWarnings("checkstyle:MissingJavadocMethod")
-    public static DndProblem getProblemsWithQuestion(final IsaacDndQuestion q) {
-        // items
-        if (q.getItems() == null || q.getItems().isEmpty()) {
-            return new DndProblem(FEEDBACK_QUESTION_MISSING_ITEMS, q);
+    /**
+     * Check for problems with a DnD question, including problems with its choices.
+     *
+     * @param question the question to validate
+     * @return a list of problems, empty if no problems were found
+     */
+    public static List<String> getProblemsWithQuestion(final IsaacDndQuestion question) {
+        List<String> problems = new ArrayList<>();
+
+        if (question.getItems() == null || question.getItems().isEmpty()) {
+            problems.add(String.format("Question '%s': %s", question.getId(), FEEDBACK_QUESTION_MISSING_ITEMS));
         }
 
-        // answers
-        if (q.getChoices() == null || q.getChoices().isEmpty()) {
-            return new DndProblem(FEEDBACK_QUESTION_NO_ANSWERS, q);
+        if (question.getChoices() == null || question.getChoices().isEmpty()) {
+            problems.add(String.format("Question '%s': %s", question.getId(), FEEDBACK_NO_ANSWERS));
+            return problems;
         }
 
-        Optional<Choice> nonDndChoice = q.getChoices().stream()
+        question.getChoices().stream()
             .filter(c -> !DndChoice.class.equals(c.getClass()))
-            .findFirst();
-        if (nonDndChoice.isPresent()) {
-            return new DndProblem(FEEDBACK_QUESTION_INVALID_ANS, q, nonDndChoice.get());
+            .forEach(c -> problems.add(String.format("Question '%s', Choice '%s': %s", question.getId(), c.getId(), FEEDBACK_QUESTION_INVALID_ANS)));
+
+        if (question.getChoices().stream().noneMatch(Choice::isCorrect)) {
+            problems.add(String.format("Question '%s': %s", question.getId(), FEEDBACK_NO_CORRECT_ANSWERS));
         }
 
-        if (q.getChoices().stream().noneMatch(Choice::isCorrect)) {
-            return new DndProblem(Constants.FEEDBACK_NO_CORRECT_ANSWERS, q);
-        }
+        question.getChoices().stream().filter(DndChoice.class::isInstance).map(DndChoice.class::cast)
+            .forEach(c -> problems.addAll(getProblemsWithChoice(question, c)));
 
-        Optional<String> answerProblems = q.getChoices().stream()
-            .map(c -> getProblemsWithAnswer(q, (DndChoice) c))
-            .filter(Objects::nonNull)
-            .map(m -> "The question is invalid, because it has " + m.message)
-            .findFirst();
-        if (answerProblems.isPresent()) {
-            return new DndProblem(answerProblems.get(), q);
-        }
-
-        return null;
+        return problems;
     }
 
-    private static DndProblem getProblemsWithAnswer(final IsaacDndQuestion q, final DndChoice a) {
-        if (a.getItems() == null || a.getItems().isEmpty()) {
-            return new DndProblem("an empty answer.", q);
+    private static List<String> getProblemsWithChoice(final IsaacDndQuestion question, final DndChoice choice) {
+        List<String> problems = new ArrayList<>();
+
+        if (choice.getItems() == null || choice.getItems().isEmpty()) {
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with no items", question.getId(), choice.getId()));
+            return problems;
         }
-        if (a.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class)) {
-            return new DndProblem("an invalid answer.", q);
+        if (choice.getItems().stream().anyMatch(i -> i.getClass() != DndItem.class)) {
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with an invalid item", question.getId(), choice.getId()));
         }
-        if (a.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
-                || Objects.equals(i.getId(), "") || Objects.equals(i.getDropZoneId(), ""))) {
-            return new DndProblem("an answer in an unrecognised format.", q);
+        if (choice.getItems().stream().anyMatch(i -> i.getId() == null || i.getDropZoneId() == null
+                || i.getId().isBlank() || i.getDropZoneId().isBlank())) {
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with an item with an empty id or dropzone id", question.getId(), choice.getId()));
         }
-        if (a.getItems().stream().anyMatch(i -> !q.getItems().contains(i))) {
-            return new DndProblem("an answer with unrecognised items.", q);
+        if (question.getItems() != null && choice.getItems().stream().anyMatch(i -> !question.getItems().contains(i))) {
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with an item that is not in the question's items", question.getId(), choice.getId()));
         }
-        if (a.getItems().size() > q.getChoices().stream().filter(Choice::isCorrect).findFirst()
-                .map(c -> ((DndChoice) c).getItems().size()).orElse(0)) {
-            return new DndProblem("an answer with more items than we have gaps.", q);
+        Optional<Integer> correctNumberOfGaps = question.getChoices().stream().filter(Choice::isCorrect).findFirst().map(c -> ((DndChoice) c).getItems().size());
+        if (correctNumberOfGaps.isPresent() && choice.getItems().size() > correctNumberOfGaps.get()) {
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with more items than there are gaps", question.getId(), choice.getId()));
         }
-        var dropZoneIds = a.getItems().stream().map(DndItem::getDropZoneId).toList();
+        List<String> dropZoneIds = choice.getItems().stream().map(DndItem::getDropZoneId).toList();
         if (dropZoneIds.size() != new HashSet<>(dropZoneIds).size()) {
-            return new DndProblem("an answer with duplicate drop zones.", q);
+            problems.add(String.format("DnD question (%s) contains a choice (%s) with duplicate dropzone IDs", question.getId(), choice.getId()));
         }
-        return null;
-    }
-
-    /** Utility class to represent the result of checking whether a question or answer was valid. */
-    public static class DndProblem {
-        public String message;
-        public Question question;
-        public Choice choice = null;
-
-        public DndProblem(final String message, final Question question) {
-            this.message = message;
-            this.question = question;
-        }
-
-        @SuppressWarnings("checkstyle:MissingJavadocMethod")
-        public DndProblem(final String message, final Question question, final Choice choice) {
-            this.message = message;
-            this.question = question;
-            this.choice = choice;
-        }
-    }
-
-    private static class DndLogger {
-        private static void log(final DndProblem result) {
-            log.error(messageFor(result));
-        }
-
-        private static String messageFor(final DndProblem message) {
-            var id = message.question.getId();
-            var sourceFile = message.question.getCanonicalSourceFile();
-            switch (message.message) {
-                // questions
-                case FEEDBACK_QUESTION_MISSING_ITEMS: return String.format(
-                    "Expected items in question (%s), but didn't find any!", id);
-                case "The question is invalid, because it has an answer with duplicate drop zones.":
-                    return String.format("Question contains duplicate drop zones. %s src %s", id, sourceFile);
-                case FEEDBACK_QUESTION_NO_ANSWERS: return String.format(
-                    "Question does not have any answers. %s src: %s", id, sourceFile);
-                case Constants.FEEDBACK_NO_CORRECT_ANSWERS: return String.format(
-                    "Question does not have any correct answers. %s src: %s", id, sourceFile
-                );
-                case FEEDBACK_QUESTION_INVALID_ANS: return String.format(
-                    "Expected DndItem in question (%s), instead found %s!", id, message.choice.getClass());
-                // answers
-                case "The question is invalid, because it has an empty answer.": return String.format(
-                    "Expected list of DndItems, but none found in choice for question id (%s)!", id);
-                case "The question is invalid, because it has an invalid answer.": return String.format(
-                    "Expected list of DndItems, but something else found in choice for question id (%s)!", id);
-                case "The question is invalid, because it has an answer in an unrecognised format.": return
-                    String.format("Found item with missing id or drop zone id in answer for question id (%s)!", id);
-                case "The question is invalid, because it has an answer with unrecognised items.": return String.format(
-                    "Question contains invalid item ref. %s src %s", id, sourceFile);
-                case "The question is invalid, because it has an answer with more items than we have gaps.": return
-                    String.format("Question has answer with more items than we have gaps. %s src %s", id, sourceFile);
-                default: return null;
-            }
-        }
+        return problems;
     }
 }
