@@ -128,12 +128,12 @@ public class IsaacDndValidator implements IValidator {
 
         if (!(choice instanceof DndChoice)) {
             throw new IllegalArgumentException(format(
-                "This validator only works with DndChoices (%s is not DndChoice)", question.getId()));
+                "This validator only works with DndChoices (%s is not a DndChoice)", choice.getId()));
         }
 
         if (!(question instanceof IsaacDndQuestion)) {
             throw new IllegalArgumentException(format(
-                "This validator only works with IsaacDndQuestions (%s is not IsaacDndQuestion)", question.getId()));
+                "This validator only works with IsaacDndQuestions (%s is not an IsaacDndQuestion)", question.getId()));
         }
 
         DndProblem questionProblem = getProblemsWithQuestion((IsaacDndQuestion) question);
