@@ -1202,7 +1202,7 @@ public class ContentIndexer {
                 }
             }
             if (res != null) {
-                var template = "Drag-and-drop Question: %s has a problem. %s";
+                String template = "Drag-and-drop Question: %s has a problem. %s";
                 this.registerContentProblem(
                     content,
                     String.format(template, content.getId(), res.message),
