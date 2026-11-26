@@ -1048,7 +1048,9 @@ public class ContentIndexer {
         }
 
         if (content instanceof ChoiceQuestion question
-                && !(content.getType().equals("isaacQuestion") || content.getType().equals("isaacLLMFreeTextQuestion"))) {
+                && !(content.getType().equals("isaacQuestion")
+                || content.getType().equals("isaacLLMFreeTextQuestion")
+                || content.getType().equals("isaacCompletionQuestion"))) {
 
             if (question.getChoices() == null || question.getChoices().isEmpty()) {
                 this.registerContentProblem(question,

@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.cam.cl.dtg.isaac.dao.GameboardPersistenceManager;
 import uk.ac.cam.cl.dtg.isaac.dos.AudienceContext;
 import uk.ac.cam.cl.dtg.isaac.dos.GameboardContentDescriptor;
+import uk.ac.cam.cl.dtg.isaac.dos.IsaacCompletionQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuestionPage;
 import uk.ac.cam.cl.dtg.isaac.dos.IsaacQuickQuestion;
 import uk.ac.cam.cl.dtg.isaac.dos.LightweightQuestionValidationResponse;
@@ -38,6 +39,7 @@ import uk.ac.cam.cl.dtg.isaac.dto.GameFilter;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardItem;
 import uk.ac.cam.cl.dtg.isaac.dto.GameboardListDTO;
+import uk.ac.cam.cl.dtg.isaac.dto.IsaacCompletionQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacQuickQuestionDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.IsaacWildcardDTO;
 import uk.ac.cam.cl.dtg.isaac.dto.ResultsWrapper;
@@ -801,8 +803,9 @@ public class GameManager {
     private static List<QuestionDTO> filterQuestionParts(final Collection<ContentDTO> contentToFilter) {
         List<QuestionDTO> results = Lists.newArrayList();
         for (ContentDTO possibleQuestion : contentToFilter) {
-            if (!(possibleQuestion instanceof QuestionDTO) || possibleQuestion instanceof IsaacQuickQuestionDTO) {
-                // we are not interested if this is not a question or if it is a quick question.
+            if (!(possibleQuestion instanceof QuestionDTO) || (possibleQuestion instanceof IsaacQuickQuestionDTO)
+                    || (possibleQuestion instanceof IsaacCompletionQuestionDTO)) {
+                // we are not interested if this is not a question, a quick question or completion question
                 continue;
             }
             QuestionDTO question = (QuestionDTO) possibleQuestion;
@@ -818,8 +821,9 @@ public class GameManager {
     private static List<Question> filterDOQuestionParts(final Collection<Content> contentToFilter) {
         List<Question> results = Lists.newArrayList();
         for (Content possibleQuestion : contentToFilter) {
-            if (!(possibleQuestion instanceof Question) || possibleQuestion instanceof IsaacQuickQuestion) {
-                // we are not interested if this is not a question or if it is a quick question.
+            if (!(possibleQuestion instanceof Question) || (possibleQuestion instanceof IsaacQuickQuestion)
+                    || (possibleQuestion instanceof IsaacCompletionQuestion)) {
+                // we are not interested if this is not a question, a quick question or completion question
                 continue;
             }
             Question question = (Question) possibleQuestion;
